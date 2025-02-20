@@ -1,0 +1,22 @@
+# version: '3'
+
+services:
+    
+  postgres: # can elevate third party redis
+    container_name: postgres
+    hostname: postgres
+    image: postgres
+    ports:
+      - "5432:5432" # can be closed for security
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+
+  
+
+
+networks:
+  my-network:
+    name: my-network
+    external: true

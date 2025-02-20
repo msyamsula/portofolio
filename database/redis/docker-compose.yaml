@@ -1,0 +1,19 @@
+
+services:
+  redis: # can elevate third party
+    container_name: redis
+    hostname: redis
+    image: redis
+    ports:
+      - "6379:6379" # can be closed for security
+    env_file:
+      - ".env"
+    command: redis-server --requirepass admin
+    networks:
+      - my-network
+
+
+networks:
+  my-network:
+    name: my-network
+    external: true
