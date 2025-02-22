@@ -1,0 +1,23 @@
+services:
+    
+  url: # can elevate third party redis
+    container_name: url
+    hostname: url
+    image: url
+    ports:
+      - "8000:8000" # can be closed for security
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+    working_dir: /app
+    volumes:
+      - .env:/app/.env
+      - ./main:/app/main
+    command: ["./main"]
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true

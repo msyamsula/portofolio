@@ -27,14 +27,14 @@ func New(config Config) *Postgres {
 		config.Username, config.DbName, config.Password, config.Host, config.Port,
 	)
 	db, err := sqlx.Connect("postgres", connectionString)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	// connection pool
 	db.SetMaxIdleConns(3)
 	db.SetMaxOpenConns(10)
 	db.SetConnMaxIdleTime(5 * time.Second)
 	db.SetConnMaxLifetime(-1)
-	if err != nil {
-		log.Fatalln(err)
-	}
 	return &Postgres{
 		Db: db,
 	}
