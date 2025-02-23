@@ -7,3 +7,7 @@ run:
 
 down:
 	docker-compose down
+
+push:
+	docker tag url syamsuldocker/url
+	docker push syamsuldocker/url
