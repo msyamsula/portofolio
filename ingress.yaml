@@ -52,6 +52,13 @@ spec:
             name: url-http-clusterip
             port:
               number: 5000
+      - pathType: Prefix
+        path: "/api/chat/ws"
+        backend:
+          service:
+            name: chat-server-clusterip
+            port:
+              number: 8080
       # - pathType: Prefix
       #   path: "/postgres"
       #   backend:
