@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
       - name: chat-server
-        image: syamsuldocker/chat-server:0.0.1
+        image: syamsuldocker/chat-server:0.0.2
         ports:
         - containerPort: 8080
         # env:

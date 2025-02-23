@@ -5,6 +5,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -50,7 +51,8 @@ func main() {
 	r := mux.NewRouter()
 
 	// r.HandleFunc("/", serveHome)
-	r.HandleFunc("/ws/{room}", func(w http.ResponseWriter, r *http.Request) {
+	apiPrefix := "/api/chat"
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/ws/{room}"), func(w http.ResponseWriter, r *http.Request) {
 		pathVariables := mux.Vars(r)
 		room, ok := pathVariables["room"]
 		if !ok {
@@ -69,7 +71,7 @@ func main() {
 		websocket.ServeWs(hubMap[room], w, r)
 	})
 
-	http.Handle("/api/chat", r)
+	http.Handle("/", r)
 	err := http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

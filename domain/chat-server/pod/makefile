@@ -9,8 +9,8 @@ down:
 	docker-compose down
 
 push:
-	docker tag chat-server syamsuldocker/chat-server:0.0.1
-	docker push syamsuldocker/chat-server:0.0.1
-	docker image rm syamsuldocker/chat-server:0.0.0
+	docker tag chat-server syamsuldocker/chat-server:0.0.2
+	docker push syamsuldocker/chat-server:0.0.2
+	docker image rm syamsuldocker/chat-server:0.0.1
 
 # docker run -it --rm --network my-network --name chat-server -p 5000:5000 ubuntu  /bin/bash
