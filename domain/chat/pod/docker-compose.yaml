@@ -1,0 +1,23 @@
+services:
+    
+  chat-websocket:
+    container_name: chat-websocket
+    hostname: chat-websocket
+    image: chat-websocket
+    ports:
+      - "8080:8080" # can be closed for security
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+    working_dir: /app
+    volumes:
+      - .env:/app/.env
+      - ./main:/app/main
+    command: ["./main"]
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true
