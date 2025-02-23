@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-redis/redismock/v9 v9.2.0
+	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9

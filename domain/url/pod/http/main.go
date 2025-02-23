@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/database/postgres"
 	"github.com/msyamsula/portofolio/database/redis"
@@ -57,7 +58,6 @@ func main() {
 	ha := hasher.New(hasher.Config{
 		Length: int64(hasherLength),
 		Word:   os.Getenv("HASHER_CHARACTER_POOL"),
-		Host:   os.Getenv("HASHER_HOST"),
 	})
 
 	dep := urlhttp.Dependencies{
@@ -66,15 +66,21 @@ func main() {
 				Persistence: pg,
 				Cache:       re,
 			}),
+			Host:   os.Getenv("HASHER_HOST"),
 			Hasher: ha,
 		}),
 	}
 
 	urlSevice := urlhttp.New(dep)
 
-	apiPrefix := "/api"
+	apiPrefix := "/api/url"
 
-	http.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/url/short"), urlSevice.GetShortUrl)
+	r := mux.NewRouter()
+
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), urlSevice.GetShortUrl)
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/redirect/{shortUrl}"), urlSevice.RedirectShortUrl)
+
+	http.Handle("/", r)
 
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if errors.Is(err, http.ErrServerClosed) {
