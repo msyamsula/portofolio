@@ -45,6 +45,13 @@ spec:
             name: hello-kubernetes-second
             port:
               number: 80
+      - pathType: Prefix
+        path: "/api"
+        backend:
+          service:
+            name: url-http-clusterip
+            port:
+              number: 5000
       # - pathType: Prefix
       #   path: "/postgres"
       #   backend:
