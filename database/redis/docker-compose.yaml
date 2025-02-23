@@ -1,8 +1,8 @@
 
 services:
-  redisClusterIp: # can elevate third party
-    container_name: redisClusterIp
-    hostname: redisClusterIp
+  redis-clusterip: # can elevate third party
+    container_name: redis-clusterip
+    hostname: redis-clusterip
     image: redis
     ports:
       - "6379:6379" # can be closed for security
