@@ -20,7 +20,10 @@ import (
 
 func main() {
 	// load env
-	godotenv.Load("domain/url/pod/grpc/.env")
+	err := godotenv.Load(".env")
+	if err != nil {
+		fmt.Println("error in loading env", err)
+	}
 
 	// build the service dependencies
 	// ------------------------------
@@ -69,11 +72,9 @@ func main() {
 
 	urlSevice := urlhttp.New(dep)
 
-	// myhttp.Testing()
-	// myhttp.GetShortUrl()
-	http.HandleFunc("/", urlSevice.GetShortUrl)
-	// myhttp.GetShortUrl()
-	// http.HandleFunc("/hello", getHello)
+	apiPrefix := "/api"
+
+	http.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/url/short"), urlSevice.GetShortUrl)
 
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if errors.Is(err, http.ErrServerClosed) {

@@ -3,13 +3,13 @@ build:
 	docker build -t url-http .
 
 run:
-	docker-compose up -d
+	docker-compose up
 
 down:
 	docker-compose down
 
 push:
-	docker tag url syamsuldocker/url
-	docker push syamsuldocker/url
+	docker tag url-http syamsuldocker/url-http:0.0.3
+	docker push syamsuldocker/url-http:0.0.3
 
 # docker run -it --rm --network my-network --name url-http -p 5000:5000 ubuntu  /bin/bash

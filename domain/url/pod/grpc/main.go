@@ -23,7 +23,10 @@ import (
 func main() {
 
 	// load env
-	godotenv.Load("domain/url/pod/grpc/.env")
+	err := godotenv.Load("domain/url/pod/grpc/.env")
+	if err != nil {
+		log.Fatal("error in loading env", err)
+	}
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
