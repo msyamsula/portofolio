@@ -9,8 +9,8 @@ import (
 
 	"github.com/msyamsula/portofolio/database/postgres"
 	"github.com/msyamsula/portofolio/database/redis"
-	"github.com/msyamsula/portofolio/domain/hasher"
 	"github.com/msyamsula/portofolio/domain/url/handler/grpc/pb"
+	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
 	"google.golang.org/grpc"

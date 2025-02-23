@@ -13,8 +13,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/database/postgres"
 	"github.com/msyamsula/portofolio/database/redis"
-	"github.com/msyamsula/portofolio/domain/hasher"
 	urlhttp "github.com/msyamsula/portofolio/domain/url/handler/http"
+	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
 )

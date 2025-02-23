@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
       - name: url-http
-        image: syamsuldocker/url-http:0.0.4
+        image: syamsuldocker/url-http:0.0.5
         ports:
         - containerPort: 5000
         # env:

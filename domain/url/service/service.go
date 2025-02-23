@@ -1,7 +1,7 @@
 package url
 
 import (
-	"github.com/msyamsula/portofolio/domain/hasher"
+	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 )
 
