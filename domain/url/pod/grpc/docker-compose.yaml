@@ -1,6 +1,6 @@
 services:
     
-  url: # can elevate third party redis
+  url:
     container_name: url
     hostname: url
     image: url
