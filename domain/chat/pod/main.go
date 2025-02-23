@@ -15,18 +15,18 @@ import (
 
 var addr = flag.String("addr", ":8080", "http service address")
 
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL)
-	if r.URL.Path != "/" {
-		http.Error(w, "Not found", http.StatusNotFound)
-		return
-	}
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	http.ServeFile(w, r, "home.html")
-}
+// func serveHome(w http.ResponseWriter, r *http.Request) {
+// 	log.Println(r.URL)
+// 	if r.URL.Path != "/" {
+// 		http.Error(w, "Not found", http.StatusNotFound)
+// 		return
+// 	}
+// 	if r.Method != http.MethodGet {
+// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+// 		return
+// 	}
+// 	http.ServeFile(w, r, "home.html")
+// }
 
 func hubReceiver(c chan *websocket.Hub) {
 	for {
@@ -41,15 +41,15 @@ var (
 )
 
 func main() {
+	// look at this implementation for guidance in using websocket
+	// https://github.com/gorilla/websocket?tab=readme-ov-file
 	flag.Parse()
-	// hub := websocket.NewHub()
-	// go hub.Run()
 	roomChan := make(chan *websocket.Hub)
 	go hubReceiver(roomChan)
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/", serveHome)
+	// r.HandleFunc("/", serveHome)
 	r.HandleFunc("/ws/{room}", func(w http.ResponseWriter, r *http.Request) {
 		pathVariables := mux.Vars(r)
 		room, ok := pathVariables["room"]
@@ -69,7 +69,7 @@ func main() {
 		websocket.ServeWs(hubMap[room], w, r)
 	})
 
-	http.Handle("/", r)
+	http.Handle("/api/chat", r)
 	err := http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

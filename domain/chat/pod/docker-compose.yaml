@@ -1,9 +1,9 @@
 services:
     
-  chat-websocket:
-    container_name: chat-websocket
-    hostname: chat-websocket
-    image: chat-websocket
+  chat-server:
+    container_name: chat-server
+    hostname: chat-server
+    image: chat-server
     ports:
       - "8080:8080" # can be closed for security
     env_file:
