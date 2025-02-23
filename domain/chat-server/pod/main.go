@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/msyamsula/portofolio/domain/chat/websocket"
+	"github.com/msyamsula/portofolio/domain/chat-server/websocket"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
