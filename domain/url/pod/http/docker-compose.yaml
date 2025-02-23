@@ -1,0 +1,23 @@
+services:
+    
+  url-http:
+    container_name: url-http
+    hostname: url-http
+    image: url-http
+    ports:
+      - "5000:5000" # can be closed for security
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+    working_dir: /app
+    volumes:
+      - .env:/app/.env
+      - ./main:/app/main
+    command: ["./main"]
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true

@@ -2,6 +2,7 @@ output.txt
 vendor
 main
 .env
+.env
 .DS_Store
 kubeconfig.yaml
 secret.yaml

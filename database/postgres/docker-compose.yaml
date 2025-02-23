@@ -2,9 +2,9 @@
 
 services:
     
-  postgres: # can elevate third party redis
-    container_name: postgres
-    hostname: postgres
+  postgresClusterIp: # can elevate third party redis
+    container_name: postgresClusterIp
+    hostname: postgresClusterIp
     image: postgres
     ports:
       - "5432:5432" # can be closed for security

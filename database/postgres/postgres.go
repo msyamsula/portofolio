@@ -28,6 +28,8 @@ func New(config Config) *Postgres {
 	)
 	db, err := sqlx.Connect("postgres", connectionString)
 	if err != nil {
+		fmt.Println(connectionString, db)
+		fmt.Println("goes herer", err.Error())
 		log.Fatalln(err)
 	}
 	// connection pool

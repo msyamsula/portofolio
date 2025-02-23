@@ -1,9 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
-	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -12,18 +13,17 @@ import (
 	"github.com/msyamsula/portofolio/database/postgres"
 	"github.com/msyamsula/portofolio/database/redis"
 	"github.com/msyamsula/portofolio/domain/hasher"
-	urlgrpc "github.com/msyamsula/portofolio/domain/url/handler/grpc"
-	"github.com/msyamsula/portofolio/domain/url/handler/grpc/pb"
+	urlhttp "github.com/msyamsula/portofolio/domain/url/handler/http"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-
 	// load env
 	godotenv.Load("domain/url/pod/grpc/.env")
+
+	// build the service dependencies
+	// ------------------------------
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
@@ -57,7 +57,7 @@ func main() {
 		Host:   os.Getenv("HASHER_HOST"),
 	})
 
-	dep := urlgrpc.Dependencies{
+	dep := urlhttp.Dependencies{
 		UrlService: url.New(url.Dependencies{
 			Repo: repository.New(repository.Dependencies{
 				Persistence: pg,
@@ -67,16 +67,19 @@ func main() {
 		}),
 	}
 
-	// server part
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
+	urlSevice := urlhttp.New(dep)
 
-	pb.RegisterUrlShortenerServer(grpcServer, urlgrpc.New(dep))
-	reflection.Register(grpcServer)
-	log.Println("starting server on port", port)
-	grpcServer.Serve(lis)
+	// myhttp.Testing()
+	// myhttp.GetShortUrl()
+	http.HandleFunc("/", urlSevice.GetShortUrl)
+	// myhttp.GetShortUrl()
+	// http.HandleFunc("/hello", getHello)
+
+	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
+	if errors.Is(err, http.ErrServerClosed) {
+		fmt.Printf("server closed\n")
+	} else if err != nil {
+		fmt.Printf("error starting server: %s\n", err)
+		os.Exit(1)
+	}
 }
