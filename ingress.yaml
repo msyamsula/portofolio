@@ -46,7 +46,7 @@ spec:
             port:
               number: 80
       - pathType: Prefix
-        path: "/api"
+        path: "/api/url"
         backend:
           service:
             name: url-http-clusterip

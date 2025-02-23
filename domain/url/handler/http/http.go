@@ -9,6 +9,7 @@ import (
 
 type Handler struct {
 	urlService *url.Service
+	host       string
 }
 
 type Dependencies struct {

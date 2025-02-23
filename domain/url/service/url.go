@@ -2,6 +2,7 @@ package url
 
 import (
 	"context"
+	"fmt"
 )
 
 func (s *Service) GetLongUrl(ctx context.Context, shortUrl string) (string, error) {
@@ -14,5 +15,6 @@ func (s *Service) SetShortUrl(ctx context.Context, longUrl string) (string, erro
 	if err != nil {
 		return "", err
 	}
+	shortUrl = fmt.Sprintf("%s/api/url/redirect/%s", s.host, shortUrl)
 	return shortUrl, nil
 }

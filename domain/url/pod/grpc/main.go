@@ -57,7 +57,6 @@ func main() {
 	ha := hasher.New(hasher.Config{
 		Length: int64(hasherLength),
 		Word:   os.Getenv("HASHER_CHARACTER_POOL"),
-		Host:   os.Getenv("HASHER_HOST"),
 	})
 
 	dep := urlgrpc.Dependencies{
@@ -66,6 +65,7 @@ func main() {
 				Persistence: pg,
 				Cache:       re,
 			}),
+			Host:   os.Getenv("HASHER_HOST"),
 			Hasher: ha,
 		}),
 	}
