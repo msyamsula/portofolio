@@ -62,6 +62,13 @@ spec:
             name: chat-server-clusterip
             port:
               number: 8080
+      - pathType: Prefix
+        path: "/jaeger"
+        backend:
+          service:
+            name: jaeger-clusterip
+            port:
+              number: 16686
       # - pathType: Prefix
       #   path: "/postgres"
       #   backend:

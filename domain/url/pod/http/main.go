@@ -13,10 +13,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/database/postgres"
 	"github.com/msyamsula/portofolio/database/redis"
+	"github.com/msyamsula/portofolio/domain/telemetry"
 	urlhttp "github.com/msyamsula/portofolio/domain/url/handler/http"
 	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
@@ -26,9 +28,11 @@ func main() {
 		fmt.Println("error in loading env", err)
 	}
 
+	appName := "url-http"
+	telemetry.InitializeTelemetrySDK(appName, os.Getenv("JAEGER_HOST"))
+
 	// build the service dependencies
 	// ------------------------------
-
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		log.Fatal("error in port format", err)
@@ -74,13 +78,13 @@ func main() {
 	urlSevice := urlhttp.New(dep)
 
 	apiPrefix := "/api/url"
-
 	r := mux.NewRouter()
 
+	// API listing
 	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), urlSevice.GetShortUrl)
 	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/redirect/{shortUrl}"), urlSevice.RedirectShortUrl)
 
-	http.Handle("/", r)
+	http.Handle("/", otelhttp.NewHandler(r, "")) // use otelhttp for telemetry
 
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if errors.Is(err, http.ErrServerClosed) {

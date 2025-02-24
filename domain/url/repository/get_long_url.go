@@ -5,37 +5,37 @@ import (
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
+	"go.opentelemetry.io/otel"
 )
 
 var queryGetLongUrl = "SELECT long_url FROM url WHERE short_url = :short_url"
 
-func (repo *Repository) GetLongUrl(ctx context.Context, shortUrl string) (string, error) {
+func (repo *Repository) GetLongUrl(c context.Context, shortUrl string) (string, error) {
+	ctx, span := otel.Tracer("").Start(c, "repository.GetLongUrl")
+	defer span.End()
+
 	var err error
 	var longUrl string
 
 	// get from redis
-	cmd := repo.cache.Get(ctx, shortUrl)
+	redisCtx, redisSpan := otel.Tracer("").Start(ctx, "redis.getCache")
+	cmd := repo.cache.Get(redisCtx, shortUrl)
 	longUrl, err = cmd.Result()
+	redisSpan.End()
 	if err == nil && longUrl != "" {
 		// cached hit
 		return longUrl, nil
 	}
 
 	// persistence
-	tx := repo.persistence.Db.MustBeginTx(ctx, &sql.TxOptions{
+	tCtx, tSpan := otel.Tracer("").Start(ctx, "db.transactions")
+	tx := repo.persistence.Db.MustBeginTx(tCtx, &sql.TxOptions{
 		Isolation: 0,
 		ReadOnly:  true,
 	})
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
 
 	var stmt *sqlx.NamedStmt
-	stmt, err = tx.PrepareNamedContext(ctx, queryGetLongUrl)
+	stmt, err = tx.PrepareNamedContext(tCtx, queryGetLongUrl)
 	if err != nil {
 		return "", err
 	}
@@ -43,15 +43,22 @@ func (repo *Repository) GetLongUrl(ctx context.Context, shortUrl string) (string
 	dest := struct {
 		LongUrl string `db:"long_url,omitempty"`
 	}{}
-	err = stmt.GetContext(ctx, &dest, map[string]interface{}{
+	dbCtx, dbSpan := otel.Tracer("").Start(tCtx, "db.getExecution")
+	err = stmt.GetContext(dbCtx, &dest, map[string]interface{}{
 		"short_url": shortUrl,
 	})
+	dbSpan.End()
+	tSpan.End()
 	if err != nil {
 		return "", err
 	}
+	longUrl = dest.LongUrl
 
-	r := repo.cache.Set(ctx, shortUrl, longUrl, repo.cache.Ttl)
+	// set to redis if db success
+	setCtx, setSpan := otel.Tracer("").Start(ctx, "redis.setCache")
+	r := repo.cache.Set(setCtx, shortUrl, longUrl, repo.cache.Ttl)
 	r.Result()
-	return dest.LongUrl, nil
+	setSpan.End()
+	return longUrl, nil
 
 }

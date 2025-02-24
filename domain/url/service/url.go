@@ -3,13 +3,21 @@ package url
 import (
 	"context"
 	"fmt"
+
+	"go.opentelemetry.io/otel"
 )
 
-func (s *Service) GetLongUrl(ctx context.Context, shortUrl string) (string, error) {
+func (s *Service) GetLongUrl(c context.Context, shortUrl string) (string, error) {
+	ctx, span := otel.Tracer("").Start(c, "service.GetLongUrl")
+	defer span.End()
+
 	return s.repo.GetLongUrl(ctx, shortUrl)
 }
 
-func (s *Service) SetShortUrl(ctx context.Context, longUrl string) (string, error) {
+func (s *Service) SetShortUrl(c context.Context, longUrl string) (string, error) {
+	ctx, span := otel.Tracer("").Start(c, "service.SetShortUrl")
+	defer span.End()
+
 	shortUrl := s.hasher.Hash()
 	err := s.repo.SetShortUrl(ctx, shortUrl, longUrl)
 	if err != nil {

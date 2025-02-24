@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	url "github.com/msyamsula/portofolio/domain/url/service"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
 	urlService *url.Service
-	host       string
+	tracer     trace.Tracer
 }
 
 type Dependencies struct {
@@ -23,9 +25,13 @@ func New(dep Dependencies) *Handler {
 }
 
 func (h *Handler) GetShortUrl(w http.ResponseWriter, req *http.Request) {
+
+	ctx, span := otel.Tracer("").Start(req.Context(), "handler.GetShortUrl")
+	defer span.End()
+
 	query := req.URL.Query()
 	longUrl := query.Get("long_url")
-	shortUrl, err := h.urlService.SetShortUrl(req.Context(), longUrl)
+	shortUrl, err := h.urlService.SetShortUrl(ctx, longUrl)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

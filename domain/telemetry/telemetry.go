@@ -13,21 +13,32 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func InitializeTelemetrySDK() {
+func InitializeTelemetrySDK(appName, jaegerHost string) {
 	// Initialize OpenTelemetry SDK
 	ctx := context.Background()
-	exporter, err := otlptracegrpc.New(ctx)
+	exporterOptions := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint(jaegerHost),
+		otlptracegrpc.WithInsecure(), // remove this for production
+	}
+	exporter, err := otlptracegrpc.New(ctx, exporterOptions...)
 	if err != nil {
 		log.Fatal("failed to create exporter")
 	}
-	openTelemetryURL := attribute.KeyValue{
-		Key:   attribute.Key("opentelemetry.io/schemas"),
-		Value: attribute.StringValue("1.7.0"),
+
+	attr := []attribute.KeyValue{
+		{
+			Key:   attribute.Key("opentelemetry.io/schemas"),
+			Value: attribute.StringValue("1.7.0"),
+		},
+		{
+			Key:   attribute.Key("service.name"),
+			Value: attribute.StringValue(appName),
+		},
 	}
 
 	resource, err := resource.New(ctx,
 		resource.WithAttributes(
-			openTelemetryURL,
+			attr...,
 		),
 		resource.WithSchemaURL(semconv.SchemaURL),
 	)
