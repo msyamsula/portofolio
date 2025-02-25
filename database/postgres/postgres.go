@@ -10,7 +10,7 @@ import (
 )
 
 type Postgres struct {
-	Db *sqlx.DB
+	*sqlx.DB
 }
 
 type Config struct {
@@ -38,6 +38,6 @@ func New(config Config) *Postgres {
 	db.SetConnMaxIdleTime(5 * time.Second)
 	db.SetConnMaxLifetime(-1)
 	return &Postgres{
-		Db: db,
+		DB: db,
 	}
 }

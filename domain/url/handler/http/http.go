@@ -24,9 +24,9 @@ func New(dep Dependencies) *Handler {
 	}
 }
 
-func (h *Handler) GetShortUrl(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) HashUrl(w http.ResponseWriter, req *http.Request) {
 
-	ctx, span := otel.Tracer("").Start(req.Context(), "handler.GetShortUrl")
+	ctx, span := otel.Tracer("").Start(req.Context(), "handler.HashUrl")
 	defer span.End()
 
 	query := req.URL.Query()

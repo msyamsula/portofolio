@@ -1,9 +1,12 @@
 package hasher
 
 import (
+	"context"
 	"crypto/rand"
 	"math/big"
 	"strings"
+
+	"go.opentelemetry.io/otel"
 )
 
 type Service struct {
@@ -23,7 +26,10 @@ func New(cfg Config) *Service {
 	}
 }
 
-func (s *Service) Hash() string {
+func (s *Service) Hash(c context.Context) string {
+	_, span := otel.Tracer("").Start(c, "service.Hash")
+	span.End()
+
 	var result strings.Builder
 	limit := big.NewInt(int64(len(s.word)))
 	for i := 0; i < int(s.length); i++ {

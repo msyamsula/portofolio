@@ -29,7 +29,7 @@ func (repo *Repository) GetLongUrl(c context.Context, shortUrl string) (string, 
 
 	// persistence
 	tCtx, tSpan := otel.Tracer("").Start(ctx, "db.transactions")
-	tx := repo.persistence.Db.MustBeginTx(tCtx, &sql.TxOptions{
+	tx := repo.persistence.MustBeginTx(tCtx, &sql.TxOptions{
 		Isolation: 0,
 		ReadOnly:  true,
 	})

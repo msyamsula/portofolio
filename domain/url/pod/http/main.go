@@ -81,7 +81,7 @@ func main() {
 	r := mux.NewRouter()
 
 	// API listing
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), urlSevice.GetShortUrl)
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), urlSevice.HashUrl)
 	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/redirect/{shortUrl}"), urlSevice.RedirectShortUrl)
 
 	http.Handle("/", otelhttp.NewHandler(r, "")) // use otelhttp for telemetry

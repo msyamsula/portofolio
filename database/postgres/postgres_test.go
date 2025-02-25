@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, mock)
 	db := &Postgres{
-		Db: sqlxDB,
+		DB: sqlxDB,
 	}
 	assert.NotEmpty(t, db)
 }

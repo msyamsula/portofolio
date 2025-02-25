@@ -18,7 +18,7 @@ func (s *Service) SetShortUrl(c context.Context, longUrl string) (string, error)
 	ctx, span := otel.Tracer("").Start(c, "service.SetShortUrl")
 	defer span.End()
 
-	shortUrl := s.hasher.Hash()
+	shortUrl := s.hasher.Hash(ctx)
 	err := s.repo.SetShortUrl(ctx, shortUrl, longUrl)
 	if err != nil {
 		return "", err
