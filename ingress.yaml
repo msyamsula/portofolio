@@ -46,7 +46,7 @@ spec:
         path: "/"
         backend:
           service:
-            name: hello-kubernetes-second
+            name: url-ui-clusterip
             port:
               number: 80
       - pathType: Prefix
@@ -77,6 +77,13 @@ spec:
             name: prometheus-clusterip
             port:
               number: 9090
+      # - pathType: Prefix
+      #   path: "/url"
+      #   backend:
+      #     service:
+      #       name: url-ui-clusterip
+      #       port:
+      #         number: 80
       # - pathType: Prefix
       #   path: "/postgres"
       #   backend:
