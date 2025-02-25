@@ -28,7 +28,7 @@ func New(cfg Config) *Service {
 
 func (s *Service) Hash(c context.Context) string {
 	_, span := otel.Tracer("").Start(c, "service.Hash")
-	span.End()
+	defer span.End()
 
 	var result strings.Builder
 	limit := big.NewInt(int64(len(s.word)))
