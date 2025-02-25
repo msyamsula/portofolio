@@ -35,7 +35,7 @@ func (s *Service) Hash(c context.Context) string {
 	for i := 0; i < int(s.length); i++ {
 		randomIdx, _ := rand.Int(rand.Reader, limit)
 		idx := randomIdx.Int64()
-		idx %= s.length
+		idx %= limit.Int64()
 		result.WriteByte(s.word[idx])
 	}
 
