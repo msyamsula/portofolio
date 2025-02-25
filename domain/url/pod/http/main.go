@@ -18,6 +18,8 @@ import (
 	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -29,7 +31,7 @@ func main() {
 	}
 
 	appName := "url-http"
-	telemetry.InitializeTelemetrySDK(appName, os.Getenv("JAEGER_HOST"))
+	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"), os.Getenv("PROMOTEHUS_HOST"))
 
 	// build the service dependencies
 	// ------------------------------
@@ -80,11 +82,42 @@ func main() {
 	apiPrefix := "/api/url"
 	r := mux.NewRouter()
 
+	// prometheus metrics
+	hashCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "hash_counter",
+		Help: "number of shortener request",
+	})
+	prometheus.MustRegister(hashCounter)
+
+	redirectCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "redirect_counter",
+		Help: "number of redirect request",
+	})
+	prometheus.MustRegister(redirectCounter)
+
+	// middleware
+	hashCounterMiddleWare := func(next http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println(r.URL.Path)
+			hashCounter.Inc()
+			next.ServeHTTP(w, r)
+		}
+	}
+
+	redirectCounterMiddleWare := func(next http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println(r.URL.Path)
+			redirectCounter.Inc()
+			next.ServeHTTP(w, r)
+		}
+	}
+
 	// API listing
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), urlSevice.HashUrl)
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/redirect/{shortUrl}"), urlSevice.RedirectShortUrl)
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), hashCounterMiddleWare(http.HandlerFunc(urlSevice.HashUrl)))
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/redirect/{shortUrl}"), redirectCounterMiddleWare(http.HandlerFunc(urlSevice.RedirectShortUrl)))
 
 	http.Handle("/", otelhttp.NewHandler(r, "")) // use otelhttp for telemetry
+	http.Handle("/metrics", promhttp.Handler())
 
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if errors.Is(err, http.ErrServerClosed) {

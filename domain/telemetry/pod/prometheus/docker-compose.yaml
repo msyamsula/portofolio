@@ -11,7 +11,6 @@ services:
     volumes:
       - ./config.yaml:/config.yaml:ro
     command:
-      - /bin/prometheus
       - --config.file=/config.yaml
       - --storage.tsdb.retention.time=7d
       - --web.external-url=/prometheus

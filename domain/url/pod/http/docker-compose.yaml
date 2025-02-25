@@ -1,8 +1,8 @@
 services:
     
-  url-http:
-    container_name: url-http
-    hostname: url-http
+  url-http-clusterip:
+    container_name: url-http-clusterip
+    hostname: url-http-clusterip
     image: url-http
     ports:
       - "5000:5000" # can be closed for security

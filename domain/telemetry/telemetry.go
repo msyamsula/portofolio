@@ -13,7 +13,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func InitializeTelemetrySDK(appName, jaegerHost string) {
+func InitializeTelemetryTracing(appName, jaegerHost, promotheusHost string) {
 	// Initialize OpenTelemetry SDK
 	ctx := context.Background()
 	exporterOptions := []otlptracegrpc.Option{
@@ -36,6 +36,7 @@ func InitializeTelemetrySDK(appName, jaegerHost string) {
 		},
 	}
 
+	// resource
 	resource, err := resource.New(ctx,
 		resource.WithAttributes(
 			attr...,
@@ -46,6 +47,7 @@ func InitializeTelemetrySDK(appName, jaegerHost string) {
 		log.Fatal("failed to create resource")
 	}
 
+	// tracer provider
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource),
@@ -53,4 +55,5 @@ func InitializeTelemetrySDK(appName, jaegerHost string) {
 
 	otel.SetTracerProvider(tracerProvider)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
+
 }

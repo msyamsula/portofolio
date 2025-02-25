@@ -9,9 +9,9 @@ down:
 	docker-compose down
 
 push:
-	docker tag url-http syamsuldocker/url-http:0.0.11
-	docker push syamsuldocker/url-http:0.0.11
-	docker image rm syamsuldocker/url-http:0.0.10
+	docker tag url-http syamsuldocker/url-http:0.0.13
+	docker push syamsuldocker/url-http:0.0.13
+	docker image rm syamsuldocker/url-http:0.0.12
 
 deploy:
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml
