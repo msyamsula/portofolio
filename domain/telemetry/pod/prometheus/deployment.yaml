@@ -1,0 +1,121 @@
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-clusterip
+  labels:
+    app: prometheus
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 9090 # service port
+      targetPort: 9090 # container port
+      name: prometheus-clusterip
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+  labels:
+    app: prometheus
+    type: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        type: pod
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus
+          ports:
+          - containerPort: 9090
+          command:
+            - /bin/prometheus
+            - --config.file=/config.yaml
+            - --storage.tsdb.retention.time=7d
+            - --web.external-url=/prometheus
+          volumeMounts:
+            - name: prometheus-configmap
+              mountPath: /config.yaml
+              subPath: config.yaml
+              readOnly: true
+          # envFrom:
+          #   - secretRef:
+          #       name: prometheus-secret
+          #   - configMapRef:
+          #       name: postgres-configmap
+          # env:
+          #   - name: POSTGRES_USER
+          #     value: admin
+          #   - name: POSTGRES_PASSWORD
+          #     value: admin
+      volumes:
+        - name: prometheus-configmap
+          configMap:
+            name: prometheus-configmap
+
+#Secret
+# secret value is left empty, I add it manually to ensure security
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: prometheus-secret
+# stringData:
+#   POSTGRES_USERNAME:
+#   POSTGRES_PASSWORD:
+#   POSTGRES_DB:
+#   POSTGRES_HOST:
+#   POSTGRES_PORT:
+#   REDIS_PASSWORD:
+#   REDIS_HOST:
+#   REDIS_PORT:
+#   REDIS_TTL:
+#   HASHER_LENGTH:
+#   HASHER_CHARACTER_POOL:
+#   HASHER_HOST:
+#   PORT:
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: postgres-configmap
+# data:
+#   POSTGRES_USER: 
+#   POSTGRES_PASSWORD: 
+
+---
+# nodeport, can be closed for better security
+# leave it open for debug purpose
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: prometheus-nodeport
+#   labels:
+#     app: prometheus
+#     type: nodeport
+# spec:
+#   type: NodePort
+#   selector:
+#     app: prometheus
+#     type: pod
+#   ports:
+#     - protocol: TCP
+#       port: 5000 #container port
+#       targetPort: 5000 #service port
+#       nodePort: 30002 #open port
+#       name: prometheus-nodeport
