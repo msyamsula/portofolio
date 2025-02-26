@@ -15,6 +15,13 @@
 #   redis_USER: 
 #   redis_PASSWORD: 
 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secret
+stringData:
+  REDIS_PASSWORD: admin
+
 ---
 # nodeport, can be closed for better security
 # leave it open for debug purpose

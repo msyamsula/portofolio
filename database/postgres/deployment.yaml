@@ -1,12 +1,13 @@
 #Secret
 # secret value is left empty, I add it manually to ensure security
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: postgres-secret
-# stringData:
-#   POSTGRES_USER: 
-#   POSTGRES_PASSWORD: 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+stringData:
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: admin
+  POSTGRES_DB: postgres
 
 # apiVersion: v1
 # kind: ConfigMap
