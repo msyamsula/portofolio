@@ -245,7 +245,7 @@ fileInput.addEventListener("change", function (event) {
 
 // const host = process.env.HOST
 // const host = "http://0.0.0.0:7000"
-const host = "https://syamsul.online"
+const host = "https://api.syamsul.online"
 console.log(host);
 
 var log = []
@@ -309,7 +309,7 @@ function run() {
     }
 
 
-    url = `${host}/api/graph/${selectedAlgorithm}?start=${start}&end=${end}&isDirected=${isDirected}`
+    url = `${host}/graph/${selectedAlgorithm}?start=${start}&end=${end}&isDirected=${isDirected}`
 
     fetch(url, {
         method: "POST",

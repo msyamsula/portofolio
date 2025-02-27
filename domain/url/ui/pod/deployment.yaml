@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: url-ui
-          image: syamsuldocker/url-ui:0.0.4
+          image: syamsuldocker/url-ui:0.0.6
           ports:
           - containerPort: 80
           # volumeMounts:

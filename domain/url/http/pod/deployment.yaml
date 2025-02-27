@@ -14,7 +14,7 @@ stringData:
   REDIS_TTL: "300000" #in millisecond
   HASHER_LENGTH: "10"
   HASHER_CHARACTER_POOL: qQwWeErRtTyYuUiIoOpPaAsSdDfFgGhHjJkKlLzZxXcCvVbBnNmM123456
-  HASHER_HOST: https://syamsul.online
+  HASHER_HOST: https://api.syamsul.online
   PORT: "5000"
   JAEGER_HOST: "jaeger-clusterip:4317"
 
@@ -61,7 +61,7 @@ spec:
     spec:
       containers:
       - name: url-http
-        image: syamsuldocker/url-http:0.0.15
+        image: syamsuldocker/url-http:0.0.16
         ports:
         - containerPort: 5000
         # env:

@@ -13,10 +13,9 @@ spec:
       name: letsencrypt-prod-private-key
     # Add a single challenge solver, HTTP01 using nginx
     solvers:
-    - http01:
-        ingress:
-          class: nginx
-          
+      - http01:
+          ingress:
+            class: nginx
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -35,66 +34,80 @@ metadata:
 spec:
   tls:
     - hosts:
-      - syamsul.online
-      # - hw2.your_domain
+        - graph.syamsul.online
+        - url.syamsul.online
+        - api.syamsul.online
       secretName: hello-kubernetes-tls
   rules:
-  - host: syamsul.online
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: graph-ui-clusterip
-            port:
-              number: 80
-      - pathType: Prefix
-        path: "/api/url"
-        backend:
-          service:
-            name: url-http-clusterip
-            port:
-              number: 5000
-      - pathType: Prefix
-        path: "/api/chat/ws"
-        backend:
-          service:
-            name: chat-server-clusterip
-            port:
-              number: 8080
-      - pathType: Prefix
-        path: "/jaeger"
-        backend:
-          service:
-            name: jaeger-clusterip
-            port:
-              number: 16686
-      - pathType: Prefix
-        path: "/prometheus"
-        backend:
-          service:
-            name: prometheus-clusterip
-            port:
-              number: 9090
-      - pathType: Prefix
-        path: "/api/graph"
-        backend:
-          service:
-            name: graph-http-clusterip
-            port:
-              number: 7000
-      # - pathType: Prefix
-      #   path: "/url"
-      #   backend:
-      #     service:
-      #       name: url-ui-clusterip
-      #       port:
-      #         number: 80
-      # - pathType: Prefix
-      #   path: "/postgres"
-      #   backend:
-      #     service:
-      #       name: postgres-clusterip
-      #       port:
-      #         number: 5432
+    - host: url.syamsul.online
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: url-ui-clusterip
+                port:
+                  number: 80
+    - host: graph.syamsul.online
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: graph-ui-clusterip
+                port:
+                  number: 80
+    - host: api.syamsul.online
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/url"
+            backend:
+              service:
+                name: url-http-clusterip
+                port:
+                  number: 5000
+          - pathType: Prefix
+            path: "/chat/ws"
+            backend:
+              service:
+                name: chat-server-clusterip
+                port:
+                  number: 8080
+          - pathType: Prefix
+            path: "/jaeger"
+            backend:
+              service:
+                name: jaeger-clusterip
+                port:
+                  number: 16686
+          - pathType: Prefix
+            path: "/prometheus"
+            backend:
+              service:
+                name: prometheus-clusterip
+                port:
+                  number: 9090
+          - pathType: Prefix
+            path: "/graph"
+            backend:
+              service:
+                name: graph-http-clusterip
+                port:
+                  number: 7000
+        # - pathType: Prefix
+        #   path: "/url"
+        #   backend:
+        #     service:
+        #       name: url-ui-clusterip
+        #       port:
+        #         number: 80
+        # - pathType: Prefix
+        #   path: "/postgres"
+        #   backend:
+        #     service:
+        #       name: postgres-clusterip
+        #       port:
+        #         number: 5432

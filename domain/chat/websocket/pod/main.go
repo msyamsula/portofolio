@@ -64,7 +64,7 @@ func main() {
 	r := mux.NewRouter()
 
 	// r.HandleFunc("/", serveHome)
-	apiPrefix := "/api/chat"
+	apiPrefix := "/chat"
 	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/ws/{hub}"), func(w http.ResponseWriter, r *http.Request) {
 		pathVariables := mux.Vars(r)
 		hubName, ok := pathVariables["hub"]

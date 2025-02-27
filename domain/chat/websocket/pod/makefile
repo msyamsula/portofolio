@@ -9,9 +9,9 @@ down:
 	docker-compose down
 
 push:
-	docker tag chat-server syamsuldocker/chat-server:0.0.3
-	docker push syamsuldocker/chat-server:0.0.3
-	docker image rm syamsuldocker/chat-server:0.0.2
+	docker tag chat-server syamsuldocker/chat-server:0.0.4
+	docker push syamsuldocker/chat-server:0.0.4
+	docker image rm syamsuldocker/chat-server:0.0.3
 
 deploy:
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml

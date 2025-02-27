@@ -79,7 +79,7 @@ func main() {
 
 	urlSevice := urlhttp.New(dep)
 
-	apiPrefix := "/api/url"
+	apiPrefix := "/url"
 	r := mux.NewRouter()
 
 	// prometheus metrics
@@ -112,7 +112,7 @@ func main() {
 
 	// API listing
 	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), hashCounterMiddleWare(http.HandlerFunc(urlSevice.HashUrl)))
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/redirect/{shortUrl}"), redirectCounterMiddleWare(http.HandlerFunc(urlSevice.RedirectShortUrl)))
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/{shortUrl}"), redirectCounterMiddleWare(http.HandlerFunc(urlSevice.RedirectShortUrl)))
 
 	http.Handle("/", otelhttp.NewHandler(r, "")) // use otelhttp for telemetry
 	http.Handle("/metrics", promhttp.Handler())

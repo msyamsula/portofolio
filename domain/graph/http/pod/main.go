@@ -35,7 +35,7 @@ func main() {
 	// ------------------------------
 	graphHandler := graphhttphandler.Service{}
 
-	apiPrefix := "/api/graph"
+	apiPrefix := "/graph"
 	r := mux.NewRouter()
 
 	preflight := func(next http.Handler) http.HandlerFunc {
