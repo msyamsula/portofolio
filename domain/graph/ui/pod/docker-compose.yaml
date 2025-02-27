@@ -1,0 +1,23 @@
+services:
+    
+  graph-ui-clusterip:
+    container_name: graph-ui-clusterip
+    hostname: graph-ui-clusterip
+    image: graph-ui
+    ports:
+      - "8000:80" # can be closed for security
+    networks:
+      - my-network
+    # working_dir: /app
+    # volumes:
+    #   - .env:/app/.env
+    #   - ./main:/app/main
+    # command: ["./main"]
+    # env_file:
+    #   - ".env"
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Visualization with Node and Edge Input</title>
+
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <style>
+        /* General body styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f4; /* Light background */
+            color: #333; /* Dark text */
+        }
+
+        /* Sidebar for input forms */
+        #inputForms {
+            width: 20%;
+            padding: 20px;
+            background-color: #ffffff; /* White background for sidebar */
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #inputForms h2 {
+            font-size: 1.2em;
+            color: #333; /* Dark text for headings */
+            margin: 0;
+        }
+
+        #inputForms p {
+            font-size: 0.9em;
+            color: #666; /* Slightly lighter text */
+            margin: 0;
+        }
+
+        /* Form elements styling */
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 1em;
+            color: #333;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            margin-top: 5px;
+            outline: none;
+            background-color: #fff;
+            color: #333;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #4CAF50;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #divider {
+            width: 100%;
+            height: 1px;
+            background-color: #ddd;
+            margin: 10px 0;
+        }
+
+        /* Dropdown and button styling for the top graph controls section */
+        #section2 {
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #section2 label {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #section2 select {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            margin-right: 10px;
+            outline: none;
+            background-color: #fff;
+            color: #333;
+            transition: border-color 0.3s;
+        }
+
+        #section2 select:hover {
+            border-color: #4CAF50;
+        }
+
+        #section2 button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        #section2 button:hover {
+            background-color: #45a049;
+        }
+
+        /* Graph container */
+        #graph {
+            flex: 1;
+            height: 100%;
+            width: 100%;
+            border: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Styling for the vis.js network container */
+        #network {
+            flex: 1;
+            background-color: #fff; /* Light background for graph */
+            border: 1px solid #ddd; /* Light border for the network */
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Input Forms Sidebar -->
+    <div id="inputForms">
+        <form>
+            <label for="directed">
+                <input type="checkbox" id="directed" name="directed">
+                Directed graph
+            </label>
+            <p class="note">Check this before populating the graph</p>
+        </form>
+
+        <!-- Input Node Form -->
+        <div id="inputNodeForm">
+            <h2>Node</h2>
+
+            <div class="form-group">
+                <input type="text" id="Node" placeholder="Enter node ID">
+            </div>
+
+            <button onclick="addNode()">Add Node</button>
+        </div>
+
+        <div id="divider"></div>
+
+        <!-- Input Edge Form -->
+        <div id="inputEdgeForm">
+            <h2>Edge</h2>
+
+            <div class="form-group">
+                <label for="fromNode">From:</label>
+                <input type="text" id="fromNode" placeholder="Enter from node ID">
+            </div>
+
+            <div class="form-group">
+                <label for="toNode">To:</label>
+                <input type="text" id="toNode" placeholder="Enter to node ID">
+            </div>
+
+            <div class="form-group">
+                <label for="weight">Weight:</label>
+                <input type="text" id="weight" placeholder="default to 1">
+            </div>
+
+            <button onclick="addEdge()">Add Edge</button>
+        </div>
+
+        <div id="divider"></div>
+
+        <div id="inputEdgeForm">
+            <h2>Clear Graph</h2>
+            <button onclick="clearGraph()">Clear/Reset</button>
+        </div>
+    </div>
+
+    <div id="section2">
+        <label for="algorithmType">Graph Type:</label>
+        <div id="control">
+            <select id="algorithmType">
+                <option value="dfs">Depth First Search</option>
+                <option value="bfs">Breadth First Search</option>
+                <option value="cycle">Cycle Check</option>
+                <option value="dag">Directed Acyclic Graph</option>
+                <option value="scc">Strongly Connected Components</option>
+                <option value="ap">Articulation Points</option>
+                <option value="bridge">Bridges</option>
+                <option value="ep">Eulerian Path</option>
+            </select>
+            <input type="text" name="" id="start" placeholder="start node ID">
+            <input type="text" name="" id="end" placeholder="end node ID">
+        </div>
+        <button onclick="run()">Run Algorithm</button>
+
+        <!-- Graph Container -->
+        <div id="graph">
+            <!-- Here your vis.js graph will be rendered -->
+            <div id="network"></div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+
+</html>

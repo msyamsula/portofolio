@@ -13,7 +13,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func InitializeTelemetryTracing(appName, jaegerHost, promotheusHost string) {
+func InitializeTelemetryTracing(appName, jaegerHost string) {
 	// Initialize OpenTelemetry SDK
 	ctx := context.Background()
 	exporterOptions := []otlptracegrpc.Option{

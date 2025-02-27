@@ -31,7 +31,7 @@ func main() {
 	}
 
 	appName := "url-http"
-	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"), os.Getenv("PROMOTEHUS_HOST"))
+	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"))
 
 	// build the service dependencies
 	// ------------------------------

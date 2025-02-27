@@ -27,7 +27,7 @@ metadata:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS, HEAD"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/enable-websocket: "true"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
@@ -46,7 +46,7 @@ spec:
         path: "/"
         backend:
           service:
-            name: url-ui-clusterip
+            name: graph-ui-clusterip
             port:
               number: 80
       - pathType: Prefix
@@ -77,6 +77,13 @@ spec:
             name: prometheus-clusterip
             port:
               number: 9090
+      - pathType: Prefix
+        path: "/api/graph"
+        backend:
+          service:
+            name: graph-http-clusterip
+            port:
+              number: 7000
       # - pathType: Prefix
       #   path: "/url"
       #   backend:
