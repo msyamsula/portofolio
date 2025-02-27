@@ -9,9 +9,9 @@ down:
 	docker-compose down
 
 push:
-	docker tag graph-http syamsuldocker/graph-http:0.0.8
-	docker push syamsuldocker/graph-http:0.0.8
-	docker image rm syamsuldocker/graph-http:0.0.7
+	docker tag graph-http syamsuldocker/graph-http:0.0.9
+	docker push syamsuldocker/graph-http:0.0.9
+	docker image rm syamsuldocker/graph-http:0.0.8
 
 deploy:
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml

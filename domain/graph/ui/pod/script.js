@@ -328,7 +328,7 @@ function run() {
         path = data.path
 
         // await sleep(10000)
-        await animate(data.log, data.cycles, data.path, data.acyclic)
+        await animate(data.log, data.cycles, data.path, data.acyclic, data.scc)
     }).catch(err => {
         console.log(err);
     })
@@ -338,7 +338,7 @@ function sleep(ms) {
     return new Promise(r => setTimeout(r, ms))
 }
 
-async function animate(log, cycles, path, acyclic) {
+async function animate(log, cycles, path, acyclic, scc) {
     await sleep(1000)
     if (log) {
         for (let i = 0; i < log.length; i++) {
@@ -465,6 +465,21 @@ async function animate(log, cycles, path, acyclic) {
                     borderWidth: 15,
                 })
 
+                await sleep(1000)
+            }
+        }
+    }
+
+    if (selectedAlgorithm == "scc") {
+        var colorPool = ["white", "green", "lightblue", "red", "orange", "black"]
+        for (let i=0; i<scc.length; i++) {
+            var group = scc[i]
+            for (let j=0; j<group.length; j++) {
+                var node = group[j]
+                nodes.update({
+                    id: node,
+                    color: colorPool[i%colorPool.length]
+                })
                 await sleep(1000)
             }
         }

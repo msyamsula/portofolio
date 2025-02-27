@@ -4,7 +4,7 @@ import (
 	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) Dag(g *graph.Service) (path []string, acyclic bool) {
+func (s *Service) DirectedAcyclicGraph(g *graph.Service) (path []string, acyclic bool) {
 	for _, n := range g.Grabber {
 		n.Visited = false
 	}

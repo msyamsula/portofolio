@@ -20,6 +20,9 @@ type Service struct {
 
 	// dag
 	dagPath []string
+
+	// scc
+	sccTree []string
 }
 
 func New() *Service {

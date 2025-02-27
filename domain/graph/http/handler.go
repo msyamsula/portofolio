@@ -61,6 +61,7 @@ type AlgoResult struct {
 	Path    []string   `json:"path"`
 	Cycles  [][]string `json:"cycles"`
 	Acyclic bool       `json:"acyclic"`
+	Scc     [][]string `json:"scc"`
 }
 
 func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
@@ -82,9 +83,9 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 	case "dfs", "bfs":
 		var log []string
 		if algo == "dfs" {
-			log = machine.Dfs(s.graph)
+			log = machine.DepthFirstSearch(s.graph)
 		} else {
-			log = machine.Bfs(s.graph)
+			log = machine.BreadthFirstSearch(s.graph)
 		}
 		result = AlgoResult{
 			Log: log,
@@ -96,10 +97,16 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 			Cycles: cycles,
 		}
 	case "dag":
-		path, acyclic := machine.Dag(s.graph)
+		path, acyclic := machine.DirectedAcyclicGraph(s.graph)
 		result = AlgoResult{
 			Path:    path,
 			Acyclic: acyclic,
+		}
+	case "scc":
+		log, scc := machine.StronglyConnectedComponents(s.graph)
+		result = AlgoResult{
+			Log: log,
+			Scc: scc,
 		}
 
 	default:

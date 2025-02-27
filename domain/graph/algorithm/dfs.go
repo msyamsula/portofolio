@@ -6,7 +6,7 @@ import (
 	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) Dfs(g *graph.Service) []string {
+func (s *Service) DepthFirstSearch(g *graph.Service) []string {
 	for _, n := range g.Grabber {
 		n.Visited = false
 		n.Parent = nil

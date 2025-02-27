@@ -6,7 +6,7 @@ import (
 	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) Bfs(g *graph.Service) []string {
+func (s *Service) BreadthFirstSearch(g *graph.Service) []string {
 	// clean up previous work first
 	for _, n := range g.Grabber {
 		n.Visited = false
