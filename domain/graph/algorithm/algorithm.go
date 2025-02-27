@@ -17,6 +17,9 @@ type Service struct {
 	cycleLog   []string
 	cycle      []CyclePair
 	cycleExist bool
+
+	// dag
+	dagPath []string
 }
 
 func New() *Service {

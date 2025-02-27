@@ -98,7 +98,6 @@ func main() {
 	// middleware
 	hashCounterMiddleWare := func(next http.Handler) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(r.URL.Path)
 			hashCounter.Inc()
 			next.ServeHTTP(w, r)
 		}
@@ -106,7 +105,6 @@ func main() {
 
 	redirectCounterMiddleWare := func(next http.Handler) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(r.URL.Path)
 			redirectCounter.Inc()
 			next.ServeHTTP(w, r)
 		}

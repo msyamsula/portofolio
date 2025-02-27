@@ -41,9 +41,12 @@ spec:
     spec:
       containers:
         - name: graph-ui
-          image: syamsuldocker/graph-ui:0.0.3
+          image: syamsuldocker/graph-ui:0.0.5
           ports:
           - containerPort: 80
+          env:
+            - name: HOST
+              value: http://syamsul.online
           # volumeMounts:
           #   - name: graph-ui-configmap
           #     mountPath: /usr/share/nginx/html/index.html
@@ -62,9 +65,6 @@ spec:
           #       name: graph-ui-secret
           #   - configMapRef:
           #       name: postgres-configmap
-          # env:
-          #   - name: POSTGRES_USER
-          #     value: admin
           #   - name: POSTGRES_PASSWORD
           #     value: admin
       # volumes:

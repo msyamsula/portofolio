@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -56,9 +57,10 @@ func (s *Service) InitGraph(next http.Handler) http.HandlerFunc {
 }
 
 type AlgoResult struct {
-	Log    []string   `json:"log,omitempty"`
-	Path   []string   `json:"path,omitempty"`
-	Cycles [][]string `json:"cycles,omitempty"`
+	Log     []string   `json:"log"`
+	Path    []string   `json:"path"`
+	Cycles  [][]string `json:"cycles"`
+	Acyclic bool       `json:"acyclic"`
 }
 
 func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +70,6 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("graph is not initiated"))
 		return
 	}
-	q := r.URL.Query()
 	pathVariable := mux.Vars(r)
 	algo := ""
 	if pathVariable != nil && pathVariable["algo"] != "" {
@@ -76,56 +77,43 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	machine := algorithm.New()
+	result := AlgoResult{}
 	switch algo {
 	case "dfs", "bfs":
-		start := q.Get("start")
-		if start == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("start/end node undefined"))
-			return
-		}
 		var log []string
 		if algo == "dfs" {
-			log = machine.Dfs(s.graph, s.graph.GetNode(start))
+			log = machine.Dfs(s.graph)
 		} else {
-			log = machine.Bfs(s.graph, s.graph.GetNode(start))
+			log = machine.Bfs(s.graph)
 		}
-		result := AlgoResult{
+		result = AlgoResult{
 			Log: log,
 		}
-		resp, err := json.Marshal(result)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		w.Write(resp)
-		return
 	case "cycle":
-		start := q.Get("start")
-		if start == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("start/end node undefined"))
-			return
-		}
-
-		machine := algorithm.New()
-		log, cycles := machine.IsCycle(s.graph, s.graph.GetNode(start))
-		result := AlgoResult{
+		log, cycles := machine.IsCycle(s.graph)
+		result = AlgoResult{
 			Log:    log,
 			Cycles: cycles,
 		}
-		resp, err := json.Marshal(result)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
+	case "dag":
+		path, acyclic := machine.Dag(s.graph)
+		result = AlgoResult{
+			Path:    path,
+			Acyclic: acyclic,
 		}
-		w.Write(resp)
+
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("algo is not defined"))
 		return
 	}
+
+	resp, err := json.Marshal(result)
+	fmt.Println(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Write(resp)
 }

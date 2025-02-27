@@ -161,8 +161,92 @@ endBox.addEventListener("input", function (event) {
     end = event.target.value
 })
 
-const host = "https://syamsul.online"
+var fileInput = document.getElementById("file-input")
+fileInput.addEventListener("change", function (event) {
+    clearGraph()
+    file = event.target.files[0]
+    if (file) {
+        // Check if the file is a .txt file (by extension or MIME type)
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const fileType = file.type.toLowerCase();
+
+        // Checking file extension
+        if (fileExtension === 'txt' || fileType === 'text/plain') {
+            // Use FileReader to read the file content
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                // Read the file
+                graph = e.target.result
+                lines = graph.split('\n')
+
+                var directed = isDirected
+                for (let i = 0; i < lines.length; i++) {
+                    var line = lines[i].split(' ')
+                    var u = line[0]
+                    var v = line[1]
+                    var w = "1"
+                    if (line.length >= 3) {
+                        w = line[2]
+                    }
+                    if (u == v) {
+                        continue
+                    }
+                    if (!nodes.get(u)) {
+                        nodes.add({ id: u, label: u, color: "lightblue" })
+                    }
+                    if (!nodes.get(v)) {
+                        nodes.add({ id: v, label: v, color: "lightblue" })
+                    }
+                    var newEdge = {
+                        from: u,
+                        to: v,
+                        id: `${u}-${v}`,
+                        arrows: "to",
+                        label: w,
+                        font: {
+                            size: 16,          // Font size for the label
+                            face: 'Arial',     // Font family
+                            color: 'black',    // Font color (black for visibility)
+                            background: 'white', // Label background color
+                            align: 'middle',   // Align text to the middle of the edge
+                            bold: {
+                                size: 16,        // Bold font size
+                            },
+                        },
+                        color: {
+                            color: 'black',    // Text color
+                            background: 'white',  // Background color for the label
+                            border: 'black',   // Border color for the label
+                        },
+                        width: 2,            // Border width of the label
+                        height: 30
+                    }
+                    if (!directed) {
+                        newEdge.arrows = ""
+                    }
+                    if (!edges.get(`${u}-${v}`)) {
+                        edges.add(newEdge);
+                    }
+
+                }
+            };
+
+            // Read the file as text
+            reader.readAsText(file);
+            checkbox.disabled = true
+            fileInput.value = ""
+
+        } else {
+            // Not a .txt file, show error message
+            errorMessageDiv.textContent = 'Error: Please upload a .txt file.';
+        }
+    }
+})
+
+// const host = process.env.HOST
 // const host = "http://0.0.0.0:7000"
+const host = "https://syamsul.online"
+console.log(host);
 
 var log = []
 var path = []
@@ -177,17 +261,51 @@ function run() {
 
     nodeArr = nodes.get()
     for (let i = 0; i < nodeArr.length; i++) {
-        request.nodes.push(nodeArr[i].id)
+        var id = nodeArr[i].id
+        request.nodes.push(id)
+        nodes.update({ id: id, label: id, color: "lightblue" })
     }
 
     edgeArr = edges.get()
     for (let i = 0; i < edgeArr.length; i++) {
-        reqEdge = {}
+        var reqEdge = {}
         reqEdge.from = edgeArr[i].from
         reqEdge.to = edgeArr[i].to
         reqEdge.weight = edgeArr[i].label
 
         request.edges.push(reqEdge)
+
+        var fromNode = reqEdge.from
+        var toNode = reqEdge.to
+        var w = reqEdge.weight
+        var newEdge = {
+            from: fromNode,
+            to: toNode,
+            id: `${fromNode}-${toNode}`,
+            arrows: "to",
+            label: w,
+            font: {
+                size: 16,          // Font size for the label
+                face: 'Arial',     // Font family
+                color: 'black',    // Font color (black for visibility)
+                background: 'white', // Label background color
+                align: 'middle',   // Align text to the middle of the edge
+                bold: {
+                    size: 16,        // Bold font size
+                },
+            },
+            color: {
+                color: 'black',    // Text color
+                background: 'white',  // Background color for the label
+                border: 'black',   // Border color for the label
+            },
+            width: 2,            // Border width of the label
+            height: 30
+        }
+        if (!isDirected) {
+            newEdge.arrows = ""
+        }
+        edges.update(newEdge)
     }
 
 
@@ -210,7 +328,7 @@ function run() {
         path = data.path
 
         // await sleep(10000)
-        await animate(data.log, data.cycles)
+        await animate(data.log, data.cycles, data.path, data.acyclic)
     }).catch(err => {
         console.log(err);
     })
@@ -220,94 +338,98 @@ function sleep(ms) {
     return new Promise(r => setTimeout(r, ms))
 }
 
-async function animate(log, cycles) {
-    await sleep(2000)
-    for (let i = 0; i < log.length; i++) {
-        partition = log[i].split(":")
-        type = partition[0]
-        switch (type) {
-            case "node":
-            case "grey":
-            case "white":
-            case "black":
-                id = partition[1]
-                color = "red"
-                if (type != "node") {
-                    color = type
-                }
-                nodes.update({
-                    id: id,
-                    color: color
-                })
-                break;
-            case "edge":
-            case "cycle":
-                u = partition[1]
-                v = partition[2]
-                id = `${u}-${v}`
-                if (!edges.get(id)) {
-                    id = `${v}-${u}`
-                }
-                color = "blue"
-                if (type == "cycle") {
+async function animate(log, cycles, path, acyclic) {
+    await sleep(1000)
+    if (log) {
+        for (let i = 0; i < log.length; i++) {
+            partition = log[i].split(":")
+            type = partition[0]
+            switch (type) {
+                case "node":
+                case "grey":
+                case "white":
+                case "black":
+                    id = partition[1]
                     color = "red"
-                }
-                edges.update({
-                    id: id,
-                    color: {
-                        color: color,    // Text color
-                        background: 'white',  // Background color for the label
-                        border: 'black',   // Border color for the label
-                    },
-                    width: 10,
-                })
-                break
-            case "deNode":
-                id = partition[1]
-                nodes.update({
-                    id: id,
-                    color: "lightblue"
-                })
-                break
-            case "deEdge":
-                u = partition[1]
-                v = partition[2]
-                id = `${u}-${v}`
-                if (!edges.get(id)) {
-                    id = `${v}-${u}`
-                }
-                edges.update({
-                    id: id,
-                    color: {
-                        color: 'black',    // Text color
-                        background: 'white',  // Background color for the label
-                        border: 'black',   // Border color for the label
-                    },
-                    width: 2,
-                })
-                break
-            case "bold":
-                u = partition[1]
-                nodes.update({
-                    id: u,
-                    borderWidth: 10,
-                })
-                break
-            case "deBold":
-                u = partition[1]
-                nodes.update({
-                    id: u,
-                    borderWidth: 1,
-                })
-                break
+                    if (type != "node") {
+                        color = type
+                    }
+                    nodes.update({
+                        id: id,
+                        color: color
+                    })
+                    break;
+                case "edge":
+                case "cycle":
+                    u = partition[1]
+                    v = partition[2]
+                    id = `${u}-${v}`
+                    if (!edges.get(id)) {
+                        id = `${v}-${u}`
+                    }
+                    color = "blue"
+                    if (type == "cycle") {
+                        color = "red"
+                    }
+                    edges.update({
+                        id: id,
+                        color: {
+                            color: color,    // Text color
+                            background: 'white',  // Background color for the label
+                            border: 'black',   // Border color for the label
+                        },
+                        width: 10,
+                    })
+                    break
+                case "deNode":
+                    continue
+                    id = partition[1]
+                    nodes.update({
+                        id: id,
+                        color: "lightblue"
+                    })
+                    break
+                case "deEdge":
+                    u = partition[1]
+                    v = partition[2]
+                    id = `${u}-${v}`
+                    if (!edges.get(id)) {
+                        id = `${v}-${u}`
+                    }
+                    edges.update({
+                        id: id,
+                        color: {
+                            color: 'black',    // Text color
+                            background: 'white',  // Background color for the label
+                            border: 'black',   // Border color for the label
+                        },
+                        width: 2,
+                    })
+                    break
+                case "bold":
+                    u = partition[1]
+                    nodes.update({
+                        id: u,
+                        borderWidth: 10,
+                    })
+                    break
+                case "deBold":
+                    continue
+                    u = partition[1]
+                    nodes.update({
+                        id: u,
+                        borderWidth: 1,
+                    })
+                    break
 
-            default:
-                break;
+                default:
+                    break;
+            }
+
+            await sleep(1000)
         }
-
-        await sleep(1000)
     }
-    if (selectedAlgorithm == "cycle" && cycles) {
+    if (cycles) {
         for (let i = 0; i < cycles.length; i++) {
             for (let j = 0; j < cycles[i].length; j++) {
                 a = j
@@ -326,6 +448,23 @@ async function animate(log, cycles) {
                     },
                     width: 10,
                 })
+                await sleep(1000)
+            }
+        }
+    }
+
+    if (selectedAlgorithm == "dag") {
+        if (!acyclic) {
+            alert("graph is non acyclic")
+        } else {
+            for (let i = 0; i < path.length; i++) {
+                id = path[i]
+                nodes.update({
+                    id: id,
+                    label: `${i + 1}(id:${id})`,
+                    borderWidth: 15,
+                })
+
                 await sleep(1000)
             }
         }

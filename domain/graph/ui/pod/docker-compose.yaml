@@ -8,13 +8,13 @@ services:
       - "8000:80" # can be closed for security
     networks:
       - my-network
+    env_file:
+      - ".env"
     # working_dir: /app
     # volumes:
     #   - .env:/app/.env
     #   - ./main:/app/main
     # command: ["./main"]
-    # env_file:
-    #   - ".env"
 
   
 networks:

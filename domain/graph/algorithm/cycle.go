@@ -6,14 +6,19 @@ import (
 	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) IsCycle(g *graph.Service, u *graph.Node) (log []string, cycles [][]string) {
+func (s *Service) IsCycle(g *graph.Service) (log []string, cycles [][]string) {
 	for _, n := range g.Grabber {
-		n.Parent = nil
 		n.Color = graph.White
-		n.Visited = false
 	}
+	s.cycleLog = []string{}
+	s.cycleExist = false
 
-	s.isCycle(u)
+	for _, u := range g.Grabber {
+		if u.Color == graph.Black {
+			continue
+		}
+		s.isCycle(u)
+	}
 
 	cycles = make([][]string, 0)
 	for _, p := range s.cycle {
@@ -24,7 +29,6 @@ func (s *Service) IsCycle(g *graph.Service, u *graph.Node) (log []string, cycles
 }
 
 func (s *Service) isCycle(u *graph.Node) {
-	u.Visited = true
 	u.Color = graph.Grey
 	s.cycleLog = append(s.cycleLog, fmt.Sprintf("grey:%s", u.Id))
 

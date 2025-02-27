@@ -6,7 +6,7 @@ import (
 	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) Bfs(g *graph.Service, start *graph.Node) []string {
+func (s *Service) Bfs(g *graph.Service) []string {
 	// clean up previous work first
 	for _, n := range g.Grabber {
 		n.Visited = false
@@ -14,7 +14,12 @@ func (s *Service) Bfs(g *graph.Service, start *graph.Node) []string {
 	}
 	s.bfsLog = []string{}
 
-	s.bfs(start)
+	for _, n := range g.Grabber {
+		if n.Visited {
+			continue
+		}
+		s.bfs(n)
+	}
 	return s.bfsLog
 }
 

@@ -6,15 +6,20 @@ import (
 	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) Dfs(g *graph.Service, start *graph.Node) []string {
-	s.dfsLog = []string{}
-	start.Parent = nil
+func (s *Service) Dfs(g *graph.Service) []string {
 	for _, n := range g.Grabber {
 		n.Visited = false
 		n.Parent = nil
 	}
+	s.dfsLog = []string{}
 
-	s.dfs(start)
+	for _, n := range g.Grabber {
+		if n.Visited {
+			continue
+		}
+		s.dfs(n)
+
+	}
 	return s.dfsLog
 }
 

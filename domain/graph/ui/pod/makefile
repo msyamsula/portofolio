@@ -8,9 +8,9 @@ down:
 	docker-compose down
 
 push:
-	docker tag graph-ui syamsuldocker/graph-ui:0.0.3
-	docker push syamsuldocker/graph-ui:0.0.3
-	docker image rm syamsuldocker/graph-ui:0.0.2
+	docker tag graph-ui syamsuldocker/graph-ui:0.0.5
+	docker push syamsuldocker/graph-ui:0.0.5
+	docker image rm syamsuldocker/graph-ui:0.0.4
 
 deploy:
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml

@@ -13,14 +13,19 @@ const (
 type Node struct {
 	Id        string
 	Neighbors map[*Node]int
-	Visited   bool
-	Color     Color
-	Parent    *Node
+
+	// properties
+	Visited             bool
+	Color               Color
+	Parent              *Node
+	Indegree, Outdegree int
+	In, Out             int // running indegree
+	Tin, Tout           int
 }
 
 type Service struct {
 	Grabber    map[string]*Node
-	isDirected bool
+	IsDirected bool
 }
 
 func (s *Service) GetNode(id string) *Node {
@@ -28,8 +33,13 @@ func (s *Service) GetNode(id string) *Node {
 }
 
 func New(nodes []string, edges [][]string, isDirected ...bool) *Service {
+	directed := false
+	if len(isDirected) > 0 {
+		directed = isDirected[0]
+	}
 	s := &Service{
-		Grabber: make(map[string]*Node),
+		Grabber:    make(map[string]*Node),
+		IsDirected: directed,
 	}
 
 	for _, n := range nodes {
@@ -66,13 +76,10 @@ func New(nodes []string, edges [][]string, isDirected ...bool) *Service {
 		}
 
 		nu.Neighbors[nv] = w
+		nv.Indegree++
+		nu.Outdegree++
 
-		directed := false
-		if len(isDirected) > 0 {
-			directed = isDirected[0]
-		}
-
-		if directed {
+		if s.IsDirected {
 			continue // only process explicit edge if directed graph
 		}
 
@@ -80,6 +87,8 @@ func New(nodes []string, edges [][]string, isDirected ...bool) *Service {
 			nv.Neighbors = make(map[*Node]int)
 		}
 		nv.Neighbors[nu] = w
+		nu.Indegree++
+		nv.Outdegree++
 	}
 
 	return s
