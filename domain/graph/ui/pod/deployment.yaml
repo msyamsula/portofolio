@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: graph-ui
-          image: syamsuldocker/graph-ui:0.0.8
+          image: syamsuldocker/graph-ui:0.0.9
           ports:
           - containerPort: 80
           env:

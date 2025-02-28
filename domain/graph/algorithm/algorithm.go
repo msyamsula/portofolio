@@ -28,6 +28,10 @@ type Service struct {
 	apLog  []string
 	apId   []string
 	bridge [][]string
+
+	// eulerian path
+	eulerPath []string
+	dfsTree   []string
 }
 
 func New() *Service {

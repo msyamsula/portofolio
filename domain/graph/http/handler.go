@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -82,13 +81,13 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 	machine := algorithm.New()
 	result := AlgoResult{}
 	switch algo {
-	case "dfs", "bfs":
-		var log []string
-		if algo == "dfs" {
-			log = machine.DepthFirstSearch(s.graph)
-		} else {
-			log = machine.BreadthFirstSearch(s.graph)
+	case "dfs":
+		log := machine.DepthFirstSearch(s.graph)
+		result = AlgoResult{
+			Log: log,
 		}
+	case "bfs":
+		log := machine.BreadthFirstSearch(s.graph)
 		result = AlgoResult{
 			Log: log,
 		}
@@ -117,6 +116,11 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 			Ap:     apId,
 			Bridge: bridge,
 		}
+	case "ep":
+		eulerPath := machine.Eulerian(s.graph)
+		result = AlgoResult{
+			Path: eulerPath,
+		}
 
 	default:
 		w.WriteHeader(http.StatusBadRequest)
@@ -125,7 +129,6 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := json.Marshal(result)
-	fmt.Println(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

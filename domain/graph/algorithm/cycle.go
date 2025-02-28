@@ -17,7 +17,7 @@ func (s *Service) IsCycle(g *graph.Service) (log []string, cycles [][]string) {
 		if u.Color == graph.Black {
 			continue
 		}
-		s.isCycle(u)
+		s.isCycle(u, g.IsDirected)
 	}
 
 	cycles = make([][]string, 0)
@@ -28,18 +28,18 @@ func (s *Service) IsCycle(g *graph.Service) (log []string, cycles [][]string) {
 	return s.cycleLog, cycles
 }
 
-func (s *Service) isCycle(u *graph.Node) {
+func (s *Service) isCycle(u *graph.Node, directed bool) {
 	u.Color = graph.Grey
 	s.cycleLog = append(s.cycleLog, fmt.Sprintf("grey:%s", u.Id))
 
 	for v := range u.Neighbors {
-		if u.Parent == v {
+		if u.Parent == v && !directed {
 			continue
 		}
 		s.cycleLog = append(s.cycleLog, fmt.Sprintf("edge:%s:%s", u.Id, v.Id))
 		if v.Color == graph.White {
 			v.Parent = u
-			s.isCycle(v)
+			s.isCycle(v, directed)
 		} else if v.Color == graph.Black {
 			// do nothing
 		} else {

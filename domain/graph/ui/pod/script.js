@@ -244,8 +244,8 @@ fileInput.addEventListener("change", function (event) {
 })
 
 // const host = process.env.HOST
-const host = "http://0.0.0.0:7000"
-// const host = "https://api.syamsul.online"
+// const host = "http://0.0.0.0:7000"
+const host = "https://api.syamsul.online"
 console.log(host);
 
 var log = []
@@ -347,7 +347,6 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
     await sleep(1000)
     if (log) {
         for (let i = 0; i < log.length; i++) {
-            console.log(log[i]);
             partition = log[i].split(":")
             type = partition[0]
             switch (type) {
@@ -546,6 +545,35 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
                 width: 10,
                 color: "red"
             })
+        }
+    }
+
+    if (selectedAlgorithm == "ep"){
+        if (path.length == 0) {
+            alert("graph doesn't have eulerian path/circut")
+            return
+        }
+
+        for (let i=0; i<path.length-1; i++) {
+            var u = path[i]
+            var v = path[i+1]
+
+            var id = `${u}-${v}`
+            var arrows = "to"
+            if (!edges.get(id)) {
+                id = `${v}-${u}`
+                arrows = "from"
+            }
+
+            edges.update({
+                id: id,
+                width: 8,
+                color: "red",
+                label: `${i+1}`,
+                arrows: arrows,
+            })
+
+            await sleep(1000)
         }
     }
 }
