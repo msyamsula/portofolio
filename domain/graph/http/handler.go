@@ -62,6 +62,8 @@ type AlgoResult struct {
 	Cycles  [][]string `json:"cycles"`
 	Acyclic bool       `json:"acyclic"`
 	Scc     [][]string `json:"scc"`
+	Ap      []string   `json:"ap"`
+	Bridge  [][]string `json:"bridge"`
 }
 
 func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
@@ -107,6 +109,13 @@ func (s *Service) Algorithm(w http.ResponseWriter, r *http.Request) {
 		result = AlgoResult{
 			Log: log,
 			Scc: scc,
+		}
+	case "ap":
+		log, apId, bridge := machine.ArticulationPointAndBridge(s.graph)
+		result = AlgoResult{
+			Log:    log,
+			Ap:     apId,
+			Bridge: bridge,
 		}
 
 	default:

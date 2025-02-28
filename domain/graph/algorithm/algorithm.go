@@ -23,6 +23,11 @@ type Service struct {
 
 	// scc
 	sccTree []string
+
+	// ap & bridge
+	apLog  []string
+	apId   []string
+	bridge [][]string
 }
 
 func New() *Service {

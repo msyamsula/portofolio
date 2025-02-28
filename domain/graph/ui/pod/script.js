@@ -244,14 +244,19 @@ fileInput.addEventListener("change", function (event) {
 })
 
 // const host = process.env.HOST
-// const host = "http://0.0.0.0:7000"
-const host = "https://api.syamsul.online"
+const host = "http://0.0.0.0:7000"
+// const host = "https://api.syamsul.online"
 console.log(host);
 
 var log = []
 var path = []
 
 function run() {
+
+    if (selectedAlgorithm == "ap" && isDirected) {
+        alert("articulation point & bridge for directed graph is not supported")
+        return
+    }
 
     var request = {
         // nodes: 
@@ -328,7 +333,7 @@ function run() {
         path = data.path
 
         // await sleep(10000)
-        await animate(data.log, data.cycles, data.path, data.acyclic, data.scc)
+        await animate(data.log, data.cycles, data.path, data.acyclic, data.scc, data.ap, data.bridge)
     }).catch(err => {
         console.log(err);
     })
@@ -338,10 +343,11 @@ function sleep(ms) {
     return new Promise(r => setTimeout(r, ms))
 }
 
-async function animate(log, cycles, path, acyclic, scc) {
+async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
     await sleep(1000)
     if (log) {
         for (let i = 0; i < log.length; i++) {
+            console.log(log[i]);
             partition = log[i].split(":")
             type = partition[0]
             switch (type) {
@@ -415,13 +421,45 @@ async function animate(log, cycles, path, acyclic, scc) {
                     break
                 case "deBold":
                     continue
-                    u = partition[1]
+                    var u = partition[1]
                     nodes.update({
                         id: u,
                         borderWidth: 1,
                     })
                     break
 
+                case "label":
+                    var id = partition[1]
+                    var tin = partition[2]
+                    var low = partition[3]
+
+                    nodes.update({
+                        id: id,
+                        label: `${id},T=${tin},low=${low}`
+                    })
+                    break
+                case "ap":
+                    var id = partition[1]
+                    nodes.update({
+                        id: id,
+                        color: "red",
+                        borderWidth: 10,
+                    })
+                    break
+                case "bridge":
+                    var u = partition[1]
+                    var v = partition[2]
+                    var edgeId = `${u}-${v}`
+                    if (!edges.get(edgeId)) {
+                        edgeId = `${v}-${u}`
+                    }
+
+                    edges.update({
+                        id: edgeId,
+                        width: 10,
+                        color: "red"
+                    })
+                    break
                 default:
                     break;
             }
@@ -472,16 +510,42 @@ async function animate(log, cycles, path, acyclic, scc) {
 
     if (selectedAlgorithm == "scc") {
         var colorPool = ["white", "green", "lightblue", "red", "orange", "black"]
-        for (let i=0; i<scc.length; i++) {
+        for (let i = 0; i < scc.length; i++) {
             var group = scc[i]
-            for (let j=0; j<group.length; j++) {
+            for (let j = 0; j < group.length; j++) {
                 var node = group[j]
                 nodes.update({
                     id: node,
-                    color: colorPool[i%colorPool.length]
+                    color: colorPool[i % colorPool.length]
                 })
                 await sleep(1000)
             }
+        }
+    }
+
+    if (selectedAlgorithm == "ap") {
+        for (let i = 0; i < ap.length; i++) {
+            var id = ap[i]
+            nodes.update({
+                id: id,
+                color: "red",
+                borderWidth: 10,
+            })
+        }
+
+        for (let i = 0; i < bridge.length; i++) {
+            var u = bridge[i][0]
+            var v = bridge[i][1]
+            var edgeId = `${u}-${v}`
+            if (!edges.get(edgeId)) {
+                edgeId = `${v}-${u}`
+            }
+
+            edges.update({
+                id: edgeId,
+                width: 10,
+                color: "red"
+            })
         }
     }
 }

@@ -21,6 +21,8 @@ type Node struct {
 	Indegree, Outdegree int
 	In, Out             int // running indegree
 	Tin, Tout           int
+	Low                 int // lowest reachable node (tin)
+	IsArticulationPoint bool
 }
 
 type Service struct {
