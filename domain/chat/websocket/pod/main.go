@@ -8,83 +8,43 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
-	"time"
+	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/domain/chat/websocket"
+	"github.com/msyamsula/portofolio/domain/telemetry"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
-
-// func serveHome(w http.ResponseWriter, r *http.Request) {
-// 	log.Println(r.URL)
-// 	if r.URL.Path != "/" {
-// 		http.Error(w, "Not found", http.StatusNotFound)
-// 		return
-// 	}
-// 	if r.Method != http.MethodGet {
-// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-// 		return
-// 	}
-// 	http.ServeFile(w, r, "home.html")
-// }
-
-func hubEvent(c chan *websocket.Hub) {
-	for {
-		hub := <-c
-		go hub.Run()
-	}
-}
-
-var (
-	hubMap  = make(map[string]*websocket.Hub)
-	hubSync = sync.Mutex{}
-)
-
-func hubCleaner() {
-	for {
-		for hubName, h := range hubMap {
-			if h.IsEmpty() {
-				delete(hubMap, hubName)
-			}
-		}
-		time.Sleep(5 * time.Minute)
-	}
-}
 
 func main() {
 	// look at this implementation for guidance in using websocket
 	// https://github.com/gorilla/websocket?tab=readme-ov-file
 	flag.Parse()
-	hubChan := make(chan *websocket.Hub)
-	go hubEvent(hubChan) // listen for hub creation
-	go hubCleaner()      // periodically check if hub isEmpty or not
+
+	godotenv.Load(".env")
+
+	telemetry.InitializeTelemetryTracing("chat-server", os.Getenv("JAEGER_HOST"))
+
+	go websocket.HubEvent()   // listen for hub creation
+	go websocket.HubCleaner() // periodically check if hub isEmpty or not
 
 	r := mux.NewRouter()
 
+	prometheus.MustRegister(websocket.HubGauge)
+	prometheus.MustRegister(websocket.UserGauge)
+	prometheus.MustRegister(websocket.MessageCounter)
+
 	// r.HandleFunc("/", serveHome)
 	apiPrefix := "/chat"
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/ws/{hub}"), func(w http.ResponseWriter, r *http.Request) {
-		pathVariables := mux.Vars(r)
-		hubName, ok := pathVariables["hub"]
-		if !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/ws/{hub}"), websocket.ConnectionHandler)
 
-		hubSync.Lock()
-		if hubMap[hubName] == nil {
-			hub := websocket.NewHub()
-			hubMap[hubName] = hub
-		}
-		hubSync.Unlock()
-
-		hubChan <- hubMap[hubName]
-		websocket.ServeWs(hubMap[hubName], w, r)
-	})
-
-	http.Handle("/", r)
+	http.Handle("/", otelhttp.NewHandler(r, ""))
+	http.Handle("/metrics", promhttp.Handler())
 	err := http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

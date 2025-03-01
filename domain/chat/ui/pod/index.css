@@ -1,0 +1,195 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f0e1;
+    /* Light brown background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    flex-direction: column;
+    /* Stack room title and chat container */
+}
+
+
+#identity {
+    margin-bottom: 5px;
+    /* width: 100%; */
+    max-width: 100%;
+    display: flex;
+    /* flex-direction: row; */
+    /* align-items: center; */
+    gap: 10%;
+    height: 30px;
+}
+
+#identity div {
+    height: 1px;
+}
+
+/* Label Styles */
+label {
+    /* font-size: 16px; */
+    /* font-weight: bold; */
+    color: #a37c56;
+    margin-right: 10px;
+}
+
+/* Style input fields */
+input[type="text"] {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #d8c8a7;
+    border-radius: 5px;
+    width: 250px;
+    margin-bottom: 20px;
+    background-color: #f0e0c9;
+    transition: border-color 0.3s ease;
+}
+
+/* Add a focus effect on the input fields */
+input[type="text"]:focus {
+    border-color: #a37c56;
+    outline: none;
+}
+
+#connect-button {
+    margin: 10px 0;
+}
+
+
+#room-name {
+    /* text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #a37c56; */
+    margin-bottom: 0;
+    width: 100%;
+}
+#user-name {
+    /* text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #a37c56;
+    margin-bottom: 20px; */
+    margin: 0;
+    width: 100%;
+}
+
+.chat-container {
+    width: 40%;
+    max-width: 100%;
+    height: 70%;
+    background-color: #ffffff;
+    /* White for chat container */
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.messages {
+    height: 85%;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #f8f3e0;
+    /* Light brownish background for message area */
+    border-bottom: 1px solid #d8c8a7;
+}
+
+.message {
+    padding: 8px;
+    margin: 5px 0;
+    background-color: #d8c8a7;
+    /* Light brownish color for messages */
+    border-radius: 5px;
+    display: grid;
+    /* Use grid layout */
+    grid-template-rows: auto 10px;
+    /* Create two rows: one for the message and one for the tick button */
+    /* display: flex; */
+    /* Ensures messages fit the text width */
+    /* width: auto; Allow the message width to fit the content */
+    /* Add relative position for tick button positioning */
+    max-width: fit-content;
+    width: auto;
+    /* Allow the message width to fit the content */
+}
+
+.message.user {
+    background-color: #c1a085;
+    /* Slightly darker brown for user messages */
+    text-align: right;
+    /* justify-content: flex-end; */
+    margin-left: auto;
+}
+
+.message.other {
+    background-color: #a1d3a1;
+    /* Light greenish background for other messages */
+    text-align: left;
+    /* justify-content: flex-start; */
+    margin-right: auto;
+}
+
+.input-area {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #d8c8a7;
+    background-color: #f8f3e0;
+    /* Match the input area background with the messages */
+}
+
+.input-area input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #d8c8a7;
+    border-radius: 5px;
+    margin-right: 10px;
+    background-color: #f0e0c9;
+    margin-bottom: 0px;
+    /* Lighter brownish background for the input */
+}
+
+.input-area button {
+    padding: 10px 20px;
+    background-color: #a37c56;
+    /* Medium brown color for the button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.input-area button:hover {
+    background-color: #8f6643;
+    /* Darker brown on hover */
+}
+
+.tick-button {
+    font-size: 10px;
+    margin-left: auto;
+    /* align-self: end; */
+}
+
+/* Styling for the connect button */
+#connect-button {
+    padding: 10px 20px;                  /* Add padding for size */
+    background-color: #a37c56;            /* Light brown color matching the theme */
+    color: white;                         /* White text for contrast */
+    border: none;                         /* No border */
+    border-radius: 5px;                   /* Rounded corners */
+    cursor: pointer;                     /* Pointer cursor on hover */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for hover effect */
+}
+
+/* Hover effect for the connect button */
+#connect-button:hover {
+    background-color: #8f6643;            /* Darker brown color on hover */
+    transform: scale(1.05);                /* Slight scale-up effect when hovering */
+}
+
+/* Focus effect for accessibility */
+#connect-button:focus {
+    outline: none;                        /* Remove default outline */
+    box-shadow: 0 0 5px rgba(163, 124, 86, 0.7); /* Add a soft focus outline */
+}

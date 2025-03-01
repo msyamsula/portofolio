@@ -5,10 +5,14 @@ package websocket
 // license that can be found in the LICENSE file.
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -25,6 +29,32 @@ const (
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 )
+
+var (
+	HubChan = make(chan *Hub)
+)
+
+func HubEvent() {
+	for {
+		hub := <-HubChan
+		go hub.Run()
+	}
+}
+
+func HubCleaner() {
+	for {
+		for hubName, h := range hubMap {
+			fmt.Println(hubName, len(h.clients), h.IsEmpty())
+			if h.IsEmpty() {
+				hubSync.Lock()
+				delete(hubMap, hubName)
+				hubSync.Unlock()
+				HubGauge.Dec()
+			}
+		}
+		time.Sleep(2 * time.Minute)
+	}
+}
 
 var (
 	newline = []byte{'\n'}
@@ -48,6 +78,12 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	// name
+	name string
+
+	// register error
+	registerError chan error
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -124,18 +160,44 @@ func (c *Client) writePump() {
 
 // serveWs handles websocket requests from the peer.
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	defer conn.Close()
+
+	query := r.URL.Query()
+	username := query.Get("username")
+	fmt.Println("username", username)
+	if username == "" {
+		fmt.Println("username empty")
+		status := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username is empty")
+		conn.WriteMessage(websocket.CloseMessage, status)
+		return
+	}
+	client := &Client{
+		hub: hub, conn: conn,
+		send:          make(chan []byte, 256),
+		name:          username,
+		registerError: make(chan error),
+	}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
+
+	err = <-client.registerError
+	if err != nil {
+		fmt.Println("goes here")
+		status := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username is already taken")
+		conn.WriteMessage(websocket.CloseMessage, status)
+		return
+	}
+
 }
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -143,6 +205,9 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 type Hub struct {
 	// Registered clients.
 	clients map[*Client]bool
+
+	// make username distinct in a hub
+	clientUsername map[string]bool
 
 	// Inbound messages from the clients.
 	broadcast chan []byte
@@ -156,33 +221,76 @@ type Hub struct {
 
 func NewHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		clients:    make(map[*Client]bool),
+		broadcast:      make(chan []byte),
+		register:       make(chan *Client),
+		unregister:     make(chan *Client),
+		clients:        make(map[*Client]bool),
+		clientUsername: make(map[string]bool),
 	}
 }
 func (h *Hub) IsEmpty() bool {
 	return len(h.clients) == 0
 }
 
+var (
+	hubMap  = make(map[string]*Hub)
+	hubSync = sync.Mutex{}
+)
+
+func ConnectionHandler(w http.ResponseWriter, r *http.Request) {
+
+	pathVariables := mux.Vars(r)
+	hubName, ok := pathVariables["hub"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hubSync.Lock()
+	if hubMap[hubName] == nil {
+		hubMap[hubName] = NewHub()
+		HubGauge.Inc()
+	}
+	hubSync.Unlock()
+
+	HubChan <- hubMap[hubName]
+
+	ServeWs(hubMap[hubName], w, r)
+}
+
 func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
+			fmt.Println(h.clientUsername)
+			// fmt.Println(h.cli)
+			if h.clientUsername[client.name] == false {
+				h.clients[client] = true
+				h.clientUsername[client.name] = true
+				UserGauge.Inc()
+			} else {
+				// reject the connection
+				fmt.Println("duplicate error")
+				client.registerError <- errors.New("duplicate username")
+			}
+			fmt.Println(h.clientUsername)
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
+				UserGauge.Dec()
 				delete(h.clients, client)
+				delete(h.clientUsername, client.name)
 				close(client.send)
 			}
 		case message := <-h.broadcast:
+			MessageCounter.Inc()
 			for client := range h.clients {
 				select {
 				case client.send <- message:
 				default:
+					UserGauge.Dec()
 					close(client.send)
 					delete(h.clients, client)
+					delete(h.clientUsername, client.name)
 				}
 			}
 		}

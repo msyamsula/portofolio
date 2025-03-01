@@ -37,6 +37,7 @@ spec:
         - graph.syamsul.online
         - url.syamsul.online
         - api.syamsul.online
+        - chat.syamsul.online
       secretName: hello-kubernetes-tls
   rules:
     - host: url.syamsul.online
@@ -57,6 +58,16 @@ spec:
             backend:
               service:
                 name: graph-ui-clusterip
+                port:
+                  number: 80
+    - host: chat.syamsul.online
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: chat-ui-clusterip
                 port:
                   number: 80
     - host: api.syamsul.online

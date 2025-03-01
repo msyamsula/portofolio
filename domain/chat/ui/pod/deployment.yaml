@@ -1,0 +1,127 @@
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-ui-clusterip
+  labels:
+    app: chat-ui
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: chat-ui
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 80 # service port
+      targetPort: 80 # container port
+      name: chat-ui-clusterip
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-ui-deployment
+  labels:
+    app: chat-ui
+    type: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-ui
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: chat-ui
+        type: pod
+    spec:
+      containers:
+        - name: chat-ui
+          image: syamsuldocker/chat-ui:0.0.2
+          ports:
+          - containerPort: 80
+          # volumeMounts:
+          #   - name: chat-ui-configmap
+          #     mountPath: /usr/share/nginx/html/index.html
+          #     subPath: index.html
+          #     readOnly: true
+          #   - name: chat-ui-nginx
+          #     mountPath: /etc/nginx/nginx.conf
+          #     subPath: nginx.conf
+          # command:
+          #   - /bin/chat-ui
+          #   - --config.file=/config.yaml
+          #   - --storage.tsdb.retention.time=7d
+          #   - --web.external-url=/chat-ui
+          # envFrom:
+          #   - secretRef:
+          #       name: chat-ui-secret
+          #   - configMapRef:
+          #       name: postgres-configmap
+          # env:
+          #   - name: POSTGRES_USER
+          #     value: admin
+          #   - name: POSTGRES_PASSWORD
+          #     value: admin
+      # volumes:
+      #   - name: chat-ui-configmap
+      #     configMap:
+      #       name: chat-ui-configmap
+      #   - name: chat-ui-nginx
+      #     configMap:
+      #       name: chat-ui-nginx
+
+#Secret
+# secret value is left empty, I add it manually to ensure security
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: chat-ui-secret
+# stringData:
+#   POSTGRES_USERNAME:
+#   POSTGRES_PASSWORD:
+#   POSTGRES_DB:
+#   POSTGRES_HOST:
+#   POSTGRES_PORT:
+#   REDIS_PASSWORD:
+#   REDIS_HOST:
+#   REDIS_PORT:
+#   REDIS_TTL:
+#   HASHER_LENGTH:
+#   HASHER_CHARACTER_POOL:
+#   HASHER_HOST:
+#   PORT:
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: postgres-configmap
+# data:
+#   POSTGRES_USER: 
+#   POSTGRES_PASSWORD: 
+
+---
+# nodeport, can be closed for better security
+# leave it open for debug purpose
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: chat-ui-nodeport
+#   labels:
+#     app: chat-ui
+#     type: nodeport
+# spec:
+#   type: NodePort
+#   selector:
+#     app: chat-ui
+#     type: pod
+#   ports:
+#     - protocol: TCP
+#       port: 5000 #container port
+#       targetPort: 5000 #service port
+#       nodePort: 30002 #open port
+#       name: chat-ui-nodeport

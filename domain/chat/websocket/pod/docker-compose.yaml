@@ -1,8 +1,8 @@
 services:
     
-  chat-server:
-    container_name: chat-server
-    hostname: chat-server
+  chat-server-clusterip:
+    container_name: chat-server-clusterip
+    hostname: chat-server-clusterip
     image: chat-server
     ports:
       - "8080:8080" # can be closed for security
