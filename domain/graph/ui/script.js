@@ -339,12 +339,13 @@ function run() {
     })
 }
 
-function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms))
+const defaultSleep = 500
+function sleep() {
+    return new Promise(r => setTimeout(r, defaultSleep))
 }
 
 async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
-    await sleep(1000)
+    await sleep()
     if (log) {
         for (let i = 0; i < log.length; i++) {
             partition = log[i].split(":")
@@ -463,7 +464,7 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
                     break;
             }
 
-            await sleep(1000)
+            await sleep()
         }
     }
     if (cycles) {
@@ -485,7 +486,7 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
                     },
                     width: 10,
                 })
-                await sleep(1000)
+                await sleep()
             }
         }
     }
@@ -502,7 +503,7 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
                     borderWidth: 15,
                 })
 
-                await sleep(1000)
+                await sleep()
             }
         }
     }
@@ -517,7 +518,7 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
                     id: node,
                     color: colorPool[i % colorPool.length]
                 })
-                await sleep(1000)
+                await sleep()
             }
         }
     }
@@ -573,7 +574,7 @@ async function animate(log, cycles, path, acyclic, scc, ap, bridge) {
                 arrows: arrows,
             })
 
-            await sleep(1000)
+            await sleep()
         }
     }
 }

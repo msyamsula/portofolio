@@ -26,6 +26,7 @@ func New(dep Dependencies) *Handler {
 
 func (h *Handler) HashUrl(w http.ResponseWriter, req *http.Request) {
 
+	HashCounter.Inc()
 	ctx, span := otel.Tracer("").Start(req.Context(), "handler.HashUrl")
 	defer span.End()
 

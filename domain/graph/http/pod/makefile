@@ -3,18 +3,20 @@ build:
 	docker build -t graph-http .
 
 run:
+	make build
 	docker-compose up -d
 
 down:
 	docker-compose down
 
 push:
-	docker tag graph-http syamsuldocker/graph-http:0.0.11
-	docker push syamsuldocker/graph-http:0.0.11
-	docker image rm syamsuldocker/graph-http:0.0.10
+	make build
+	docker tag graph-http syamsuldocker/graph-http:0.0.13
+	docker push syamsuldocker/graph-http:0.0.13
+	docker image rm syamsuldocker/graph-http:0.0.12
 
 deploy:
-	make build
+	make down
 	make push
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml
 

@@ -8,6 +8,7 @@ import (
 )
 
 func (h *Handler) RedirectShortUrl(w http.ResponseWriter, req *http.Request) {
+	RedirectCounter.Inc()
 	ctx, span := otel.Tracer("").Start(req.Context(), "handler.RedirectShortUrl")
 	defer span.End()
 

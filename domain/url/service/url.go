@@ -23,6 +23,6 @@ func (s *Service) SetShortUrl(c context.Context, longUrl string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	shortUrl = fmt.Sprintf("%s/url/%s", s.host, shortUrl)
+	shortUrl = fmt.Sprintf("%s/%s", s.host, shortUrl)
 	return shortUrl, nil
 }

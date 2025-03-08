@@ -37,23 +37,25 @@ func (s *Service) DirectedAcyclicGraph(g *graph.Service) (path []string, acyclic
 	}
 
 	s.dfsLog = []string{}
+	s.dagPath = []string{}
 	for _, n := range g.Grabber {
 		if n.Visited {
 			continue
 		}
 
-		s.dag(g, n)
+		s.dag(n)
+		// s.dagPath = append(s.dagPath, n.Id)
 	}
 
 	// reverse s.dagPath
 	for i := 0; i <= (len(s.dagPath)-1)/2; i++ {
-		s.dagPath[i], s.dagPath[len(s.dagPath)-1-i] = s.dagPath[len(s.dagPath)-1], s.dagPath[i]
+		s.dagPath[i], s.dagPath[len(s.dagPath)-1-i] = s.dagPath[len(s.dagPath)-1-i], s.dagPath[i]
 	}
 
 	return s.dagPath, true
 }
 
-func (s *Service) dag(g *graph.Service, u *graph.Node) {
+func (s *Service) dag(u *graph.Node) {
 	u.Visited = true
 	s.dfsLog = append(s.dfsLog, u.Id)
 
@@ -61,7 +63,7 @@ func (s *Service) dag(g *graph.Service, u *graph.Node) {
 		if v.Visited {
 			continue
 		}
-		s.dag(g, v)
+		s.dag(v)
 	}
 
 	s.dfsLog = s.dfsLog[:len(s.dfsLog)-1]

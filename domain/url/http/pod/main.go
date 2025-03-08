@@ -20,25 +20,11 @@ import (
 	url "github.com/msyamsula/portofolio/domain/url/service"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-func main() {
-	// load env
-	err := godotenv.Load(".env")
-	if err != nil {
-		fmt.Println("error in loading env", err)
-	}
-
-	appName := "url-http"
-	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"))
-
-	// build the service dependencies
-	// ------------------------------
-	port, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		log.Fatal("error in port format", err)
-	}
+func initUrlHandler() *urlhttp.Handler {
 
 	pg := postgres.New(postgres.Config{
 		Username: os.Getenv("POSTGRES_PASSWORD"),
@@ -76,47 +62,50 @@ func main() {
 			Hasher: ha,
 		}),
 	}
+	urlHandler := urlhttp.New(dep)
+	return urlHandler
 
-	urlSevice := urlhttp.New(dep)
+}
 
-	apiPrefix := "/url"
+func main() {
+	appName := "url-http"
+
+	// load env
+	godotenv.Load(".env")
+
+	// initialize instrumentation
+	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"))
+
+	// register prometheus metrics
+	prometheus.MustRegister(urlhttp.HashCounter)
+	prometheus.MustRegister(urlhttp.RedirectCounter)
+
+	// create handler
+	urlHandler := initUrlHandler()
+
+	// create server routes
 	r := mux.NewRouter()
+	r.HandleFunc("/short", urlHandler.HashUrl)
+	r.HandleFunc("/{shortUrl}", urlHandler.RedirectShortUrl)
 
-	// prometheus metrics
-	hashCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "hash_counter",
-		Help: "number of shortener request",
+	// cors option
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},                              // Allow all origins (adjust for security)
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "HEAD"}, // Allow methods
+		AllowedHeaders:   []string{"Content-Type"},                   // Allow headers
+		AllowCredentials: true,                                       // Allows credentials (cookies, authorization headers)
 	})
-	prometheus.MustRegister(hashCounter)
+	corsHandler := c.Handler(r)
 
-	redirectCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "redirect_counter",
-		Help: "number of redirect request",
-	})
-	prometheus.MustRegister(redirectCounter)
-
-	// middleware
-	hashCounterMiddleWare := func(next http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			hashCounter.Inc()
-			next.ServeHTTP(w, r)
-		}
-	}
-
-	redirectCounterMiddleWare := func(next http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			redirectCounter.Inc()
-			next.ServeHTTP(w, r)
-		}
-	}
-
-	// API listing
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/short"), hashCounterMiddleWare(http.HandlerFunc(urlSevice.HashUrl)))
-	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/{shortUrl}"), redirectCounterMiddleWare(http.HandlerFunc(urlSevice.RedirectShortUrl)))
-
-	http.Handle("/", otelhttp.NewHandler(r, "")) // use otelhttp for telemetry
+	// server handler
+	http.Handle("/", otelhttp.NewHandler(corsHandler, "")) // use otelhttp for telemetry
 	http.Handle("/metrics", promhttp.Handler())
 
+	// server start
+	port, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		log.Fatal("error in port format", err)
+	}
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")

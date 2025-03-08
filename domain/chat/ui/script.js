@@ -11,16 +11,13 @@ const host = "wss://api.syamsul.online"
 console.log(document.getElementById("room-name"));
 var socket, url
 
-function receiveMessage(event) {
-    console.log("Message from server: ", event.data);
-    // You can also handle the incoming message here
-    data = JSON.parse(event.data)
+function handleChat(payload) {
     // const messageText = messageInput.value.trim();
-    var text = data.text
+    var text = payload.message
     if (!text) {
         return
     }
-    var sender = data.sender
+    var sender = payload.sender
     if (sender == userName || userName == "") {
         return
     }
@@ -30,15 +27,24 @@ function receiveMessage(event) {
                 <span class="tick-button">${noTick}</span>
             </div>
         `;
-
+    
     // Append both messages to the container
     messageContainer.innerHTML += messageHtml;
-
+    
     // Scroll to the bottom
     messageContainer.scrollTop = messageContainer.scrollHeight;
-
+    
     // Scroll to the bottom
     messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+function receiveMessage(event) {
+    console.log("Message from server: ", event.data);
+    // You can also handle the incoming message here
+    data = JSON.parse(event.data)
+    if (data.type == "chat") {
+        handleChat(data.payload)
+    }
 }
 function connect() {
     if (socket) {
@@ -50,14 +56,14 @@ function connect() {
         return
     }
 
-    url = `${host}/chat/ws/${roomName}`
+    url = `${host}/chat/ws/${roomName}?username=${userName}`
     socket = new WebSocket(url);
 
     // When the connection is established
     socket.addEventListener("open", function (event) {
         console.log("Connected to WebSocket server!");
         // Send a message to the server
-        socket.send("Hello, Server!");
+        // socket.send("Hello, Server!");
     });
 
     // When a message is received from the server
@@ -65,7 +71,9 @@ function connect() {
 
     // When the connection is closed
     socket.addEventListener("close", function (event) {
-        console.log("Disconnected from WebSocket server!");
+        // alert(`Disconnected from WebSocket server! (${event.reason})`);
+        console.log("reconnecting");
+        socket = new WebSocket(url)
     });
 
     // When an error occurs
@@ -99,8 +107,11 @@ function sendMessage() {
     const messageText = messageInput.value.trim();
     if (messageText) {
         var data = JSON.stringify({
-            text: messageText,
-            sender: userName,
+            type: "chat",
+            payload: {
+                message: messageText,
+                sender: userName,
+            }
         })
         socket.send(data)
         const userMessageHTML = `
@@ -109,14 +120,6 @@ function sendMessage() {
                 <span class="tick-button">${noTick}</span>
             </div>
         `;
-
-        // Create the other message with tick button using HTML literals
-        // const otherMessageHTML = `
-        //     <div class="message other">
-        //         <span>${messageText}</span>
-        //         <span class="tick-button">${tick}</span>
-        //     </div>
-        // `;
 
         // Append both messages to the container
         messageContainer.innerHTML += userMessageHTML;

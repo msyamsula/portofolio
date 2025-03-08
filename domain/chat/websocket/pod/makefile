@@ -4,18 +4,19 @@ build:
 
 run:
 	make build
-	docker-compose up
+	docker-compose up -d
 
 down:
 	docker-compose down
 
 push:
 	make build
-	docker tag chat-server syamsuldocker/chat-server:0.0.6
-	docker push syamsuldocker/chat-server:0.0.6
-	# docker image rm syamsuldocker/chat-server:0.0.5
+	docker tag chat-server syamsuldocker/chat-server:0.0.8
+	docker push syamsuldocker/chat-server:0.0.8
+	docker image rm syamsuldocker/chat-server:0.0.7
 
 deploy:
+	make down
 	make push
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml
 

@@ -1,20 +1,20 @@
 services:
     
-  graph-ui-clusterip:
-    container_name: graph-ui-clusterip
-    hostname: graph-ui-clusterip
-    image: graph-ui
+  chat-ui-clusterip:
+    container_name: chat-ui-clusterip
+    hostname: chat-ui-clusterip
+    image: chat-ui
     ports:
-      - "8000:80" # can be closed for security
+      - "8002:80" # can be closed for security
     networks:
       - my-network
-    env_file:
-      - ".env"
     # working_dir: /app
     # volumes:
     #   - .env:/app/.env
     #   - ./main:/app/main
     # command: ["./main"]
+    # env_file:
+    #   - ".env"
 
   
 networks:

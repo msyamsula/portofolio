@@ -25,6 +25,7 @@ type Edge struct {
 	Weight string `json:"weight,omitempty"`
 }
 
+// InitGraph is a middleware, it create graph before executing an algorithm
 func (s *Service) InitGraph(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

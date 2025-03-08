@@ -107,6 +107,8 @@ func (c *Client) readPump() {
 			}
 			break
 		}
+		fmt.Println(string(createEvent("ack", []byte(""))))
+		c.send <- createEvent("ack", []byte(""))
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.hub.broadcast <- message
 	}
@@ -140,11 +142,11 @@ func (c *Client) writePump() {
 			w.Write(message)
 
 			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
+			// n := len(c.send)
+			// for i := 0; i < n; i++ {
+			// 	w.Write(newline)
+			// 	w.Write(<-c.send)
+			// }
 
 			if err := w.Close(); err != nil {
 				return
@@ -172,7 +174,6 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	username := query.Get("username")
 	fmt.Println("username", username)
 	if username == "" {
-		fmt.Println("username empty")
 		status := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username is empty")
 		conn.WriteMessage(websocket.CloseMessage, status)
 		return
@@ -192,7 +193,6 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	err = <-client.registerError
 	if err != nil {
-		fmt.Println("goes here")
 		status := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username is already taken")
 		conn.WriteMessage(websocket.CloseMessage, status)
 		return

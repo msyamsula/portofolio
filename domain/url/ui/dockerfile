@@ -3,7 +3,6 @@ FROM nginx:latest
 # Copy the HTML files into the container (including index.html)
 COPY ./index.html /usr/share/nginx/html/
 COPY ./script.js /usr/share/nginx/html/
-COPY ./index.css /usr/share/nginx/html/
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
 # Change the ownership of the files to www-data (the user Nginx runs as)

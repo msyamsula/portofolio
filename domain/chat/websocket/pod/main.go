@@ -28,18 +28,20 @@ func main() {
 
 	godotenv.Load(".env")
 
+	// instrumentation
 	telemetry.InitializeTelemetryTracing("chat-server", os.Getenv("JAEGER_HOST"))
 
+	// prometheus metrics
+	prometheus.MustRegister(websocket.HubGauge)
+	prometheus.MustRegister(websocket.UserGauge)
+	prometheus.MustRegister(websocket.MessageCounter)
+
+	// some background process related to hub
 	go websocket.HubEvent()   // listen for hub creation
 	go websocket.HubCleaner() // periodically check if hub isEmpty or not
 
 	r := mux.NewRouter()
 
-	prometheus.MustRegister(websocket.HubGauge)
-	prometheus.MustRegister(websocket.UserGauge)
-	prometheus.MustRegister(websocket.MessageCounter)
-
-	// r.HandleFunc("/", serveHome)
 	apiPrefix := "/chat"
 	r.HandleFunc(fmt.Sprintf("%s%s", apiPrefix, "/ws/{hub}"), websocket.ConnectionHandler)
 
