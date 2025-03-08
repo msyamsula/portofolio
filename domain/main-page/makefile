@@ -10,9 +10,9 @@ down:
 
 push:
 	make build
-	docker tag main-page syamsuldocker/main-page:0.0.1
-	docker push syamsuldocker/main-page:0.0.1
-	docker image rm syamsuldocker/main-page:0.0.0
+	docker tag main-page syamsuldocker/main-page:0.0.2
+	docker push syamsuldocker/main-page:0.0.2
+	docker image rm syamsuldocker/main-page:0.0.1
 
 deploy:
 	make down

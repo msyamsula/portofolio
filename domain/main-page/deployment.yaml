@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: main-page
-          image: syamsuldocker/main-page:0.0.1
+          image: syamsuldocker/main-page:0.0.2
           ports:
           - containerPort: 80
           # volumeMounts:
