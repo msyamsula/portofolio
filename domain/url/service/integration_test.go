@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/msyamsula/portofolio/database/postgres"
-	"github.com/msyamsula/portofolio/database/redis"
 	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
+	"github.com/msyamsula/portofolio/tech-stack/postgres"
+	"github.com/msyamsula/portofolio/tech-stack/redis"
 )
 
 func TestIntegration(t *testing.T) {

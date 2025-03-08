@@ -1,0 +1,195 @@
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: nsqadmin-clusterip
+  labels:
+    app: nsqadmin
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: nsqadmin
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 4171 # service port
+      targetPort: 4171 # container port
+      name: nsqadmin-clusterip
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nsqadmin-deployment
+  labels:
+    app: nsqadmin
+    type: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nsqadmin
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: nsqadmin
+        type: pod
+    spec:
+      containers:
+      - name: nsqadmin
+        image: nsqio/nsq
+        ports:
+        - containerPort: 4171
+        command:
+        - /nsqadmin
+        - --lookupd-http-address=nsqlookupd-clusterip:4161
+        - --base-path=/nsqadmin
+        # env:
+        #   - name: POSTGRES_USER
+        #     value: admin
+        #   - name: POSTGRES_PASSWORD
+        #     value: admin
+        # envFrom:
+        #   - secretRef:
+        #       name: nsqadmin-secret
+        # - configMapRef:
+        #     name: postgres-configmap
+
+
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: nsqlookupd-clusterip
+  labels:
+    app: nsqlookupd
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: nsqlookupd
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 4160 # service port
+      targetPort: 4160 # container port
+      name: nsqlookupd-clusterip-tcp
+    - protocol: TCP
+      port: 4161 # service port
+      targetPort: 4161 # container port
+      name: nsqlookupd-clusterip-http
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nsqlookupd-deployment
+  labels:
+    app: nsqlookupd
+    type: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nsqlookupd
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: nsqlookupd
+        type: pod
+    spec:
+      containers:
+      - name: nsqlookupd
+        image: nsqio/nsq
+        ports:
+        - containerPort: 4160
+        - containerPort: 4161
+        command:
+        - /nsqlookupd
+        # env:
+        #   - name: POSTGRES_USER
+        #     value: admin
+        #   - name: POSTGRES_PASSWORD
+        #     value: admin
+        # envFrom:
+        #   - secretRef:
+        #       name: nsqadmin-secret
+        # - configMapRef:
+        #     name: postgres-configmap
+
+#Secret
+# secret value is left empty, I add it manually to ensure security
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: nsqadmin-secret
+# stringData:
+#   POSTGRES_USERNAME:
+#   POSTGRES_PASSWORD:
+#   POSTGRES_DB:
+#   POSTGRES_HOST:
+#   POSTGRES_PORT:
+#   REDIS_PASSWORD:
+#   REDIS_HOST:
+#   REDIS_PORT:
+#   REDIS_TTL:
+#   HASHER_LENGTH:
+#   HASHER_CHARACTER_POOL:
+#   HASHER_HOST:
+#   PORT:
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: postgres-configmap
+# data:
+#   POSTGRES_USER: 
+#   POSTGRES_PASSWORD: 
+
+---
+# nodeport, can be closed for better security
+# leave it open for debug purpose
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nsqadmin-nodeport
+#   labels:
+#     app: nsqadmin
+#     type: nodeport
+# spec:
+#   type: NodePort
+#   selector:
+#     app: nsqadmin
+#     type: pod
+#   ports:
+#     - protocol: TCP
+#       port: 5000 #container port
+#       targetPort: 5000 #service port
+#       nodePort: 30002 #open port
+#       name: nsqadmin-nodeport
+
+
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: nsqadmin-secret
+# stringData:
+#   POSTGRES_USERNAME: admin
+#   POSTGRES_PASSWORD: admin
+#   POSTGRES_DB: postgres
+#   POSTGRES_HOST: postgres-clusterip
+#   POSTGRES_PORT: "5432"
+#   REDIS_PASSWORD: admin
+#   REDIS_HOST: redis-clusterip
+#   REDIS_PORT: "6379"
+#   REDIS_TTL: "300000" #in millisecond
+#   HASHER_LENGTH: "10"
+#   HASHER_CHARACTER_POOL: qQwWeErRtTyYuUiIoOpPaAsSdDfFgGhHjJkKlLzZxXcCvVbBnNmM123456
+#   HASHER_HOST: https://api.syamsul.online
+#   PORT: "5000"
+#   JAEGER_HOST: "jaeger-clusterip:4317"

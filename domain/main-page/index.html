@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal Portfolio">
+    <title>Your Name - Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Georgia:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Georgia', serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid #dddddd;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-family: 'Merriweather', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            font-family: 'Georgia', serif;
+            font-size: 1.2rem;
+            margin-top: 10px;
+            color: #666;
+        }
+
+        /* Tabs Styles */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            background-color: #ffffff;
+            border-top: 1px solid #dddddd;
+        }
+
+        .tabs button {
+            background-color: #ffffff;
+            color: #333;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+            flex: 1;
+            transition: background-color 0.3s ease;
+            border-left: 1px solid #dddddd;
+            font-weight: bold;
+        }
+
+        .tabs button:first-child {
+            border-left: none;
+        }
+
+        .tabs button:hover {
+            background-color: #f5f5f5;
+        }
+
+        .tabs .active {
+            background-color: #333;
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #ffffff;
+            margin-top: 10px;
+            height: 80%; /* Reserve space for header and tabs */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        section h2 {
+            font-family: 'Merriweather', serif;
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dddddd;
+            padding-bottom: 10px;
+            text-align: left;
+        }
+
+        p {
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .skills, .projects, .contact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        .skill, .project, .contact-info {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 30%;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 25px;
+            font-size: 0.9rem;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .skill, .project {
+                width: 100%;
+            }
+
+            .skills, .projects {
+                flex-direction: column;
+            }
+
+            header h1 {
+                font-size: 2.5rem;
+            }
+
+            header p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+    <h1>Muhammad Syamsul Arifin</h1>
+    <p>Software Engineer | Problem Solver | Physicist | Mathematician | A Friend</p>
+</header>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="openTab(event, 'about')">About</button>
+    <button class="tab-btn" onclick="openTab(event, 'projects')">Experiences</button>
+    <button class="tab-btn" onclick="openTab(event, 'projects')">Self Projects</button>
+    <button class="tab-btn" onclick="openTab(event, 'skills')">Skills</button>
+    <button class="tab-btn" onclick="openTab(event, 'contact')">Contact & Misc</button>
+</div>
+
+<!-- Tab Content -->
+<div id="about" class="tab-content active">
+    <h2>About Me</h2>
+    <p>Hi, I’m [Your Name], a passionate web developer with a love for creating clean, efficient, and user-friendly websites. I specialize in front-end and back-end development, and I enjoy solving complex problems while crafting intuitive web experiences. I'm always exploring new technologies to enhance my skills and grow as a developer.</p>
+</div>
+
+<div id="skills" class="tab-content">
+    <h2>Skills</h2>
+    <div class="skills">
+        <div class="skill">
+            <h3>HTML & CSS</h3>
+            <p>Building responsive and accessible web pages with clean HTML and CSS.</p>
+        </div>
+        <div class="skill">
+            <h3>JavaScript</h3>
+            <p>Creating interactive websites with JavaScript, including front-end frameworks like React.</p>
+        </div>
+        <div class="skill">
+            <h3>Node.js</h3>
+            <p>Building scalable server-side applications with Node.js and Express.js.</p>
+        </div>
+        <div class="skill">
+            <h3>Git & GitHub</h3>
+            <p>Version control using Git, and collaborating with teams through GitHub.</p>
+        </div>
+    </div>
+</div>
+
+<div id="projects" class="tab-content">
+    <h2>Projects</h2>
+    <div class="projects">
+        <div class="project">
+            <h3>Project 1: URL Shortener</h3>
+            <p>Simple URL shortener: (very easy)</p>
+            <a href="https://url.syamsul.online">visit</a>
+        </div>
+        <div class="project">
+            <h3>Project 2: Graph Visualization</h3>
+            <p>Visualize how every traditional graph algorithm: dfs, bfs, djikstra, and many more</p>
+            <a href="https://graph.syamsul.online">visit</a>
+        </div>
+        <div class="project">
+            <h3>Project 3: Monitoring, Metrics, and Tracing</h3>
+            <p>Learn to instrument, trace, and monitor backend system from scratch</p>
+            <p>monitoring: <a href="https://api.syamsul.online/prometheus">prometheus</a></p>
+            <p>tracing: <a href="https://api.syamsul.online/jaeger">jaeger</a></p>
+        </div>
+        <div class="project">
+            <h3>Project 4: Chat Message</h3>
+            <p>Enjoy my simple chat app. Get the detail about how websocket work and make scalable, persistence chat app</p>
+            <a href="https://chat.syamsul.online">visit</a>
+        </div>
+    </div>
+</div>
+
+<div id="contact" class="tab-content">
+    <h2>Contact</h2>
+    <div class="contact-info">
+        <p>Email: <a href="mailto:msyamsula1995@gmail.com">msyamsula1995@gmail.com</a></p>
+        <p>LinkedIn: <a href="https://www.linkedin.com/in/msyamsula/" target="_blank">linkedin.com/in/msyamsula</a></p>
+        <p>GitHub: <a href="https://github.com/msyamsula" target="_blank">github.com/msyamsula</a></p>
+        <p>Medium: <a href="https://msyamsula1995.medium.com/" target="_blank">medium/msyamsula1995</a></p>
+        <p>LeetCode: <a href="https://leetcode.com/u/msyamsula1995/" target="_blank">leetcode.com/u/msyamsula1995</a></p>
+        <p>Hakerrank: <a href="https://www.hackerrank.com/profile/msyamsula1995" target="_blank">hackerrank.com/profile/msyamsula1995</a></p>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer>
+    <p>&copy; 2025 Your Name. All rights reserved.</p>
+</footer>
+
+<!-- JavaScript for Tabs -->
+<script>
+    function openTab(event, tabName) {
+        // Hide all tabs
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Remove 'active' class from all buttons
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(button => {
+            button.classList.remove('active');
+        });
+
+        // Show the clicked tab content
+        document.getElementById(tabName).classList.add('active');
+
+        // Add 'active' class to the clicked button
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

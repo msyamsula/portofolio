@@ -38,8 +38,19 @@ spec:
         - url.syamsul.online
         - api.syamsul.online
         - chat.syamsul.online
+        - syamsul.online
       secretName: hello-kubernetes-tls
   rules:
+    - host: syamsul.online
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: main-page-clusterip
+                port:
+                  number: 80
     - host: url.syamsul.online
       http:
         paths:
@@ -80,6 +91,13 @@ spec:
                 name: url-http-clusterip
                 port:
                   number: 5000
+          - pathType: Prefix
+            path: "/nsqadmin"
+            backend:
+              service:
+                name: nsqadmin-clusterip
+                port:
+                  number: 4171
           - pathType: Prefix
             path: "/chat/ws"
             backend:

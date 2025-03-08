@@ -1,0 +1,56 @@
+services:
+  nsqlookupd-clusterip:
+    image: nsqio/nsq
+    command: /nsqlookupd
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+    networks:
+      - my-network
+      
+  nsqd-clusterip:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd-clusterip:4160
+    hostname: nsqd-clusterip
+    container_name: nsqd-clusterip
+    depends_on:
+      - nsqlookupd-clusterip
+    ports:
+      - "4150"
+      - "4151"
+      # - "4150:4150"
+      # - "4151:4151"
+    networks:
+      - my-network
+
+  nsqd-clusterip-mantap:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd-clusterip:4160
+    hostname: nsqd-clusterip-mantap
+    container_name: nsqd-clusterip-mantap
+    depends_on:
+      - nsqlookupd-clusterip
+    ports:
+      - "4150"
+      - "4151"
+      # - "4150:4150"
+      # - "4151:4151"
+    networks:
+      - my-network
+    # deploy:
+    #   replicas: 2
+
+  nsqadmin-clusterip:
+    image: nsqio/nsq
+    command: /nsqadmin --lookupd-http-address=nsqlookupd-clusterip:4161
+    depends_on:
+      - nsqlookupd-clusterip  
+    ports:
+      - "4171:4171"
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    name: my-network
+    external: true
