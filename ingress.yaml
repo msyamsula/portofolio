@@ -92,6 +92,13 @@ spec:
                 port:
                   number: 5000
           - pathType: Prefix
+            path: "/user"
+            backend:
+              service:
+                name: user-http-clusterip
+                port:
+                  number: 8000
+          - pathType: Prefix
             path: "/nsqadmin"
             backend:
               service:

@@ -1,0 +1,23 @@
+services:
+    
+  user-http-clusterip:
+    container_name: user-http-clusterip
+    hostname: user-http-clusterip
+    image: user-http
+    ports:
+      - "8000:8000" # can be closed for security
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+    working_dir: /app
+    volumes:
+      - .env:/app/.env
+      - ./main:/app/main
+    command: ["./main"]
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true

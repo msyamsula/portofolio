@@ -3,4 +3,5 @@ vendor
 main
 .DS_Store
 kubeconfig.yaml
-
+node_modules
+package-lock.json
