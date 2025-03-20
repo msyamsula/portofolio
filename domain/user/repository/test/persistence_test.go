@@ -183,7 +183,7 @@ func (s *RepositoryTestSuite) TestGetUser() {
 			name: "user not found",
 			args: args{
 				c:        context.Background(),
-				username: "testing",
+				username: "admin",
 			},
 			want: want{
 				user: repository.User{},
@@ -191,7 +191,6 @@ func (s *RepositoryTestSuite) TestGetUser() {
 			},
 			mockFunc: func() {
 				rows := sqlmock.NewRows([]string{"id", "username"})
-				rows.AddRow(10, "admin")
 
 				mock.ExpectBegin()
 				mock.ExpectPrepare("SELECT id, username FROM users WHERE username = ?").
@@ -201,15 +200,35 @@ func (s *RepositoryTestSuite) TestGetUser() {
 				mock.ExpectRollback()
 			},
 		},
-	}
+		{
+			name: "commit failed",
+			args: args{
+				c:        context.Background(),
+				username: "admin",
+			},
+			want: want{
+				user: repository.User{},
+				err:  s.mockErr,
+			},
+			mockFunc: func() {
+				rows := sqlmock.NewRows([]string{"id", "username"})
+				rows.AddRow(1, "admin")
 
-	// fmt.Println(testCases)
+				mock.ExpectBegin()
+				mock.ExpectPrepare("SELECT id, username FROM users WHERE username = ?").
+					ExpectQuery().
+					WithArgs("admin").
+					WillReturnRows(rows)
+				mock.ExpectCommit().WillReturnError(s.mockErr)
+				mock.ExpectRollback()
+			},
+		},
+	}
 
 	for _, tt := range testCases {
 		s.Run(tt.name, func() {
 			tt.mockFunc()
 
-			// fmt.Println(s.persistence.GetUser)
 			user, err := persistence.GetUser(tt.args.c, tt.args.username)
 			s.Equal(tt.want.user, user)
 			s.Equal(tt.want.err, err)

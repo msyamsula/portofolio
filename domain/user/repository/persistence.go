@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/msyamsula/portofolio/tech-stack/postgres"
+	"go.opentelemetry.io/otel"
 )
 
 type Persistence struct {
@@ -18,27 +19,29 @@ type User struct {
 }
 
 func (s *Persistence) InsertUser(c context.Context, username string) (User, error) {
+	ctx, span := otel.Tracer("").Start(c, "repository.persistence.InsertUser")
+	defer span.End()
+
+	tx := s.MustBeginTx(ctx, nil)
 	var err error
-	tx := s.MustBeginTx(c, nil)
 	defer func() {
 		if err != nil {
+			span.RecordError(err)
 			tx.Rollback()
 		}
 	}()
+
 	var user User
 	var stmt *sqlx.NamedStmt
-	stmt, err = tx.PrepareNamedContext(c, QueryInsertUser)
+	stmt, err = tx.PrepareNamedContext(ctx, QueryInsertUser)
 	if err != nil {
 		return user, err
 	}
 
 	var row *sqlx.Row
-	row = stmt.QueryRowContext(c, map[string]interface{}{
+	row = stmt.QueryRowContext(ctx, map[string]interface{}{
 		"username": username,
 	})
-	if row == nil {
-		return user, ErrUserNotFound
-	}
 
 	user.Username = username
 	err = row.Scan(&user.Id)
@@ -47,48 +50,48 @@ func (s *Persistence) InsertUser(c context.Context, username string) (User, erro
 	}
 
 	err = tx.Commit()
-	return user, err
+	if err != nil {
+		return user, err
+	}
+	return user, nil
 }
 
 func (s *Persistence) GetUser(c context.Context, username string) (User, error) {
+	ctx, span := otel.Tracer("").Start(c, "repository.persistence.GetUser")
+	defer span.End()
+
 	var err error
-	tx := s.MustBeginTx(c, nil)
+	tx := s.MustBeginTx(ctx, nil)
 	defer func() {
 		if err != nil {
+			span.RecordError(err)
 			tx.Rollback()
 		}
 	}()
 
 	var stmt *sqlx.NamedStmt
-	stmt, err = tx.PrepareNamedContext(c, QueryGetUser)
+	stmt, err = tx.PrepareNamedContext(ctx, QueryGetUser)
 	if err != nil {
 		return User{}, err
 	}
 
-	var rows *sql.Rows
-	rows, err = stmt.QueryContext(c, map[string]interface{}{
+	var row *sqlx.Row
+	row = stmt.QueryRowContext(ctx, map[string]interface{}{
 		"username": username,
 	})
 
-	if rows == nil {
-		return User{}, ErrUserNotFound
-	}
-
 	var user User
-	count := 0
-	for rows.Next() {
-		err = rows.Scan(&user.Id, &user.Username)
-		if err != nil {
-			return User{}, err
+	err = row.Scan(&user.Id, &user.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = ErrUserNotFound
 		}
-		count++
-		break
-	}
-
-	if count == 0 {
-		return User{}, ErrUserNotFound
+		return user, err
 	}
 
 	err = tx.Commit()
-	return user, err
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
 }

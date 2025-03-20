@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/msyamsula/portofolio/tech-stack/redis"
+	"go.opentelemetry.io/otel"
 )
 
 type Cache struct {
@@ -13,24 +14,44 @@ type Cache struct {
 }
 
 func (s *Cache) SetUser(c context.Context, user User) error {
+	ctx, span := otel.Tracer("").Start(c, "repository.cache.SetUser")
+	defer span.End()
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+	}()
+
 	value := map[string]interface{}{
 		"id":       fmt.Sprintf("%d", user.Id),
 		"username": user.Username,
 	}
-	cmd := s.HSet(c, user.Username, value)
-	_, err := cmd.Result()
+	cmd := s.HSet(ctx, user.Username, value)
+	_, err = cmd.Result()
 	if err != nil {
 		return err
 	}
 
-	ttlCmd := s.Expire(c, user.Username, s.Ttl)
+	ttlCmd := s.Expire(ctx, user.Username, s.Ttl)
 	_, err = ttlCmd.Result()
 
 	return err
 }
 
 func (s *Cache) GetUser(c context.Context, username string) (User, error) {
-	cmd := s.HGetAll(c, username)
+	ctx, span := otel.Tracer("").Start(c, "respository.cache.GetUser")
+	defer span.End()
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+	}()
+
+	cmd := s.HGetAll(ctx, username)
 	result, err := cmd.Result()
 	if err != nil {
 		return User{}, err

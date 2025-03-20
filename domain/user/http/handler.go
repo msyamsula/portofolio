@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/msyamsula/portofolio/domain/user/repository"
+	"go.opentelemetry.io/otel"
 )
 
 type Handler struct {
@@ -48,11 +49,33 @@ func (h *Handler) ManageUser(w http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) setUser(w http.ResponseWriter, req *http.Request) {
 
+	ctx, span := otel.Tracer("").Start(req.Context(), "handler.setUser")
+	defer span.End()
+
 	response := Response{
-		Message: "success",
+		Message: "",
 		Error:   "",
 		Data:    repository.User{},
 	}
+	var err error
+	var statusCode int
+	defer func() {
+		w.WriteHeader(statusCode)
+		if err != nil {
+			// error response
+			response.Message = "failed"
+			response.Error = err.Error()
+			span.RecordError(err)
+
+			resp, _ := json.Marshal(response)
+			w.Write([]byte(resp))
+		} else {
+			// success
+			response.Message = "success"
+			resp, _ := json.Marshal(response)
+			w.Write(resp)
+		}
+	}()
 
 	type body struct {
 		Username string `json:"username"`
@@ -61,70 +84,57 @@ func (h *Handler) setUser(w http.ResponseWriter, req *http.Request) {
 	bBody, _ := io.ReadAll(req.Body)
 	json.Unmarshal(bBody, &reqBody)
 
-	ctx := req.Context()
 	response.Data.Username = reqBody.Username
-	var err error
-
 	response.Data, err = h.service.SetUser(ctx, response.Data)
 	if err != nil {
-		// fmt.Println("here", user, err, username)
-		response.Error = err.Error()
-		resp, err := json.Marshal(response)
-		if err != nil {
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(resp))
+		statusCode = http.StatusInternalServerError
 		return
 	}
 
-	resp, err := json.Marshal(response)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(resp)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	statusCode = http.StatusOK
+	return
 
 }
 
 func (h *Handler) getUser(w http.ResponseWriter, req *http.Request) {
+	ctx, span := otel.Tracer("").Start(req.Context(), "handler.getUser")
+	defer span.End()
 
 	response := Response{
 		Message: "success",
 		Error:   "",
 		Data:    repository.User{},
 	}
+	var err error
+	var statusCode int
+	defer func() {
+		w.WriteHeader(statusCode)
+		if err != nil {
+			// failed
+			response.Message = "failed"
+			span.RecordError(err)
+			response.Error = err.Error()
+			resp, _ := json.Marshal(response)
+			w.Write([]byte(resp))
+		} else {
+			// success
+			response.Message = "success"
+			resp, _ := json.Marshal(response)
+			w.Write(resp)
+		}
+	}()
 
 	query := req.URL.Query()
 	username := query.Get("username")
-	ctx := req.Context()
 	response.Data.Username = username
-	var err error
 
 	response.Data, err = h.service.GetUser(ctx, response.Data.Username)
 	if err != nil {
-		// fmt.Println("here", user, err, username)
-		response.Error = err.Error()
-		resp, err := json.Marshal(response)
-		if err != nil {
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(resp))
+		statusCode = http.StatusInternalServerError
 		return
 	}
 
-	resp, err := json.Marshal(response)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(resp)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	statusCode = http.StatusOK
+	return
 
 }

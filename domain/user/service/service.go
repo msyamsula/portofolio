@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/msyamsula/portofolio/domain/user/repository"
+	"go.opentelemetry.io/otel"
 )
 
 type Service struct {
@@ -36,28 +37,49 @@ type CacheLayer interface {
 }
 
 func (s *Service) SetUser(c context.Context, user repository.User) (repository.User, error) {
-	user, err := s.Persistence.InsertUser(c, user.Username)
+	ctx, span := otel.Tracer("").Start(c, "service.SetUser")
+	defer span.End()
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+	}()
+
+	user, err = s.Persistence.InsertUser(ctx, user.Username)
 	if err != nil {
 		return user, err
 	}
 
-	s.Cache.SetUser(c, user)
+	s.Cache.SetUser(ctx, user)
 	return user, nil
 }
 
 func (s *Service) GetUser(c context.Context, username string) (repository.User, error) {
-	result, err := s.Cache.GetUser(c, username)
+	ctx, span := otel.Tracer("").Start(c, "service.GetUser")
+	defer span.End()
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+	}()
+
+	var result repository.User
+	result, err = s.Cache.GetUser(ctx, username)
 	if err == nil && result.Id > 0 {
 		// cache hit
 		return result, nil
 	}
 
 	// cache miss
-	result, err = s.Persistence.GetUser(c, username)
+	result, err = s.Persistence.GetUser(ctx, username)
 	if err != nil {
 		return result, err
 	}
 
-	s.Cache.SetUser(c, result) // update cache
+	s.Cache.SetUser(ctx, result) // update cache
 	return result, nil
 }
