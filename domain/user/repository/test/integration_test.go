@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/msyamsula/portofolio/domain/user/repository"
+	"github.com/msyamsula/portofolio/domain/utils"
 	"github.com/msyamsula/portofolio/tech-stack/postgres"
 	"github.com/msyamsula/portofolio/tech-stack/redis"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +42,7 @@ var (
 )
 
 func TestIntegration(t *testing.T) {
-	username := "kampung" // make sure you enter new cacheUser
+	username := utils.RandomName(20) // make sure you enter new cacheUser
 	user, err := persistence.InsertUser(c, username)
 	assert.Nil(t, err)
 	u, err := persistence.GetUser(c, username)

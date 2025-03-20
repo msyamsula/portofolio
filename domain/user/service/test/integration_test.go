@@ -9,6 +9,7 @@ import (
 
 	"github.com/msyamsula/portofolio/domain/user/repository"
 	"github.com/msyamsula/portofolio/domain/user/service"
+	"github.com/msyamsula/portofolio/domain/utils"
 	"github.com/msyamsula/portofolio/tech-stack/postgres"
 	"github.com/msyamsula/portofolio/tech-stack/redis"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,7 @@ var (
 func TestIntegrationUser(t *testing.T) {
 
 	user := repository.User{
-		Username: "waduh", //use new unique name
+		Username: utils.RandomName(20), //use new unique name
 	}
 
 	var err error

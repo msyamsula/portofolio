@@ -38,15 +38,21 @@ func (s *Persistence) InsertUser(c context.Context, username string) (User, erro
 		return user, err
 	}
 
-	var row *sqlx.Row
-	row = stmt.QueryRowContext(ctx, map[string]interface{}{
+	var rows *sql.Rows
+	rows, err = stmt.QueryContext(ctx, map[string]interface{}{
 		"username": username,
 	})
-
-	user.Username = username
-	err = row.Scan(&user.Id)
 	if err != nil {
 		return User{}, err
+	}
+
+	user.Username = username
+	for rows.Next() {
+		err = rows.Scan(&user.Id)
+		if err != nil {
+			return User{}, err
+		}
+		break
 	}
 
 	err = tx.Commit()
