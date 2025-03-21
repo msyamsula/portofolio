@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type node struct {
 	val         int
 	left, right *node
@@ -13,7 +11,6 @@ func dfs(u *node, h int) {
 	if u == nil {
 		return
 	}
-	fmt.Println(u)
 
 	height[u] = h
 	dfs(u.left, h+1)
@@ -34,10 +31,7 @@ func main() {
 			},
 		},
 	}
-	fmt.Println(root)
-	fmt.Println()
 
 	dfs(root, 0)
 
-	fmt.Println(height)
 }

@@ -4,26 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 
 	"github.com/golang/mock/gomock"
 	userhttp "github.com/msyamsula/portofolio/domain/user/http"
 	"github.com/msyamsula/portofolio/domain/user/repository"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestSetUser(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockSvc := NewMockService(ctrl)
-	h := userhttp.New(userhttp.Dependencies{
-		Service: mockSvc,
-	})
+func (s *UserTestSuite) TestSetUser() {
 
 	type (
 		args struct {
@@ -43,7 +33,9 @@ func TestSetUser(t *testing.T) {
 		}
 	)
 
-	mockErr := errors.New("ops")
+	h := userhttp.New(userhttp.Dependencies{
+		Service: s.mockSvc,
+	})
 	testCases := []testCase{
 		{
 			name: "invalid method",
@@ -67,14 +59,14 @@ func TestSetUser(t *testing.T) {
 				method:   http.MethodPost,
 			},
 			want: want{
-				err:  mockErr.Error(),
+				err:  s.mockErr.Error(),
 				user: repository.User{},
 			},
 			mockFunc: func() {
-				mockSvc.EXPECT().
+				s.mockSvc.EXPECT().
 					SetUser(gomock.Any(), repository.User{
 						Username: "admin",
-					}).Return(repository.User{}, mockErr)
+					}).Return(repository.User{}, s.mockErr)
 			},
 		},
 		{
@@ -92,7 +84,7 @@ func TestSetUser(t *testing.T) {
 				},
 			},
 			mockFunc: func() {
-				mockSvc.EXPECT().
+				s.mockSvc.EXPECT().
 					SetUser(gomock.Any(), repository.User{
 						Username: "admin",
 					}).Return(repository.User{
@@ -104,7 +96,7 @@ func TestSetUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
+		s.Run(tt.name, func() {
 			server := httptest.NewServer(http.HandlerFunc(h.ManageUser))
 			defer server.Close()
 
@@ -114,36 +106,29 @@ func TestSetUser(t *testing.T) {
 				Username: tt.args.username,
 			}
 			bBody, err := json.Marshal(reqBody)
-			assert.Nil(t, err)
+			s.Nil(err)
 			body := bytes.NewBuffer(bBody)
 			request, err := http.NewRequest(tt.args.method, server.URL, body)
-			assert.Nil(t, err)
+			s.Nil(err)
 
 			tt.mockFunc()
 
 			c := &http.Client{}
 			resp, err := c.Do(request)
-			assert.Nil(t, err)
+			s.Nil(err)
 			defer resp.Body.Close()
 
 			httpResponse := userhttp.Response{}
 			bResp, _ := io.ReadAll(resp.Body)
 			json.Unmarshal(bResp, &httpResponse)
 
-			assert.Equal(t, tt.want.err, httpResponse.Error)
-			assert.Equal(t, tt.want.user, httpResponse.Data)
+			s.Equal(tt.want.err, httpResponse.Error)
+			s.Equal(tt.want.user, httpResponse.Data)
 		})
 	}
 }
 
-func TestGetUser(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockSvc := NewMockService(ctrl)
-	h := userhttp.New(userhttp.Dependencies{
-		Service: mockSvc,
-	})
+func (s *UserTestSuite) TestGetUser() {
 
 	type (
 		args struct {
@@ -163,7 +148,9 @@ func TestGetUser(t *testing.T) {
 		}
 	)
 
-	mockErr := errors.New("ops")
+	h := userhttp.New(userhttp.Dependencies{
+		Service: s.mockSvc,
+	})
 	testCases := []testCase{
 		{
 			name: "invalid method",
@@ -187,13 +174,13 @@ func TestGetUser(t *testing.T) {
 				method:   http.MethodGet,
 			},
 			want: want{
-				err:  mockErr.Error(),
+				err:  s.mockErr.Error(),
 				user: repository.User{},
 			},
 			mockFunc: func() {
-				mockSvc.EXPECT().
+				s.mockSvc.EXPECT().
 					GetUser(gomock.Any(), "admin").
-					Return(repository.User{}, mockErr)
+					Return(repository.User{}, s.mockErr)
 			},
 		},
 		{
@@ -211,7 +198,7 @@ func TestGetUser(t *testing.T) {
 				},
 			},
 			mockFunc: func() {
-				mockSvc.EXPECT().
+				s.mockSvc.EXPECT().
 					GetUser(gomock.Any(), "admin").
 					Return(repository.User{
 						Username: "admin",
@@ -222,12 +209,12 @@ func TestGetUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
+		s.Run(tt.name, func() {
 			server := httptest.NewServer(http.HandlerFunc(h.ManageUser))
 			defer server.Close()
 
 			request, err := http.NewRequest(tt.args.method, server.URL, nil)
-			assert.Nil(t, err)
+			s.Nil(err)
 			query := request.URL.Query()
 			query.Set("username", tt.args.username)
 			request.URL.RawQuery = query.Encode()
@@ -236,15 +223,15 @@ func TestGetUser(t *testing.T) {
 
 			c := &http.Client{}
 			resp, err := c.Do(request)
-			assert.Nil(t, err)
+			s.Nil(err)
 			defer resp.Body.Close()
 
 			httpResponse := userhttp.Response{}
 			bResp, _ := io.ReadAll(resp.Body)
 			json.Unmarshal(bResp, &httpResponse)
 
-			assert.Equal(t, tt.want.err, httpResponse.Error)
-			assert.Equal(t, tt.want.user, httpResponse.Data)
+			s.Equal(tt.want.err, httpResponse.Error)
+			s.Equal(tt.want.user, httpResponse.Data)
 		})
 	}
 }

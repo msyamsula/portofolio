@@ -6,7 +6,6 @@ package websocket
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -44,7 +43,6 @@ func HubEvent() {
 func HubCleaner() {
 	for {
 		for hubName, h := range hubMap {
-			fmt.Println(hubName, len(h.clients), h.IsEmpty())
 			if h.IsEmpty() {
 				hubSync.Lock()
 				delete(hubMap, hubName)
@@ -107,7 +105,6 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		fmt.Println(string(createEvent("ack", []byte(""))))
 		c.send <- createEvent("ack", []byte(""))
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.hub.broadcast <- message
@@ -172,7 +169,6 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	username := query.Get("username")
-	fmt.Println("username", username)
 	if username == "" {
 		status := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username is empty")
 		conn.WriteMessage(websocket.CloseMessage, status)
@@ -262,18 +258,14 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			fmt.Println(h.clientUsername)
-			// fmt.Println(h.cli)
 			if h.clientUsername[client.name] == false {
 				h.clients[client] = true
 				h.clientUsername[client.name] = true
 				UserGauge.Inc()
 			} else {
 				// reject the connection
-				fmt.Println("duplicate error")
 				client.registerError <- errors.New("duplicate username")
 			}
-			fmt.Println(h.clientUsername)
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				UserGauge.Dec()

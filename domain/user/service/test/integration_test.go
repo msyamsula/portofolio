@@ -4,6 +4,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -56,4 +57,30 @@ func TestIntegrationUser(t *testing.T) {
 	var u repository.User
 	u, err = svc.GetUser(ctx, user.Username)
 	assert.Equal(t, user, u)
+}
+
+func TestIntegrationFriend(t *testing.T) {
+
+	// check both user to db
+	userA := repository.User{
+		Username: "",
+		Id:       35,
+	}
+	userB := repository.User{
+		Username: "",
+		Id:       37,
+	}
+
+	err := svc.AddFriend(ctx, userA, userB)
+	assert.Nil(t, err)
+
+	users, err := svc.GetFriends(ctx, repository.User{
+		Username: "admin",
+		Id:       21,
+	})
+	assert.Nil(t, err)
+	assert.NotZero(t, users)
+	for _, u := range users {
+		fmt.Println(u)
+	}
 }

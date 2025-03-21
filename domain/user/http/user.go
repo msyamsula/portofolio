@@ -17,6 +17,8 @@ type Handler struct {
 type Service interface {
 	SetUser(c context.Context, user repository.User) (repository.User, error)
 	GetUser(c context.Context, username string) (repository.User, error)
+	AddFriend(c context.Context, userA, userB repository.User) error
+	GetFriends(c context.Context, user repository.User) ([]repository.User, error)
 }
 
 type Dependencies struct {

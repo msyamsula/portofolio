@@ -73,6 +73,7 @@ func main() {
 	// create server routes
 	r := mux.NewRouter()
 	r.HandleFunc("/user", handler.ManageUser)
+	r.HandleFunc("/friend", handler.ManageFriend)
 
 	// cors option
 	c := cors.New(cors.Options{

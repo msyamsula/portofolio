@@ -29,6 +29,8 @@ func New(dep Dependencies) *Service {
 type PersistenceLayer interface {
 	InsertUser(c context.Context, username string) (repository.User, error)
 	GetUser(c context.Context, username string) (repository.User, error)
+	AddFriend(c context.Context, userA, userB repository.User) error
+	GetFriends(c context.Context, user repository.User) ([]repository.User, error)
 }
 
 type CacheLayer interface {
@@ -82,4 +84,43 @@ func (s *Service) GetUser(c context.Context, username string) (repository.User, 
 
 	s.Cache.SetUser(ctx, result) // update cache
 	return result, nil
+}
+
+func (s *Service) AddFriend(c context.Context, userA, userB repository.User) error {
+	ctx, span := otel.Tracer("").Start(c, "service.AddFriend")
+	defer span.End()
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+	}()
+
+	err = s.Persistence.AddFriend(ctx, userA, userB)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) GetFriends(c context.Context, user repository.User) ([]repository.User, error) {
+	ctx, span := otel.Tracer("").Start(c, "service.GetFriends")
+	defer span.End()
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+	}()
+
+	var users []repository.User
+	users, err = s.Persistence.GetFriends(ctx, user)
+	if err != nil {
+		return []repository.User{}, err
+	}
+
+	return users, nil
 }

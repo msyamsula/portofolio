@@ -11,7 +11,6 @@ type Event struct {
 }
 
 func createEvent(eventType string, payload json.RawMessage) []byte {
-	fmt.Println(eventType, string(payload))
 	b, err := json.Marshal(Event{
 		Type:    eventType,
 		Payload: payload,

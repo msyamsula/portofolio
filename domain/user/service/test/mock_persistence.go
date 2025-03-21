@@ -35,6 +35,35 @@ func (m *MockPersistenceLayer) EXPECT() *MockPersistenceLayerMockRecorder {
 	return m.recorder
 }
 
+// AddFriend mocks base method.
+func (m *MockPersistenceLayer) AddFriend(arg0 context.Context, arg1, arg2 repository.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddFriend", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddFriend indicates an expected call of AddFriend.
+func (mr *MockPersistenceLayerMockRecorder) AddFriend(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFriend", reflect.TypeOf((*MockPersistenceLayer)(nil).AddFriend), arg0, arg1, arg2)
+}
+
+// GetFriends mocks base method.
+func (m *MockPersistenceLayer) GetFriends(arg0 context.Context, arg1 repository.User) ([]repository.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFriends", arg0, arg1)
+	ret0, _ := ret[0].([]repository.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFriends indicates an expected call of GetFriends.
+func (mr *MockPersistenceLayerMockRecorder) GetFriends(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFriends", reflect.TypeOf((*MockPersistenceLayer)(nil).GetFriends), arg0, arg1)
+}
+
 // GetUser mocks base method.
 func (m *MockPersistenceLayer) GetUser(arg0 context.Context, arg1 string) (repository.User, error) {
 	m.ctrl.T.Helper()
