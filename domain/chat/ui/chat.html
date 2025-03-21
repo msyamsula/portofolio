@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="chat.css">
+    <!-- FontAwesome for Search Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            font-family: Arial, sans-serif;
+            background-color: #e5ddd5;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            background: #fff;
+        }
+
+        /* User List Panel */
+        .user-list {
+            width: 25%;
+            max-width: 250px;
+            background: #800020;
+            /* Deep Burgundy */
+            color: white;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* Header with Add Friend Button */
+        .user-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .add-friend-btn {
+            background: #D2042D;
+            /* Crimson color for add friend button */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .add-friend-btn:hover {
+            background: #C2032D;
+        }
+
+        /* Friend Search Box */
+        .friend-search {
+            padding: 10px;
+            background: #800020;
+            /* Deep Burgundy for search box */
+        }
+
+        .friend-search input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        /* User List */
+        .user-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .user-list li {
+            padding: 10px;
+            border-bottom: 1px solid #D2042D;
+            /* Dark Crimson border */
+            cursor: pointer;
+        }
+
+        .user-list li:hover {
+            background: #D2042D;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background: #800020;
+            /* Deep Burgundy */
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Message Search Bar */
+        .message-search {
+            display: flex;
+            align-items: center;
+            background: #f1f1f1;
+            padding: 5px;
+            border-radius: 20px;
+        }
+
+        .message-search input {
+            border: none;
+            padding: 10px;
+            border-radius: 20px;
+            outline: none;
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .message-search button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+        }
+
+        .message-search button i {
+            font-size: 20px;
+            color: #800020;
+            /* Deep Burgundy */
+        }
+
+        .message-search button:hover i {
+            color: #D2042D;
+            /* Crimson */
+        }
+
+        /* Chat Messages */
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .sent {
+            background-color: #f1c6c6;
+            /* Light pink for sent message */
+            align-self: flex-end;
+            position: relative;
+            padding-right: 30px;
+            /* Space for the tick */
+        }
+
+        .delivered {
+            background-color: #f1d4d4;
+            /* Soft beige color for delivered message */
+            align-self: flex-start;
+            position: relative;
+            padding-right: 30px;
+            /* Space for the tick */
+        }
+
+        .read {
+            background-color: #f1e1e1;
+            /* Light off-white for read message */
+            align-self: flex-start;
+            position: relative;
+            padding-right: 30px;
+            /* Space for the tick */
+        }
+
+        /* Message Status Tick Marks */
+        .status {
+            font-size: 14px;
+            color: #999;
+            margin-left: 5px;
+        }
+
+        .tick-sent {
+            color: #800020;
+            /* Deep Burgundy for sent tick */
+        }
+
+        .tick-delivered {
+            color: #D2042D;
+            /* Crimson for delivered tick */
+        }
+
+        .tick-read {
+            color: #C2032D;
+            /* Dark Crimson for read tick */
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background: #f1f1f1;
+            width: 100%;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 20px;
+            outline: none;
+            font-size: 16px;
+        }
+
+        button {
+            background: #D2042D;
+            /* Crimson for send button */
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            margin-left: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #C2032D;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .chat-container {
+                flex-direction: column;
+            }
+
+            .user-list {
+                width: 100%;
+                max-width: none;
+                text-align: center;
+            }
+
+            .user-list ul {
+                display: flex;
+                justify-content: space-around;
+            }
+
+            .user-list li {
+                flex: 1;
+                border-bottom: none;
+                padding: 15px;
+            }
+        }
+
+        /* Exit Button */
+        .exit-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: #f44336;
+            /* Red color for exit */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .exit-btn:hover {
+            background-color: #e53935;
+            /* Darker red on hover */
+        }
+
+
+        /* Modal Background */
+        .modal {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            /* Darker background to make the modal pop */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background: #fff;
+            /* Bright white background */
+            padding: 30px;
+            /* More padding for a spacious feel */
+            border-radius: 10px;
+            width: 350px;
+            /* Slightly larger width */
+            text-align: center;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            /* Stronger shadow effect */
+            transform: scale(1.1);
+            /* Slight zoom effect to make it more prominent */
+        }
+
+        /* Close Button */
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 30px;
+            /* Larger close icon */
+            color: #ff4d4d;
+            /* Red color for the close button */
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ff1a1a;
+            /* Darker red when hovering */
+        }
+
+
+        /* Simple underline for input inside the modal */
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-bottom: 2px solid #128C7E;
+            /* Underline color */
+            font-size: 16px;
+            color: #333;
+            outline: none;
+            margin: 20px auto;
+        }
+
+        /* Focus effect for input */
+        .modal input:focus {
+            border-bottom: 2px solid #25D366;
+            /* Change underline color when focused */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <!-- User List Panel -->
+        <div class="user-list">
+            <div class="user-list-header">
+                <h2>Chats</h2>
+                <button class="add-friend-btn" onclick="showFriendModal()">+</button>
+            </div>
+
+            <!-- Modal -->
+            <div id="friendModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Add a Friend</h2>
+                    <input type="text" id="friendName" placeholder="Enter friend's name">
+                    <button onclick="submitFriend()">Add</button>
+                </div>
+            </div>
+
+            <!-- Friend Search Box -->
+            <div class="friend-search">
+                <input type="text" id="friend-search-input" placeholder="Search friends..." onkeyup="searchFriends()">
+            </div>
+
+            <ul id="users">
+                <!-- <li onclick="switchUser('Alice')">Alice</li>
+                <li onclick="switchUser('Bob')">Bob</li>
+                <li onclick="switchUser('Charlie')">Charlie</li>
+                <li onclick="switchUser('David')">David</li>
+                <li onclick="switchUser('Emma')">Emma</li> -->
+            </ul>
+
+            <button class="exit-btn" onclick="exitChat()">Exit</button>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h2 id="chat-header"></h2>
+                <!-- Search Icon for Messages -->
+                <div class="message-search">
+                    <input type="text" id="message-search-input" placeholder="Search messages..."
+                        onkeyup="searchMessages()">
+                    <button onclick="searchMessages()">
+                        <i class="fa fa-search"></i> <!-- FontAwesome Search Icon -->
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-box" id="chat-box">
+                <!-- Messages will appear here -->
+                <div class="message sent">
+                    Hey, how are you?
+                    <span class="status tick-sent">✓</span>
+                </div>
+                <div class="message delivered">
+                    I'm good, thanks! How about you?
+                    <span class="status tick-delivered">✓✓</span>
+                </div>
+                <div class="message read">
+                    I'm doing great, just working on something!
+                    <span class="status tick-read">✓✓</span>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="chat.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    font-family: 'Arial', sans-serif;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #800020; /* Deep Burgundy */
+}
+
+/* Login Container */
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 30px;
+    background: #ffffff; /* White background for contrast */
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header */
+.login-header h2 {
+    font-size: 26px;
+    color: #800020; /* Deep Burgundy color */
+    margin-bottom: 10px;
+}
+
+.login-header p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 25px;
+}
+
+/* Input field */
+input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 18px;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+input:focus {
+    border-color: #D2042D; /* Crimson color on focus for contrast */
+    outline: none;
+}
+
+/* Button */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #D2042D; /* Crimson color for action */
+    border: none;
+    color: white;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #C2032D; /* Darker shade of Crimson on hover */
+}
+
+button:active {
+    background-color: #B1022C; /* Even darker shade on click */
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .login-container {
+        max-width: 80%;
+        padding: 25px;
+    }
+
+    .login-header h2 {
+        font-size: 22px;
+    }
+
+    button {
+        font-size: 16px;
+    }
+}
