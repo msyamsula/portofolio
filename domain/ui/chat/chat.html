@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
-    <link rel="stylesheet" href="chat.css">
     <!-- FontAwesome for Search Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
@@ -172,7 +171,7 @@
             word-wrap: break-word;
         }
 
-        .sent {
+        .user {
             background-color: #f1c6c6;
             /* Light pink for sent message */
             align-self: flex-end;
@@ -181,9 +180,9 @@
             /* Space for the tick */
         }
 
-        .delivered {
+        .pair {
             background-color: #f1d4d4;
-            /* Soft beige color for delivered message */
+            /* Soft beige color for pair message */
             align-self: flex-start;
             position: relative;
             padding-right: 30px;
@@ -213,7 +212,7 @@
 
         .tick-delivered {
             color: #D2042D;
-            /* Crimson for delivered tick */
+            /* Crimson for pair tick */
         }
 
         .tick-read {
@@ -424,11 +423,11 @@
             <!-- Chat Messages -->
             <div class="chat-box" id="chat-box">
                 <!-- Messages will appear here -->
-                <div class="message sent">
+                <div class="message user">
                     Hey, how are you?
                     <span class="status tick-sent">✓</span>
                 </div>
-                <div class="message delivered">
+                <div class="message pair">
                     I'm good, thanks! How about you?
                     <span class="status tick-delivered">✓✓</span>
                 </div>
@@ -446,6 +445,7 @@
         </div>
     </div>
 
+    <script src="apicall.js"></script>
     <script src="chat.js"></script>
 </body>
 

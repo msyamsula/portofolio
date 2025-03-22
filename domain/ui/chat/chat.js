@@ -1,5 +1,3 @@
-// const host = "http://0.0.0.0:8000"
-const host = "https://api.syamsul.online"
 let friends = [
     {
         id: 1,
@@ -17,6 +15,8 @@ let friends = [
 let friendsOnDisplay = []
 let username = ""
 let id = 0
+
+let messageOnDisplay = []
 
 function exitChat() {
     localStorage.clear()
@@ -84,16 +84,16 @@ function sendMessage() {
 function createPi(p) {
     let n = p.length
     let i = 0
-    let pi = Array(n+1).fill(0)
-    pi[0]=-1
+    let pi = Array(n + 1).fill(0)
+    pi[0] = -1
     let j = -1
     while (i < n) {
-        while(j<n && p[j] != p[i]) {
+        while (j < n && p[j] != p[i]) {
             j = pi[j]
         }
         i++
         j++
-        p[i]=j
+        p[i] = j
     }
 
     return pi
@@ -138,10 +138,45 @@ function searchFriends() {
     }, typingInterval);
 }
 
-function switchUser(user) {
+function refreshConversation() {
+    let chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML = ""
+    for (m of messageOnDisplay) {
+        let newMessage = document.createElement("div");
+        if (m.sender_id ==id) {
+            newMessage.className = "message user"; // Initially mark the message as sent
+        } else {
+            newMessage.className = "message pair"; // Initially mark the message as sent
+        }
+        newMessage.textContent = m.text;
+    
+        // Add tick mark for the sent message
+        let tickSent = document.createElement("span");
+        tickSent.className = "status tick-sent";
+        tickSent.textContent = "✓";
+        newMessage.appendChild(tickSent);
+    
+        chatBox.appendChild(newMessage);    
+    }
+
+    messageInput.value = ""; // Clear the input field
+    chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+
+    messageInput.focus()
+}
+
+async function switchUser(user) {
     document.getElementById("chat-header").textContent = user.username;
     localStorage.setItem("pairId", user.id)
     localStorage.setItem("pairUsername", user.username)
+
+    let conversation = await getConversation(id, user.id)
+    if (conversation) {
+        messageOnDisplay = conversation
+    } else {
+        messageOnDisplay = []
+    }
+    refreshConversation()
 }
 
 function refreshFriendList() {
@@ -154,23 +189,6 @@ function refreshFriendList() {
         friendTab.appendChild(f)
     }
 }
-
-async function getFriends(id) {
-    let response = await fetch(`${host}/user/friend?id=${id}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-
-    let user = await response.json()
-    if (user.data) {
-        return user.data
-    }
-
-    return null
-}
-
 
 async function populateFriends() {
     friends = await getFriends(id)
@@ -235,46 +253,6 @@ window.addEventListener("click", function (event) {
     }
 });
 
-async function connectWithUser(idA, idB) {
-    idA = parseInt(idA, 10)
-    let edge = {
-        small_id: idA,
-        big_id: idB
-    }
-    let response = await fetch(`${host}/user/friend`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(edge)
-    })
-
-    let data = await response.json()
-    if (data) {
-        return data
-    }
-    return null
-}
-
-async function getUser(username) {
-    const query = new URLSearchParams({
-        username: username
-    }).toString()
-    response = await fetch(`${host}/user?${query}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    let user = await response.json()
-    if (user) {
-        return user
-    }
-
-    return null
-
-}
-
 // Function to handle adding a friend (modify as needed)
 async function submitFriend() {
     let friendName = document.getElementById("friendName").value;
@@ -282,17 +260,17 @@ async function submitFriend() {
         document.getElementById("friendModal").style.display = "none";
 
         let newFriend = await getUser(friendName)
-        if (!newFriend.error) {
-            let r = await connectWithUser(id, newFriend.data.id)
+        if (newFriend) {
+            let r = await connectWithUser(id, newFriend.id)
             if (r != null && !r.error) {
-                addFriend(newFriend.data)
-                switchUser(newFriend.data)
+                addFriend(newFriend)
+                switchUser(newFriend)
                 return
             } else {
-                alert(r.error)
+                alert("can't add user, please try again")
             }
         } else {
-            alert(newFriend.error)
+            alert("user not found")
         }
     }
 }
