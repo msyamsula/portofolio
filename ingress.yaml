@@ -99,6 +99,13 @@ spec:
                 port:
                   number: 8000
           - pathType: Prefix
+            path: "/message"
+            backend:
+              service:
+                name: message-http-clusterip
+                port:
+                  number: 10000
+          - pathType: Prefix
             path: "/nsqadmin"
             backend:
               service:

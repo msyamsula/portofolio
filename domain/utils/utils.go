@@ -39,7 +39,7 @@ func CreatePrepareQuery(s string) string {
 
 		i++
 		j = i
-		for j < n && s[j] != ',' && s[j] != ')' {
+		for j < n && s[j] != ',' && s[j] != ')' && s[j] != ' ' {
 			j++
 		}
 		b.WriteByte('?')
