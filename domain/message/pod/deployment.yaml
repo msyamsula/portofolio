@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: message-consumer-secret
+stringData:
+  JAEGER_HOST: "jaeger-clusterip:4317"
+  LOOKUPDS: nsqlookupd-clusterip:4161
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-consumer-deployment
+  labels:
+    app: message-consumer
+    type: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: message-consumer
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: message-consumer
+        type: pod
+    spec:
+      containers:
+      - name: message-consumer
+        image: syamsuldocker/message-consumer:0.0.1
+        envFrom:
+          - secretRef:
+              name: message-consumer-secret
+        command: ["./main"]
+        # ports:
+        # - containerPort: 7000
+        # env:
+        #   - name: POSTGRES_USER
+        #     value: admin
+        #   - name: POSTGRES_PASSWORD
+        #     value: admin
+        # - configMapRef:
+        #     name: postgres-configmap
+
+#Secret
+# secret value is left empty, I add it manually to ensure security
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: message-consumer-secret
+# stringData:
+#   POSTGRES_USERNAME:
+#   POSTGRES_PASSWORD:
+#   POSTGRES_DB:
+#   POSTGRES_HOST:
+#   POSTGRES_PORT:
+#   REDIS_PASSWORD:
+#   REDIS_HOST:
+#   REDIS_PORT:
+#   REDIS_TTL:
+#   HASHER_LENGTH:
+#   HASHER_CHARACTER_POOL:
+#   HASHER_HOST:
+#   PORT:
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: postgres-configmap
+# data:
+#   POSTGRES_USER: 
+#   POSTGRES_PASSWORD: 
+
+---
+# nodeport, can be closed for better security
+# leave it open for debug purpose
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: message-consumer-nodeport
+#   labels:
+#     app: message-consumer
+#     type: nodeport
+# spec:
+#   type: NodePort
+#   selector:
+#     app: message-consumer
+#     type: pod
+#   ports:
+#     - protocol: TCP
+#       port: 5000 #container port
+#       targetPort: 5000 #service port
+#       nodePort: 30002 #open port
+#       name: message-consumer-nodeport
+
+# ---
+# # cluster IP
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: message-consumer-clusterip
+#   labels:
+#     app: message-consumer
+#     type: clusterip
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: message-consumer
+#     type: pod
+#   ports:
+#     - protocol: TCP
+#       port: 7000 # service port
+#       targetPort: 7000 # container port
+#       name: message-consumer-clusterip

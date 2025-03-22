@@ -18,6 +18,6 @@ push:
 deploy:
 	make down
 	make push
-	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml
+	kubectl --kubeconfig=.../../../kubeconfig.yaml apply -f deployment.yaml
 
 # docker run -it --rm --network my-network --name graph-http -p 5000:5000 ubuntu  /bin/bash

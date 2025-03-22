@@ -17,9 +17,9 @@ push:
 
 deploy:
 	make push
-	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml
+	kubectl --kubeconfig=.../../../kubeconfig.yaml apply -f deployment.yaml
 
 alias:
-	alias k="kubectl --kubeconfig=../../../../kubeconfig.yaml"
+	alias k="kubectl --kubeconfig=../../../kubeconfig.yaml"
 
 # docker run -it --rm --network my-network --name url-http -p 5000:5000 ubuntu  /bin/bash

@@ -12,8 +12,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"github.com/msyamsula/portofolio/domain/chat/websocket"
 	"github.com/msyamsula/portofolio/domain/telemetry"
+	"github.com/msyamsula/portofolio/domain/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
