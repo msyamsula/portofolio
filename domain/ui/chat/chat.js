@@ -54,7 +54,7 @@ function sendMessage() {
     if (message) {
         let chatBox = document.getElementById("chat-box");
         let newMessage = document.createElement("div");
-        newMessage.className = "message sent"; // Initially mark the message as sent
+        newMessage.className = "message user"; // Initially mark the message as sent
         newMessage.textContent = message;
 
         // Add tick mark for the sent message
