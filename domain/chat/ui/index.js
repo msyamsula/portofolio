@@ -1,9 +1,9 @@
-// const host = "http://0.0.0.0:8000/user"
-const host = "https://api.syamsul.online/user"
+// const host = "http://0.0.0.0:8000"
+const host = "https://api.syamsul.online"
 
 async function registerUser(username) {
     try {
-        let response = await fetch(host, {
+        let response = await fetch(`${host}/user`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -29,7 +29,7 @@ async function getUser(username) {
     const query = new URLSearchParams({
         username: username
     }).toString()
-    response = await fetch(`${host}?${query}`, {
+    response = await fetch(`${host}/user?${query}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -37,18 +37,22 @@ async function getUser(username) {
     })
     user = await response.json()
     console.log(user);
-    return user.data
+    if (user.data) {
+        return user.data
+    }
+
+    return null
 
 }
 
 async function login(username) {
     let user = await getUser(username)
-    if (user) {
+    if (user.username) {
         return user
     }
 
     user = await registerUser(username)
-    if (user) {
+    if (user.username) {
         return user
     }
 
@@ -60,15 +64,16 @@ document.getElementById("login-form").addEventListener("submit", async function 
     event.preventDefault();
     const username = document.getElementById("username").value;
 
-    console.log(username, "username");
     user = await login(username)
     console.log(user);
     if (user) {
         localStorage.setItem("username", user.username);
         localStorage.setItem("id", user.id);
         window.location.href = "chat.html"; // Redirect to chat page
+        return
     }
 
+    alert("try different name")
 });
 
 window.onload = function () {

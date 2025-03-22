@@ -58,7 +58,7 @@ spec:
     spec:
       containers:
       - name: user-http
-        image: syamsuldocker/user-http:0.0.6
+        image: syamsuldocker/user-http:0.0.7
         ports:
         - containerPort: 8000
         # env:

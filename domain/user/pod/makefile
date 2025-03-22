@@ -11,9 +11,9 @@ down:
 
 push:
 	make build
-	docker tag user-http syamsuldocker/user-http:0.0.6
-	docker push syamsuldocker/user-http:0.0.6
-	docker image rm syamsuldocker/user-http:0.0.5
+	docker tag user-http syamsuldocker/user-http:0.0.8
+	docker push syamsuldocker/user-http:0.0.8
+	docker image rm syamsuldocker/user-http:0.0.7
 
 deploy:
 	make push

@@ -16,3 +16,5 @@ create table friendship (
 	CONSTRAINT unique_friendship UNIQUE (small_id,big_id)
 );
 create index users_to_users on friendship(small_id, big_id);
+create index small on friendship(small_id);
+create index big on friendship(big_id);
