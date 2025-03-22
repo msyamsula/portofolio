@@ -1,20 +1,22 @@
 services:
     
-  chat-server-clusterip:
-    container_name: chat-server-clusterip
-    hostname: chat-server-clusterip
-    image: chat-server
+  websocket-server-clusterip:
+    container_name: websocket-server-clusterip
+    hostname: websocket-server-clusterip
+    image: websocket-server
     ports:
       - "8080:8080" # can be closed for security
-    env_file:
-      - ".env"
     networks:
       - my-network
     working_dir: /app
-    volumes:
-      - .env:/app/.env
-      - ./main:/app/main
-    command: ["./main"]
+    command:
+      - node
+      - server.js
+    # env_file:
+    #   - ".env"
+    # volumes:
+    #   - .:/app
+    #   - ./main:/app/main
 
   
 networks:

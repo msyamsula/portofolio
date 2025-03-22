@@ -1,5 +1,9 @@
-FROM ubuntu
+FROM node
 
 WORKDIR /app
 
-COPY ./main ./main
+COPY ./server.js ./server.js
+COPY ./util.js util.js
+# COPY ./package.json ./package.json
+# COPY ./package-lock.json ./package-lock.json
+COPY ./node_modules ./node_modules

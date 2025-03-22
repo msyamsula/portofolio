@@ -1,6 +1,5 @@
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build main.go
-	docker build -t chat-server .
+	docker build -t websocket-server .
 
 run:
 	make build
@@ -11,13 +10,12 @@ down:
 
 push:
 	make build
-	docker tag chat-server syamsuldocker/chat-server:0.0.8
-	docker push syamsuldocker/chat-server:0.0.8
-	docker image rm syamsuldocker/chat-server:0.0.7
+	docker tag websocket-server syamsuldocker/websocket-server:0.0.1
+	docker push syamsuldocker/websocket-server:0.0.1
+	docker image rm syamsuldocker/websocket-server:0.0.0
 
 deploy:
-	make down
 	make push
 	kubectl --kubeconfig=../../../../kubeconfig.yaml apply -f deployment.yaml
 
-# docker run -it --rm --network my-network --name chat-server -p 5000:5000 ubuntu  /bin/bash
+# docker run -it --rm --network my-network --name websocket-server -p 5000:5000 ubuntu  /bin/bash
