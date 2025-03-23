@@ -253,30 +253,6 @@
             background: #C2032D;
         }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            .chat-container {
-                flex-direction: column;
-            }
-
-            .user-list {
-                width: 100%;
-                max-width: none;
-                text-align: center;
-            }
-
-            .user-list ul {
-                display: flex;
-                justify-content: space-around;
-            }
-
-            .user-list li {
-                flex: 1;
-                border-bottom: none;
-                padding: 15px;
-            }
-        }
-
         /* Exit Button */
         .exit-btn {
             position: absolute;
@@ -368,6 +344,92 @@
             border-bottom: 2px solid #25D366;
             /* Change underline color when focused */
         }
+
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .chat-container {
+                flex-direction: column;
+            }
+
+            .chat-area {
+                overflow: scroll;
+            }
+
+            .chat-header {
+                padding-bottom: auto;
+                padding-left: auto;
+            }
+
+            .user-list-header {
+                width: 100%;
+                max-width: none;
+                text-align: center;
+                margin: 0;
+            }
+
+            .user-list {
+                width: 100%;
+                max-width: none;
+                text-align: center;
+                margin: 0;
+                padding-bottom: 0;
+            }
+
+            .user-list ul {
+                display: flex;
+                justify-content: space-around;
+            }
+
+            .user-list li {
+                flex: 1;
+                border-bottom: none;
+                padding: 15px;
+            }
+
+            .user-list ul {
+                /* display: none; */
+                flex-direction: row;
+                position: absolute;
+                background: #800020;
+                overflow-x: scroll;
+                width: 100%;
+                top: 60px;
+                left: 0;
+                z-index: 10;
+            }
+
+            .friend-search {
+                position: absolute;
+                top: 2%;
+                bottom: 92%;
+                left: 55%;
+                right: 15%;
+                z-index: 10;
+                margin: 0;
+                padding: 0;
+            }
+
+            .message-search {
+                display: none;
+            }
+
+            .exit-btn {
+                position: absolute;
+                top: 2.5%;
+                bottom: 93.5%;
+                left: 30%;
+                right: 50%;
+                /* 
+                display: flex;
+                align-items: center; 
+                transform: translateX(-50%);
+                */
+                z-index: 10;
+                margin: 0;
+                padding: 0;
+            }
+        }
     </style>
 </head>
 
@@ -376,7 +438,6 @@
         <!-- User List Panel -->
         <div class="user-list">
             <div class="user-list-header">
-                <h2>Chats</h2>
                 <button class="add-friend-btn" onclick="showFriendModal()">+</button>
             </div>
 
@@ -396,11 +457,11 @@
             </div>
 
             <ul id="users">
-                <!-- <li onclick="switchUser('Alice')">Alice</li>
+                <li onclick="switchUser('Alice')">Alice</li>
                 <li onclick="switchUser('Bob')">Bob</li>
                 <li onclick="switchUser('Charlie')">Charlie</li>
                 <li onclick="switchUser('David')">David</li>
-                <li onclick="switchUser('Emma')">Emma</li> -->
+                <li onclick="switchUser('Emma')">Emma</li>
             </ul>
 
             <button class="exit-btn" onclick="exitChat()">Exit</button>
@@ -445,7 +506,9 @@
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"
+        integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+"
+        crossorigin="anonymous"></script>
     <script src="apicall.js"></script>
     <script src="chat.js"></script>
 </body>

@@ -237,8 +237,14 @@ function refreshFriendList() {
     friendTab.innerHTML = ""
     for (let friend of friendsOnDisplay) {
         let f = document.createElement("li")
+        f.id = `${friend.id}`
         f.innerHTML = friend.username
-        f.addEventListener("click", () => switchUser(friend))
+        f.addEventListener("click", () => {
+            switchUser({
+                id: f.id,
+                username: f.innerHTML,
+            })
+        })
         friendTab.appendChild(f)
     }
 }
@@ -294,7 +300,7 @@ document.getElementById("friendModal").addEventListener("keypress", async functi
 function addFriend(friend) {
 
     friends.push({
-        id: friends.length + 1,
+        id: friend.id,
         username: friend.username,
     })
     friendsOnDisplay = friends
