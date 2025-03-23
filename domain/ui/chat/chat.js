@@ -48,10 +48,20 @@ messageInput.addEventListener("keypress", function (event) {
 });
 
 // Function to send message
+let socket = io(websocketHost);
 function sendMessage() {
     let messageInput = document.getElementById("message-input");
     let message = messageInput.value;
+
     if (message) {
+        let pairId = getPairId()
+        let senderId = getUserId()
+        let msg = {
+            senderId: senderId,
+            receiverId: pairId,
+            text: message,
+        }
+        socket.emit("chat", msg)
         let chatBox = document.getElementById("chat-box");
         let newMessage = document.createElement("div");
         newMessage.className = "message user"; // Initially mark the message as sent
@@ -68,6 +78,49 @@ function sendMessage() {
         chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
 
         messageInput.focus()
+        // // Simulate message delivery and reading after a delay
+        // setTimeout(() => {
+        //     tickSent.className = "status tick-delivered";
+        //     tickSent.textContent = "✓✓"; // Change to delivered
+        // }, 2000);
+
+        // setTimeout(() => {
+        //     tickSent.className = "status tick-read";
+        //     tickSent.textContent = "✓✓"; // Change to read
+        // }, 4000);
+    }
+}
+
+function getPairId() {
+    return parseInt(localStorage.getItem("pairId"))
+}
+
+function getUserId() {
+    return parseInt(localStorage.getItem("id"))
+}
+
+// Function to send message
+function receiveMessage(msg) {
+    // let messageInput = document.getElementById("message-input");
+    let message = msg.text;
+    let pairId = getPairId()
+    if (message && pairId == msg.senderId) {
+        let chatBox = document.getElementById("chat-box");
+        let newMessage = document.createElement("div");
+        newMessage.className = "message pair"; // Initially mark the message as sent
+        newMessage.textContent = message;
+
+        // Add tick mark for the sent message
+        let tickSent = document.createElement("span");
+        tickSent.className = "status tick-sent";
+        tickSent.textContent = "✓";
+        newMessage.appendChild(tickSent);
+
+        chatBox.appendChild(newMessage);
+        messageInput.value = ""; // Clear the input field
+        chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+
+        // messageInput.focus()
         // // Simulate message delivery and reading after a delay
         // setTimeout(() => {
         //     tickSent.className = "status tick-delivered";
@@ -143,20 +196,20 @@ function refreshConversation() {
     chatBox.innerHTML = ""
     for (m of messageOnDisplay) {
         let newMessage = document.createElement("div");
-        if (m.sender_id ==id) {
+        if (m.sender_id == id) {
             newMessage.className = "message user"; // Initially mark the message as sent
         } else {
             newMessage.className = "message pair"; // Initially mark the message as sent
         }
         newMessage.textContent = m.text;
-    
+
         // Add tick mark for the sent message
         let tickSent = document.createElement("span");
         tickSent.className = "status tick-sent";
         tickSent.textContent = "✓";
         newMessage.appendChild(tickSent);
-    
-        chatBox.appendChild(newMessage);    
+
+        chatBox.appendChild(newMessage);
     }
 
     messageInput.value = ""; // Clear the input field
@@ -205,12 +258,21 @@ window.onload = async function () {
     username = localStorage.getItem("username");
     id = localStorage.getItem("id")
     if (!username && !id) {
-        // If username exists in localStorage, redirect to the chat page
-        window.location.href = "index.html";  // Redirect to chat page
+        // If username does not exists in localStorage, redirect to the index page
+        window.location.href = "index.html";  // Redirect to index page
         return
     }
 
     await populateFriends()
+
+
+    socket.on("connect", () => {
+        console.log(socket.id);
+    })
+
+    socket.on(id, (msg) => {
+        receiveMessage(msg)
+    })
 
 };
 
@@ -274,3 +336,5 @@ async function submitFriend() {
         }
     }
 }
+
+

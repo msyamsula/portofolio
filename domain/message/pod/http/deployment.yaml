@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
       - name: message-http
-        image: syamsuldocker/message-http:0.0.2
+        image: syamsuldocker/message-http:0.0.3
         ports:
         - containerPort: 10000
         # env:

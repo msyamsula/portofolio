@@ -1,7 +1,10 @@
 // const host = "http://0.0.0.0:8000"
 // const messageHost = "http://0.0.0.0:10000"
+// const websocketHost = "ws://0.0.0.0:8080"
+
 const host = "https://api.syamsul.online"
 const messageHost = host
+const websocketHost = "wss://websocket.syamsul.online"
 
 async function getFriends(id) {
     let response = await fetch(`${host}/user/friend?id=${id}`, {

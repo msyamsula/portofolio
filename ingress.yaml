@@ -39,7 +39,9 @@ spec:
         - api.syamsul.online
         - chat.syamsul.online
         - syamsul.online
+        - websocket.syamsul.online
       secretName: hello-kubernetes-tls
+      
   rules:
     - host: syamsul.online
       http:
@@ -113,13 +115,6 @@ spec:
                 port:
                   number: 4171
           - pathType: Prefix
-            path: "/chat/ws"
-            backend:
-              service:
-                name: chat-server-clusterip
-                port:
-                  number: 8080
-          - pathType: Prefix
             path: "/jaeger"
             backend:
               service:
@@ -140,17 +135,13 @@ spec:
                 name: graph-http-clusterip
                 port:
                   number: 7000
-        # - pathType: Prefix
-        #   path: "/url"
-        #   backend:
-        #     service:
-        #       name: url-ui-clusterip
-        #       port:
-        #         number: 80
-        # - pathType: Prefix
-        #   path: "/postgres"
-        #   backend:
-        #     service:
-        #       name: postgres-clusterip
-        #       port:
-        #         number: 5432
+    - host: websocket.syamsul.online
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: websocket-server-clusterip
+                port:
+                  number: 8080

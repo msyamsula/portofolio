@@ -11,9 +11,9 @@ down:
 
 push:
 	make build
-	docker tag message-http syamsuldocker/message-http:0.0.2
-	docker push syamsuldocker/message-http:0.0.2
-	docker image rm syamsuldocker/message-http:0.0.1
+	docker tag message-http syamsuldocker/message-http:0.0.3
+	docker push syamsuldocker/message-http:0.0.3
+	docker image rm syamsuldocker/message-http:0.0.2
 
 deploy:
 	make push

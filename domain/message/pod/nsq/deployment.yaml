@@ -5,6 +5,11 @@ metadata:
 stringData:
   JAEGER_HOST: "jaeger-clusterip:4317"
   LOOKUPDS: nsqlookupd-clusterip:4161
+  POSTGRES_USERNAME: admin
+  POSTGRES_PASSWORD: admin
+  POSTGRES_DB: postgres
+  POSTGRES_HOST: postgres-clusterip
+  POSTGRES_PORT: "5432"
 
 ---
 #Deployment
@@ -29,7 +34,7 @@ spec:
     spec:
       containers:
       - name: message-consumer
-        image: syamsuldocker/message-consumer:0.0.1
+        image: syamsuldocker/message-consumer:0.0.3
         envFrom:
           - secretRef:
               name: message-consumer-secret
