@@ -90,23 +90,9 @@ spec:
             path: "/"
             backend:
               service:
-                name: url-http-clusterip
+                name: backend-clusterip
                 port:
-                  number: 5000
-          - pathType: Prefix
-            path: "/user"
-            backend:
-              service:
-                name: user-http-clusterip
-                port:
-                  number: 8000
-          - pathType: Prefix
-            path: "/message"
-            backend:
-              service:
-                name: message-http-clusterip
-                port:
-                  number: 10000
+                  number: 12000
           - pathType: Prefix
             path: "/nsqadmin"
             backend:
@@ -128,13 +114,6 @@ spec:
                 name: prometheus-clusterip
                 port:
                   number: 9090
-          - pathType: Prefix
-            path: "/graph"
-            backend:
-              service:
-                name: graph-http-clusterip
-                port:
-                  number: 7000
     - host: websocket.syamsul.online
       http:
         paths:

@@ -15,9 +15,9 @@ type Persistence struct {
 	*postgres.Postgres
 }
 
-func New(cfg postgres.Config) *Persistence {
+func New(pg *postgres.Postgres) *Persistence {
 	return &Persistence{
-		Postgres: postgres.New(cfg),
+		Postgres: pg,
 	}
 }
 

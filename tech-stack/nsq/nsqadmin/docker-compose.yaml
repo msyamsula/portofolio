@@ -1,0 +1,18 @@
+services:
+  
+  nsqadmin-clusterip:
+    image: nsqio/nsq
+    command: /nsqadmin --lookupd-http-address=nsqlookupd-clusterip:4161
+    hostname: nsqadmin-clusterip
+    container_name: nsqadmin-clusterip
+    ports:
+      - "4171:4171"
+    networks:
+      - my-network
+    # depends_on:
+    #   - nsqlookupd-clusterip  
+
+networks:
+  my-network:
+    name: my-network
+    external: true

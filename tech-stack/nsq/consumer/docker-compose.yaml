@@ -1,0 +1,23 @@
+services:
+    
+  consumer-clusterip:
+    container_name: consumer-clusterip
+    hostname: consumer-clusterip
+    image: consumer
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+    working_dir: /app
+    volumes:
+      - .env:/app/.env
+      - ./main:/app/main
+    command: ["./main"]
+    # ports:
+    #   - "7000:7000" # can be closed for security
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true

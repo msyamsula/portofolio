@@ -1,0 +1,36 @@
+services:
+      
+  nsqd-one:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd-clusterip:4160
+    hostname: nsqd-one
+    container_name: nsqd-one
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+      # - "4150"
+      # - "4151"
+    networks:
+      - my-network
+    # deploy:
+    #   replicas: 2
+
+  nsqd-two:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd-clusterip:4160
+    hostname: nsqd-two
+    container_name: nsqd-two
+    ports:
+      - "41500:4150"
+      - "41511:4151"
+      # - "4150"
+      # - "4151"
+    networks:
+      - my-network
+    # deploy:
+    #   replicas: 2
+
+networks:
+  my-network:
+    name: my-network
+    external: true

@@ -1,0 +1,16 @@
+services:
+  nsqlookupd-clusterip:
+    image: nsqio/nsq
+    command: /nsqlookupd
+    hostname: nsqlookupd-clusterip
+    container_name: nsqlookupd-clusterip
+    ports:
+      - "4160:4160" #tcp
+      - "4161:4161" #http
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    name: my-network
+    external: true

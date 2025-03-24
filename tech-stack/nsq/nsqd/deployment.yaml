@@ -1,0 +1,208 @@
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: nsqd-one
+  labels:
+    app: nsqd-one
+    type: clusterip
+spec:
+  # type: ClusterIP
+  clusterIP: None
+  selector:
+    app: nsqd-one
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 4150 # service port
+      targetPort: 4150 # container port
+      name: nsqd-one-tcp
+    - protocol: TCP
+      port: 4151 # service port
+      targetPort: 4151 # container port
+      name: nsqd-one-http
+---
+# Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nsqd-one
+  labels:
+    app: nsqd-one
+    type: pod
+spec:
+  subdomain: nsqd-one
+  hostname: nsqd-one  # Set the hostname
+  containers:
+    - name: nsqd-one
+      image: nsqio/nsq
+      ports:
+        - containerPort: 4150
+        - containerPort: 4151
+      command:
+        - /nsqd
+        - --lookupd-tcp-address=nsqlookupd-clusterip:4160
+      # env:
+      #   - name: POSTGRES_USER
+      #     value: admin
+      #   - name: POSTGRES_PASSWORD
+      #     value: admin
+      # envFrom:
+      #   - secretRef:
+      #       name: nsqd-secret
+      #   - configMapRef:
+      #       name: postgres-configmap
+
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: nsqd-two
+  labels:
+    app: nsqd-two
+    type: clusterip
+spec:
+  # type: ClusterIP
+  clusterIP: None
+  selector:
+    app: nsqd-two
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 4150 # service port
+      targetPort: 4150 # container port
+      name: nsqd-two-tcp
+    - protocol: TCP
+      port: 4151 # service port
+      targetPort: 4151 # container port
+      name: nsqd-two-http
+---
+# Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nsqd-two
+  labels:
+    app: nsqd-two
+    type: pod
+spec:
+  subdomain: nsqd-two
+  hostname: nsqd-two  # Set the hostname
+  containers:
+    - name: nsqd-two
+      image: nsqio/nsq
+      ports:
+        - containerPort: 4150
+        - containerPort: 4151
+      command:
+        - /nsqd
+        - --lookupd-tcp-address=nsqlookupd-clusterip:4160
+
+# ---
+# #Deployment
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: nsqd-deployment
+#   labels:
+#     app: nsqd
+#     type: deployment
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: nsqd
+#       type: pod
+#   template:
+#     metadata:
+#       labels:
+#         app: nsqd
+#         type: pod
+#     spec:
+#       hostname: nsqd-clusterip
+#       subdomain: nsqd-clusterip
+#       containers:
+#       - name: nsqd
+#         image: nsqio/nsq
+#         ports:
+#         - containerPort: 4150
+#         - containerPort: 4151
+#         command:
+#         - /nsqd
+#         - --lookupd-tcp-address=nsqlookupd-clusterip:4160
+        
+
+
+#Secret
+# secret value is left empty, I add it manually to ensure security
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: nsqd-secret
+# stringData:
+#   POSTGRES_USERNAME:
+#   POSTGRES_PASSWORD:
+#   POSTGRES_DB:
+#   POSTGRES_HOST:
+#   POSTGRES_PORT:
+#   REDIS_PASSWORD:
+#   REDIS_HOST:
+#   REDIS_PORT:
+#   REDIS_TTL:
+#   HASHER_LENGTH:
+#   HASHER_CHARACTER_POOL:
+#   HASHER_HOST:
+#   PORT:
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: postgres-configmap
+# data:
+#   POSTGRES_USER: 
+#   POSTGRES_PASSWORD: 
+
+---
+# nodeport, can be closed for better security
+# leave it open for debug purpose
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nsqd-nodeport
+#   labels:
+#     app: nsqd
+#     type: nodeport
+# spec:
+#   type: NodePort
+#   selector:
+#     app: nsqd
+#     type: pod
+#   ports:
+#     - protocol: TCP
+#       port: 5000 #container port
+#       targetPort: 5000 #service port
+#       nodePort: 30002 #open port
+#       name: nsqd-nodeport
+
+
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: nsqd-secret
+# stringData:
+#   POSTGRES_USERNAME: admin
+#   POSTGRES_PASSWORD: admin
+#   POSTGRES_DB: postgres
+#   POSTGRES_HOST: postgres-clusterip
+#   POSTGRES_PORT: "5432"
+#   REDIS_PASSWORD: admin
+#   REDIS_HOST: redis-clusterip
+#   REDIS_PORT: "6379"
+#   REDIS_TTL: "300000" #in millisecond
+#   HASHER_LENGTH: "10"
+#   HASHER_CHARACTER_POOL: qQwWeErRtTyYuUiIoOpPaAsSdDfFgGhHjJkKlLzZxXcCvVbBnNmM123456
+#   HASHER_HOST: https://api.syamsul.online
+#   PORT: "5000"
+#   JAEGER_HOST: "jaeger-clusterip:4317"
