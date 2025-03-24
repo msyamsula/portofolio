@@ -52,7 +52,13 @@ async function main() {
       socket.on("chat", (msg) => {
         // socket.to(room).emit("chat", msg)
         let receiverEvent = msg.receiverId
+        let senderEvent = msg.senderId
         socket.broadcast.emit(receiverEvent, msg)
+        socket.emit(senderEvent, {
+          subevent: "delivered",
+          senderId: msg.senderId,
+          receiverId: msg.receiverId,
+        })
         w.publish(topicSendMessage, msg, err => {
           console.log(err);
         })
@@ -86,7 +92,7 @@ async function main() {
     setTimeout(main, 5000)
   })
 
-  
+
 }
 
 main()

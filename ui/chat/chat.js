@@ -57,37 +57,29 @@ function sendMessage() {
         let pairId = getPairId()
         let senderId = getUserId()
         let msg = {
+            sender_id: senderId,
+            receiver_id: pairId,
             senderId: senderId,
             receiverId: pairId,
             text: message,
         }
+
+        // emit to websocket
         socket.emit("chat", msg)
+
+
+        messageOnDisplay.push(msg)
         let chatBox = document.getElementById("chat-box");
         let newMessage = document.createElement("div");
         newMessage.className = "message user"; // Initially mark the message as sent
         newMessage.textContent = message;
 
-        // Add tick mark for the sent message
-        let tickSent = document.createElement("span");
-        tickSent.className = "status tick-sent";
-        tickSent.textContent = "✓";
-        newMessage.appendChild(tickSent);
 
         chatBox.appendChild(newMessage);
         messageInput.value = ""; // Clear the input field
         chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
 
         messageInput.focus()
-        // // Simulate message delivery and reading after a delay
-        // setTimeout(() => {
-        //     tickSent.className = "status tick-delivered";
-        //     tickSent.textContent = "✓✓"; // Change to delivered
-        // }, 2000);
-
-        // setTimeout(() => {
-        //     tickSent.className = "status tick-read";
-        //     tickSent.textContent = "✓✓"; // Change to read
-        // }, 4000);
     }
 }
 
@@ -111,26 +103,18 @@ function receiveMessage(msg) {
         newMessage.textContent = message;
 
         // Add tick mark for the sent message
-        let tickSent = document.createElement("span");
-        tickSent.className = "status tick-sent";
-        tickSent.textContent = "✓";
-        newMessage.appendChild(tickSent);
+        // let tickSent = document.createElement("span");
+        // tickSent.className = "status tick-sent";
+        // tickSent.textContent = "✓";
+        // newMessage.appendChild(tickSent);
 
+        msg.sender_id = msg.senderId
+        msg.receiver_id = msg.receiverId
+        messageOnDisplay.push(msg)
         chatBox.appendChild(newMessage);
         messageInput.value = ""; // Clear the input field
         chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
 
-        // messageInput.focus()
-        // // Simulate message delivery and reading after a delay
-        // setTimeout(() => {
-        //     tickSent.className = "status tick-delivered";
-        //     tickSent.textContent = "✓✓"; // Change to delivered
-        // }, 2000);
-
-        // setTimeout(() => {
-        //     tickSent.className = "status tick-read";
-        //     tickSent.textContent = "✓✓"; // Change to read
-        // }, 4000);
     }
 }
 
@@ -197,20 +181,15 @@ function refreshConversation() {
     for (m of messageOnDisplay) {
         let newMessage = document.createElement("div");
         if (m.sender_id == id) {
-            newMessage.className = "message user"; // Initially mark the message as sent
+            newMessage.className = "message user";
         } else {
-            newMessage.className = "message pair"; // Initially mark the message as sent
+            newMessage.className = "message pair";
         }
+
         newMessage.textContent = m.text;
-
-        // Add tick mark for the sent message
-        let tickSent = document.createElement("span");
-        tickSent.className = "status tick-sent";
-        tickSent.textContent = "✓";
-        newMessage.appendChild(tickSent);
-
         chatBox.appendChild(newMessage);
     }
+
 
     messageInput.value = ""; // Clear the input field
     chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
@@ -277,10 +256,55 @@ window.onload = async function () {
     })
 
     socket.on(id, (msg) => {
+        if (msg.subevent) {
+            // check subevent, only refresh if msg.senderId == userId and msg.receiverId == pairId
+            if (msg.senderId == getUserId() && msg.receiverId == getPairId()) {
+                updateDeliveredStatus(msg.subevent)
+            }
+            return
+        } 
+
+        // no sub event mean incoming message
         receiveMessage(msg)
     })
 
 };
+
+function updateDeliveredStatus(status){
+    let chatbox = document.getElementById("chat-box")
+
+    for (let i= messageOnDisplay.length-1;i>=0;i--) {
+        if (messageOnDisplay[i].status) {
+            break
+        }
+
+        messageOnDisplay[i].status = status
+        let newMessage = chatbox.children[i]
+        if (messageOnDisplay[i].sender_id != getUserId()) {
+            // do nothing for pair message
+        } else if (status == "delivered") {
+            if (messageOnDisplay[i].status == "read"){  
+                // do not update read to delivered
+            } else {
+                if (status == "delivered") {
+                    // Add tick mark for the sent message
+                    let tickSent = document.createElement("span");
+                    tickSent.className = "status tick-sent";
+                    tickSent.textContent = "✓";
+                    newMessage.appendChild(tickSent);
+                }
+            }
+        } else if (status == "read"){
+            // Add tick mark for the read message
+            let tickSent = document.createElement("span");
+            tickSent.className = "status tick-sent";
+            tickSent.textContent = "✓✓";
+            newMessage.appendChild(tickSent);
+        }
+
+    }
+
+}
 
 
 function showFriendModal() {

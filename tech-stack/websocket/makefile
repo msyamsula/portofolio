@@ -10,8 +10,8 @@ down:
 
 push:
 	make build
-	docker tag websocket-server syamsuldocker/websocket-server:0.0.3
-	docker push syamsuldocker/websocket-server:0.0.3
+	docker tag websocket-server syamsuldocker/websocket-server:0.0.4
+	docker push syamsuldocker/websocket-server:0.0.4
 
 deploy:
 	make push
