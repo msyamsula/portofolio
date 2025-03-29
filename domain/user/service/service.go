@@ -27,7 +27,7 @@ func New(dep Dependencies) *Service {
 }
 
 type PersistenceLayer interface {
-	InsertUser(c context.Context, username string) (repository.User, error)
+	InsertUser(c context.Context, user repository.User) (repository.User, error)
 	GetUser(c context.Context, username string) (repository.User, error)
 	AddFriend(c context.Context, userA, userB repository.User) error
 	GetFriends(c context.Context, user repository.User) ([]repository.User, error)
@@ -49,7 +49,7 @@ func (s *Service) SetUser(c context.Context, user repository.User) (repository.U
 		}
 	}()
 
-	user, err = s.Persistence.InsertUser(ctx, user.Username)
+	user, err = s.Persistence.InsertUser(ctx, user)
 	if err != nil {
 		return user, err
 	}

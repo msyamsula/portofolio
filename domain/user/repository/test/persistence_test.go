@@ -28,8 +28,8 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 
 	type (
 		args struct {
-			c        context.Context
-			username string
+			c    context.Context
+			user repository.User
 		}
 		want struct {
 			err  error
@@ -47,8 +47,12 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 		{
 			name: "success",
 			args: args{
-				c:        context.Background(),
-				username: "admin",
+				c: context.Background(),
+				user: repository.User{
+					Username: "admin",
+					Id:       0,
+					Online:   false,
+				},
 			},
 			want: want{
 				err: nil,
@@ -62,9 +66,9 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 				rows.AddRow(1)
 
 				mock.ExpectBegin()
-				mock.ExpectPrepare("INSERT INTO users (username) VALUES (?) RETURNING id").
+				mock.ExpectPrepare(utils.CreatePrepareQuery(repository.QueryInsertUser)).
 					ExpectQuery().
-					WithArgs("admin").
+					WithArgs("admin", false).
 					WillReturnRows(rows)
 				mock.ExpectCommit()
 			},
@@ -72,17 +76,21 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 		{
 			name: "error in prepare context",
 			args: args{
-				c:        context.Background(),
-				username: "admin",
+				c: context.Background(),
+				user: repository.User{
+					Username: "admin",
+					Id:       0,
+					Online:   false,
+				},
 			},
 			want: want{
 				err: s.mockErr,
 			},
 			mockFunc: func() {
 				mock.ExpectBegin().WillReturnError(nil)
-				mock.ExpectPrepare("INSERT INTO users (username) VALUES (?) RETURNING id").
+				mock.ExpectPrepare(utils.CreatePrepareQuery(repository.QueryInsertUser)).
 					ExpectQuery().
-					WithArgs("admin").
+					WithArgs("admin", false).
 					WillReturnError(s.mockErr)
 				mock.ExpectRollback()
 			},
@@ -90,8 +98,12 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 		{
 			name: "error in commit",
 			args: args{
-				c:        context.Background(),
-				username: "admin",
+				c: context.Background(),
+				user: repository.User{
+					Username: "admin",
+					Id:       0,
+					Online:   false,
+				},
 			},
 			want: want{
 				err: s.mockErr,
@@ -105,9 +117,9 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 				rows.AddRow(1)
 
 				mock.ExpectBegin()
-				mock.ExpectPrepare("INSERT INTO users (username) VALUES (?) RETURNING id").
+				mock.ExpectPrepare(utils.CreatePrepareQuery(repository.QueryInsertUser)).
 					ExpectQuery().
-					WithArgs("admin").
+					WithArgs("admin", false).
 					WillReturnRows(rows)
 				mock.ExpectCommit().WillReturnError(s.mockErr)
 				mock.ExpectRollback()
@@ -118,7 +130,7 @@ func (s *RepositoryTestSuite) TestInsertUser() {
 	for _, tt := range testCases {
 		s.Run(tt.name, func() {
 			tt.mockFunc()
-			user, err := persistence.InsertUser(tt.args.c, tt.args.username)
+			user, err := persistence.InsertUser(tt.args.c, tt.args.user)
 			s.Equal(tt.want.err, err)
 			s.Equal(tt.want.user, user)
 

@@ -161,7 +161,10 @@ func (s *ServiceTestSuite) TestSetUser() {
 			},
 			mockFunc: func() {
 				s.mockPersistence.EXPECT().
-					InsertUser(gomock.Any(), "admin").
+					InsertUser(gomock.Any(), repository.User{
+						Username: "admin",
+						Online:   false,
+					}).
 					Return(repository.User{
 						Username: "admin",
 						Id:       10,
@@ -174,22 +177,25 @@ func (s *ServiceTestSuite) TestSetUser() {
 				c: context.Background(),
 				user: repository.User{
 					Username: "admin",
-					Id:       10,
 				},
 			},
 			want: want{
 				user: repository.User{
 					Username: "admin",
 					Id:       10,
+					Online:   true,
 				},
 				err: nil,
 			},
 			mockFunc: func() {
 				s.mockPersistence.EXPECT().
-					InsertUser(gomock.Any(), "admin").
+					InsertUser(gomock.Any(), repository.User{
+						Username: "admin",
+					}).
 					Return(repository.User{
 						Username: "admin",
 						Id:       10,
+						Online:   true,
 					}, nil)
 
 				s.mockCache.EXPECT().SetUser(gomock.Any(), gomock.Any())

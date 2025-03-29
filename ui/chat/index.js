@@ -1,11 +1,6 @@
 async function login(username) {
-    let user = await getUser(username)
-    if (user) {
-        return user
-    }
-
-    user = await registerUser(username)
-    if (user) {
+    user = await registerUser(username, true)
+    if (!user.error) {
         return user
     }
 
@@ -18,10 +13,13 @@ document.getElementById("login-form").addEventListener("submit", async function 
     const username = document.getElementById("username").value;
 
     user = await login(username)
-    console.log(user);
     if (user) {
         localStorage.setItem("username", user.username);
         localStorage.setItem("id", user.id);
+        let msg = {
+            userId: getUserId()
+        }
+        socket.emit("userLogin", msg)
         window.location.href = "chat.html"; // Redirect to chat page
         return
     }

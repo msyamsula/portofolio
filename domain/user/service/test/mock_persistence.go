@@ -80,7 +80,7 @@ func (mr *MockPersistenceLayerMockRecorder) GetUser(arg0, arg1 interface{}) *gom
 }
 
 // InsertUser mocks base method.
-func (m *MockPersistenceLayer) InsertUser(arg0 context.Context, arg1 string) (repository.User, error) {
+func (m *MockPersistenceLayer) InsertUser(arg0 context.Context, arg1 repository.User) (repository.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertUser", arg0, arg1)
 	ret0, _ := ret[0].(repository.User)

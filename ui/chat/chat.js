@@ -18,7 +18,12 @@ let id = 0
 
 let messageOnDisplay = []
 
-function exitChat() {
+async function exitChat() {
+    await registerUser(getUsername(), false)
+    let msg = {
+        userId: getUserId(),
+    }
+    socket.emit("userLogout", msg)
     localStorage.clear()
     window.location.href = "index.html"; // Redirect to chat page
 }
@@ -48,7 +53,7 @@ messageInput.addEventListener("keypress", function (event) {
 });
 
 // Function to send message
-let socket = io(websocketHost);
+
 function sendMessage() {
     let messageInput = document.getElementById("message-input");
     let message = messageInput.value;
@@ -81,14 +86,6 @@ function sendMessage() {
 
         messageInput.focus()
     }
-}
-
-function getPairId() {
-    return parseInt(localStorage.getItem("pairId"))
-}
-
-function getUserId() {
-    return parseInt(localStorage.getItem("id"))
 }
 
 // Function to send message
@@ -237,6 +234,11 @@ function refreshFriendList() {
     for (let friend of friendsOnDisplay) {
         let f = document.createElement("li")
         f.id = `${friend.id}`
+        if (friend.online) {
+            f.className = "online"
+        } else {
+            f.className = "offline"
+        }
         f.innerHTML = friend.username
         f.addEventListener("click", () => {
             switchUser({
@@ -302,7 +304,31 @@ window.onload = async function () {
         receiveMessage(msg)
     })
 
+    socket.on("userLogin", msg => {
+        updateFriendOnlineStatus(true, msg.userId)
+    })
+
+    socket.on("userLogout", msg => {
+        updateFriendOnlineStatus(false, msg.userId)
+    })
+
 };
+
+function updateFriendOnlineStatus(status, userId) {
+    for (f of friends) {
+        if (f.id == userId) {
+            f.online = status
+        }
+    }
+
+    for (f of friendsOnDisplay) {
+        if (f.id == userId) {
+            f.online = status
+        }
+    }
+
+    refreshFriendList()
+}
 
 function updateDelivered() {
     let chatbox = document.getElementById("chat-box")
@@ -317,8 +343,8 @@ function updateDelivered() {
         if (messageOnDisplay[i].sender_id != getUserId()) {
             // do nothing for pair message
             continue
-        } 
-        
+        }
+
         let tickSent = document.createElement("span");
         tickSent.className = "status tick-sent";
         tickSent.textContent = "✓";
@@ -341,7 +367,7 @@ function updateRead() {
         if (messageOnDisplay[i].sender_id != getUserId()) {
             // do nothing for pair message
             continue
-        } 
+        }
 
         newMessage.querySelector("span").textContent = "✓✓"
 
@@ -365,10 +391,10 @@ document.getElementById("friendModal").addEventListener("keypress", async functi
 
 // Example functions (addFriend, searchFriends, switchUser)
 function addFriend(friend) {
-
     friends.push({
         id: friend.id,
         username: friend.username,
+        online: friend.online
     })
     friendsOnDisplay = friends
     refreshFriendList()

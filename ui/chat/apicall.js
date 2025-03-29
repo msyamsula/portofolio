@@ -1,8 +1,7 @@
 // const apiHost = "http://0.0.0.0:12000"
-// const websocketHost = "ws://0.0.0.0:8080"
 
 const apiHost = "https://api.syamsul.online"
-const websocketHost = "wss://websocket.syamsul.online"
+
 
 async function getFriends(id) {
     let response = await fetch(`${apiHost}/user/friend?id=${id}`, {
@@ -60,7 +59,7 @@ async function getUser(username) {
 
 }
 
-async function registerUser(username) {
+async function registerUser(username, online) {
     try {
         let response = await fetch(`${apiHost}/user`, {
             method: 'POST',
@@ -69,6 +68,7 @@ async function registerUser(username) {
             },
             body: JSON.stringify({
                 username: username,
+                online: online,
             })
         })
 

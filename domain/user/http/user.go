@@ -81,12 +81,14 @@ func (h *Handler) setUser(w http.ResponseWriter, req *http.Request) {
 
 	type body struct {
 		Username string `json:"username"`
+		Online   bool   `json:"online"`
 	}
 	reqBody := body{}
 	bBody, _ := io.ReadAll(req.Body)
 	json.Unmarshal(bBody, &reqBody)
 
 	response.Data.Username = reqBody.Username
+	response.Data.Online = reqBody.Online
 	response.Data, err = h.service.SetUser(ctx, response.Data)
 	if err != nil {
 		statusCode = http.StatusInternalServerError

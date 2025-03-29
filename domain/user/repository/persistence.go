@@ -19,7 +19,7 @@ type User struct {
 	Online   bool   `json:"online"`
 }
 
-func (s *Persistence) InsertUser(c context.Context, username string) (User, error) {
+func (s *Persistence) InsertUser(c context.Context, user User) (User, error) {
 	ctx, span := otel.Tracer("").Start(c, "repository.persistence.InsertUser")
 	defer span.End()
 
@@ -32,7 +32,6 @@ func (s *Persistence) InsertUser(c context.Context, username string) (User, erro
 		}
 	}()
 
-	var user User
 	var stmt *sqlx.NamedStmt
 	stmt, err = tx.PrepareNamedContext(ctx, QueryInsertUser)
 	if err != nil {
@@ -41,13 +40,13 @@ func (s *Persistence) InsertUser(c context.Context, username string) (User, erro
 
 	var rows *sql.Rows
 	rows, err = stmt.QueryContext(ctx, map[string]interface{}{
-		"username": username,
+		"username": user.Username,
+		"online":   user.Online,
 	})
 	if err != nil {
 		return User{}, err
 	}
 
-	user.Username = username
 	for rows.Next() {
 		err = rows.Scan(&user.Id)
 		if err != nil {
@@ -183,7 +182,7 @@ func (s *Persistence) GetFriends(c context.Context, user User) ([]User, error) {
 	users := []User{}
 	for rows.Next() {
 		tmp := User{}
-		err = rows.Scan(&tmp.Id, &tmp.Username)
+		err = rows.Scan(&tmp.Id, &tmp.Username, &tmp.Online)
 		if err != nil {
 			continue
 		}
