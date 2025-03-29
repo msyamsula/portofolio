@@ -280,6 +280,7 @@ func (s *ServiceTestSuite) TestGetConversation() {
 						ReceiverId: 11,
 						Text:       "one",
 						CreateTime: timeA,
+						IsRead:     true,
 					},
 					{
 						Id:         2,
@@ -287,6 +288,7 @@ func (s *ServiceTestSuite) TestGetConversation() {
 						ReceiverId: 11,
 						Text:       "two",
 						CreateTime: timeB,
+						IsRead:     false,
 					},
 					{
 						Id:         3,
@@ -294,6 +296,7 @@ func (s *ServiceTestSuite) TestGetConversation() {
 						ReceiverId: 12,
 						Text:       "three",
 						CreateTime: timeC,
+						IsRead:     false,
 					},
 				},
 				err: nil,
@@ -308,6 +311,7 @@ func (s *ServiceTestSuite) TestGetConversation() {
 							ReceiverId: 12,
 							Text:       "three",
 							CreateTime: timeC,
+							IsRead:     false,
 						},
 					}, nil)
 
@@ -320,6 +324,7 @@ func (s *ServiceTestSuite) TestGetConversation() {
 							ReceiverId: 11,
 							Text:       "two",
 							CreateTime: timeB,
+							IsRead:     false,
 						},
 						{
 							Id:         1,
@@ -327,6 +332,7 @@ func (s *ServiceTestSuite) TestGetConversation() {
 							ReceiverId: 11,
 							Text:       "one",
 							CreateTime: timeA,
+							IsRead:     true,
 						},
 					}, nil)
 			},

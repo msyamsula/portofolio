@@ -21,6 +21,8 @@ func getTopicAndChannel(name string) (string, string) {
 	switch name {
 	case ConfigSaveMessage:
 		return TopicSaveMessage, ChannelSaveMessage
+	case ConfigReadMessage:
+		return TopicReadMessage, ChannelReadMessage
 	}
 
 	return "", ""

@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -238,10 +239,10 @@ func (s *RepositoryTestSuite) TestGetConversation() {
 				err:  s.mockErr,
 			},
 			mockFunc: func() {
-				rows := sqlmock.NewRows([]string{"id", "sender_id", "receiver_id", "text", "create_time"})
-				rows.AddRow(3, 1, 2, "three", time.Now().Add(3*time.Hour))
-				rows.AddRow(1, 1, 2, "one", time.Now().Add(1*time.Hour))
-				rows.AddRow(2, 1, 2, "two", time.Now().Add(2*time.Hour))
+				rows := sqlmock.NewRows([]string{"id", "sender_id", "receiver_id", "text", "create_time", "is_read"})
+				rows.AddRow(3, 1, 2, "three", time.Now().Add(3*time.Hour), false)
+				rows.AddRow(1, 1, 2, "one", time.Now().Add(1*time.Hour), false)
+				rows.AddRow(2, 1, 2, "two", time.Now().Add(2*time.Hour), false)
 
 				s.mock.ExpectBegin().WillReturnError(nil)
 				s.mock.
@@ -270,6 +271,7 @@ func (s *RepositoryTestSuite) TestGetConversation() {
 						ReceiverId: 2,
 						Text:       "three",
 						CreateTime: timeC,
+						IsRead:     false,
 					},
 					{
 						Id:         1,
@@ -277,6 +279,7 @@ func (s *RepositoryTestSuite) TestGetConversation() {
 						ReceiverId: 2,
 						Text:       "one",
 						CreateTime: timeA,
+						IsRead:     false,
 					},
 					{
 						Id:         2,
@@ -284,15 +287,16 @@ func (s *RepositoryTestSuite) TestGetConversation() {
 						ReceiverId: 2,
 						Text:       "two",
 						CreateTime: timeB,
+						IsRead:     true,
 					},
 				},
 				err: nil,
 			},
 			mockFunc: func() {
-				rows := sqlmock.NewRows([]string{"id", "sender_id", "receiver_id", "text", "create_time"})
-				rows.AddRow(3, 1, 2, "three", timeC)
-				rows.AddRow(1, 1, 2, "one", timeA)
-				rows.AddRow(2, 1, 2, "two", timeB)
+				rows := sqlmock.NewRows([]string{"id", "sender_id", "receiver_id", "text", "create_time", "is_read"})
+				rows.AddRow(3, 1, 2, "three", timeC, false)
+				rows.AddRow(1, 1, 2, "one", timeA, false)
+				rows.AddRow(2, 1, 2, "two", timeB, true)
 
 				s.mock.ExpectBegin().WillReturnError(nil)
 				s.mock.
@@ -314,6 +318,138 @@ func (s *RepositoryTestSuite) TestGetConversation() {
 			msgs, err := persistence.GetConversation(tt.args.c, tt.args.senderId, tt.args.receiverId)
 			s.Equal(tt.want.err, err)
 			s.Equal(tt.want.msgs, msgs)
+		})
+	}
+}
+
+func (s *RepositoryTestSuite) TestReadMessage() {
+
+	type (
+		args struct {
+			c                    context.Context
+			senderId, receiverId int64
+		}
+		want struct {
+			err error
+		}
+		testCase struct {
+			name     string
+			args     args
+			want     want
+			mockFunc func()
+		}
+	)
+
+	persistence := &repository.Persistence{
+		Postgres: &postgres.Postgres{
+			DB: s.sqlxDb,
+		},
+	}
+
+	timeA := time.Now()
+	timeB := timeA.Add(1 * time.Hour)
+	timeC := timeB.Add(1 * time.Hour)
+	fmt.Println(timeC)
+	testCases := []testCase{
+		{
+			name: "prepare error",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+			},
+			want: want{
+				err: s.mockErr,
+			},
+			mockFunc: func() {
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryReadMessage),
+					).
+					WillReturnError(s.mockErr)
+
+			},
+		},
+		{
+			name: "query error",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+			},
+			want: want{
+				err: s.mockErr,
+			},
+			mockFunc: func() {
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryReadMessage),
+					).
+					ExpectQuery().
+					WithArgs(int64(1), int64(2)).
+					WillReturnError(s.mockErr)
+
+			},
+		},
+		{
+			name: "commit error",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+			},
+			want: want{
+				err: s.mockErr,
+			},
+			mockFunc: func() {
+				rows := sqlmock.NewRows([]string{"id", "sender_id", "receiver_id", "text", "create_time", "is_read"})
+
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryReadMessage),
+					).
+					ExpectQuery().
+					WithArgs(int64(1), int64(2)).
+					WillReturnRows(rows)
+				s.mock.ExpectCommit().WillReturnError(s.mockErr)
+
+			},
+		},
+		{
+			name: "success",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+			},
+			want: want{
+				err: nil,
+			},
+			mockFunc: func() {
+				rows := sqlmock.NewRows([]string{"id", "sender_id", "receiver_id", "text", "create_time", "is_read"})
+
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryReadMessage),
+					).
+					ExpectQuery().
+					WithArgs(int64(1), int64(2)).
+					WillReturnRows(rows)
+				s.mock.ExpectCommit().WillReturnError(nil)
+
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		s.Run(tt.name, func() {
+			tt.mockFunc()
+			err := persistence.ReadMessage(tt.args.c, tt.args.senderId, tt.args.receiverId)
+			s.Equal(tt.want.err, err)
 		})
 	}
 }

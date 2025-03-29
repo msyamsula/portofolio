@@ -9,3 +9,5 @@ CREATE TABLE messages (
 create index sender_id on messages(sender_id);
 create index receiver_id on messages(receiver_id);
 create index create_time on messages(create_time);
+
+alter table messages add column is_read boolean not null default false;

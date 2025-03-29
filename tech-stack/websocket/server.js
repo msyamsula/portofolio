@@ -16,6 +16,7 @@ import { getNsqd } from "./util.js"
 // const nsqd = "0.0.0.0"
 // const w = new Writer('127.0.0.1', 4150)
 const topicSendMessage = "send_message"
+const topicReadMessage = "read_message"
 let nsqdAddress = ""
 async function main() {
   let data = await getNsqd()
@@ -62,6 +63,15 @@ async function main() {
         w.publish(topicSendMessage, msg, err => {
           console.log(err);
         })
+      })
+
+      socket.on("read", (msg) => {
+        console.log(msg);
+        w.publish(topicReadMessage, msg, err => {
+          console.log(err);
+        })
+
+        socket.broadcast.emit(msg.senderId, {subevent: "read", senderId: msg.senderId, receiverId: msg.receiverId})
       })
 
 

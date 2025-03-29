@@ -22,11 +22,12 @@ func New(pg *postgres.Postgres) *Persistence {
 }
 
 type Message struct {
-	Id         int64  `json:"id,omitempty"`
-	SenderId   int64  `json:"sender_id,omitempty"`
-	ReceiverId int64  `json:"receiver_id,omitempty"`
-	Text       string `json:"text,omitempty"`
+	Id         int64  `json:"id"`
+	SenderId   int64  `json:"sender_id"`
+	ReceiverId int64  `json:"receiver_id"`
+	Text       string `json:"text"`
 	CreateTime time.Time
+	IsRead     bool `json:"is_read"`
 }
 
 func (s *Persistence) AddMessage(c context.Context, msg Message) (Message, error) {
@@ -104,7 +105,7 @@ func (s *Persistence) GetConversation(c context.Context, senderId, receiverId in
 	messages := []Message{}
 	for rows.Next() {
 		m := Message{}
-		scanErr := rows.Scan(&m.Id, &m.SenderId, &m.ReceiverId, &m.Text, &m.CreateTime)
+		scanErr := rows.Scan(&m.Id, &m.SenderId, &m.ReceiverId, &m.Text, &m.CreateTime, &m.IsRead)
 		if scanErr != nil {
 			fmt.Println(scanErr.Error())
 			continue
@@ -118,4 +119,40 @@ func (s *Persistence) GetConversation(c context.Context, senderId, receiverId in
 	}
 
 	return messages, nil
+}
+
+func (s *Persistence) ReadMessage(c context.Context, senderId, receiverId int64) error {
+	ctx, span := otel.Tracer("").Start(c, "repository.persistence.ReadMessage")
+	defer span.End()
+
+	tx := s.MustBeginTx(ctx, nil)
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			tx.Rollback()
+		}
+	}()
+
+	var stmt *sqlx.NamedStmt
+	stmt, err = tx.PrepareNamedContext(ctx, QueryReadMessage)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(stmt)
+
+	_, err = stmt.QueryContext(ctx, map[string]interface{}{
+		"sender_id":   senderId,
+		"receiver_id": receiverId,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }

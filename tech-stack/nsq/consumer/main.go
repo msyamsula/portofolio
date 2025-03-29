@@ -51,6 +51,17 @@ func main() {
 			log.Fatal(err)
 		}
 		consumers = append(consumers, consumerSaveMessage)
+
+		readMessageHandler := &messageconsumer.ReadMessageHandler{
+			Repository: repository.New(pg),
+		}
+		consumerReadMessage, err := messageconsumer.New(messageconsumer.Config{
+			Name:      messageconsumer.ConfigReadMessage,
+			Lookupds:  lookupds,
+			NsqConfig: nsq.NewConfig(),
+		}, readMessageHandler)
+
+		consumers = append(consumers, consumerReadMessage)
 	}
 
 	// consumer start

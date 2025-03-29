@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
       - name: consumer
-        image: syamsuldocker/consumer:0.0.4
+        image: syamsuldocker/consumer:0.0.5
         envFrom:
           - secretRef:
               name: consumer-secret
