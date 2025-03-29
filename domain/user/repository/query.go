@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	QueryInsertUser = "INSERT INTO users (username) VALUES (:username) RETURNING id"
-	QueryGetUser    = "SELECT id, username FROM users WHERE username = :username"
+	QueryGetUser    = "SELECT id, username, online FROM users WHERE username = :username"
 
 	QueryAddFriend  = "INSERT INTO friendship (small_id, big_id) VALUES (:small_id, :big_id) RETURNING id"
 	QueryGetFriends = `SELECT * FROM

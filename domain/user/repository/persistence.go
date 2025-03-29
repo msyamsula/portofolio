@@ -14,8 +14,9 @@ type Persistence struct {
 }
 
 type User struct {
-	Username string `json:"username,omitempty"`
-	Id       int64  `json:"id,omitempty"`
+	Username string `json:"username"`
+	Id       int64  `json:"id"`
+	Online   bool   `json:"online"`
 }
 
 func (s *Persistence) InsertUser(c context.Context, username string) (User, error) {
@@ -87,7 +88,7 @@ func (s *Persistence) GetUser(c context.Context, username string) (User, error) 
 	})
 
 	var user User
-	err = row.Scan(&user.Id, &user.Username)
+	err = row.Scan(&user.Id, &user.Username, &user.Online)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = ErrUserNotFound

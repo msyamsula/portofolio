@@ -168,15 +168,16 @@ func (s *RepositoryTestSuite) TestGetUser() {
 				user: repository.User{
 					Username: "admin",
 					Id:       10,
+					Online:   true,
 				},
 				err: nil,
 			},
 			mockFunc: func() {
-				rows := sqlmock.NewRows([]string{"id", "username"})
-				rows.AddRow(10, "admin")
+				rows := sqlmock.NewRows([]string{"id", "username", "online"})
+				rows.AddRow(10, "admin", true)
 
 				mock.ExpectBegin()
-				mock.ExpectPrepare("SELECT id, username FROM users WHERE username = ?").
+				mock.ExpectPrepare(utils.CreatePrepareQuery(repository.QueryGetUser)).
 					ExpectQuery().
 					WithArgs("admin").
 					WillReturnRows(rows)
@@ -194,10 +195,10 @@ func (s *RepositoryTestSuite) TestGetUser() {
 				err:  repository.ErrUserNotFound,
 			},
 			mockFunc: func() {
-				rows := sqlmock.NewRows([]string{"id", "username"})
+				rows := sqlmock.NewRows([]string{"id", "username", "online"})
 
 				mock.ExpectBegin()
-				mock.ExpectPrepare("SELECT id, username FROM users WHERE username = ?").
+				mock.ExpectPrepare(utils.CreatePrepareQuery(repository.QueryGetUser)).
 					ExpectQuery().
 					WithArgs("admin").
 					WillReturnRows(rows)
@@ -215,11 +216,11 @@ func (s *RepositoryTestSuite) TestGetUser() {
 				err:  s.mockErr,
 			},
 			mockFunc: func() {
-				rows := sqlmock.NewRows([]string{"id", "username"})
-				rows.AddRow(1, "admin")
+				rows := sqlmock.NewRows([]string{"id", "username", "online"})
+				rows.AddRow(1, "admin", false)
 
 				mock.ExpectBegin()
-				mock.ExpectPrepare("SELECT id, username FROM users WHERE username = ?").
+				mock.ExpectPrepare(utils.CreatePrepareQuery(repository.QueryGetUser)).
 					ExpectQuery().
 					WithArgs("admin").
 					WillReturnRows(rows)

@@ -44,6 +44,7 @@ func (s *RepositoryTestSuite) TestCacheSetUser() {
 				user: repository.User{
 					Username: "admin",
 					Id:       10,
+					Online:   true,
 				},
 			},
 			want: want{},
@@ -51,6 +52,7 @@ func (s *RepositoryTestSuite) TestCacheSetUser() {
 				value := map[string]interface{}{
 					"id":       "10",
 					"username": "admin",
+					"online":   true,
 				}
 				mock.ExpectHSet("admin", value).SetVal(int64(1))
 				mock.ExpectExpire("admin", ttl).SetVal(true)
@@ -72,6 +74,7 @@ func (s *RepositoryTestSuite) TestCacheSetUser() {
 				value := map[string]interface{}{
 					"id":       "10",
 					"username": "admin",
+					"online":   false,
 				}
 				mock.ExpectHSet("admin", value).SetErr(s.mockErr)
 				mock.ExpectHSet("admin", value).SetVal(int64(1))
@@ -126,12 +129,14 @@ func (s *RepositoryTestSuite) TestCacheGetUser() {
 				user: repository.User{
 					Username: "admin",
 					Id:       10,
+					Online:   true,
 				},
 			},
 			mockFunc: func() {
 				value := map[string]string{
 					"id":       "10",
 					"username": "admin",
+					"online":   "true",
 				}
 				mock.ExpectHGetAll("admin").SetVal(value)
 			},

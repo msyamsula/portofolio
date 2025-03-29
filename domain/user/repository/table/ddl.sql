@@ -16,3 +16,5 @@ create table friendship (
 create index users_to_users on friendship(small_id, big_id);
 create index small on friendship(small_id);
 create index big on friendship(big_id);
+
+alter table users add column online bool default false not null;

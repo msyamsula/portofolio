@@ -27,6 +27,7 @@ func (s *Cache) SetUser(c context.Context, user User) error {
 	value := map[string]interface{}{
 		"id":       fmt.Sprintf("%d", user.Id),
 		"username": user.Username,
+		"online":   user.Online,
 	}
 	cmd := s.HSet(ctx, user.Username, value)
 	_, err = cmd.Result()
@@ -57,13 +58,22 @@ func (s *Cache) GetUser(c context.Context, username string) (User, error) {
 		return User{}, err
 	}
 
-	id, err := strconv.ParseInt(result["id"], 10, 64)
+	var id int64
+	id, err = strconv.ParseInt(result["id"], 10, 64)
 	if err != nil {
 		return User{}, err
 	}
+
+	var isOnline bool
+	isOnline, err = strconv.ParseBool(result["online"])
+	if err != nil {
+		return User{}, err
+	}
+
 	user := User{
 		Username: result["username"],
 		Id:       id,
+		Online:   isOnline,
 	}
 	return user, nil
 }
