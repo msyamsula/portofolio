@@ -44,7 +44,11 @@ var (
 
 func TestIntegration(t *testing.T) {
 	username := utils.RandomName(20) // make sure you enter new cacheUser
-	user, err := persistence.InsertUser(c, username)
+	user := repository.User{
+		Username: username,
+	}
+	var err error
+	user, err = persistence.InsertUser(c, user)
 	assert.Nil(t, err)
 	u, err := persistence.GetUser(c, username)
 	assert.Nil(t, err)
@@ -63,8 +67,8 @@ func TestIntegration(t *testing.T) {
 
 func TestIntegrationAddFriend(t *testing.T) {
 
-	existA := 17
-	existB := 16
+	existA := 10
+	existB := 4
 	type testCase struct {
 		IdA, idB int64
 		isErr    bool
@@ -112,7 +116,7 @@ func TestIntegrationAddFriend(t *testing.T) {
 func TestIntegrationGetFriends(t *testing.T) {
 
 	user := repository.User{
-		Id: 21,
+		Id: 1,
 	}
 
 	c := context.Background()
@@ -120,6 +124,6 @@ func TestIntegrationGetFriends(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotZero(t, users)
 	for _, u := range users {
-		fmt.Println(u.Username)
+		fmt.Println(u)
 	}
 }

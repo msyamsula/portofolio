@@ -23,6 +23,8 @@ func getTopicAndChannel(name string) (string, string) {
 		return TopicSaveMessage, ChannelSaveMessage
 	case ConfigReadMessage:
 		return TopicReadMessage, ChannelReadMessage
+	case ConfigUpdateUnread:
+		return TopicUpdateUnread, ChannelUpdateUnread
 	}
 
 	return "", ""

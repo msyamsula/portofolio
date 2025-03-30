@@ -453,3 +453,141 @@ func (s *RepositoryTestSuite) TestReadMessage() {
 		})
 	}
 }
+
+func (s *RepositoryTestSuite) TestUpdateUnread() {
+
+	type (
+		args struct {
+			c                            context.Context
+			senderId, receiverId, unread int64
+		}
+		want struct {
+			err error
+		}
+		testCase struct {
+			name     string
+			args     args
+			want     want
+			mockFunc func()
+		}
+	)
+
+	persistence := &repository.Persistence{
+		Postgres: &postgres.Postgres{
+			DB: s.sqlxDb,
+		},
+	}
+
+	timeA := time.Now()
+	timeB := timeA.Add(1 * time.Hour)
+	timeC := timeB.Add(1 * time.Hour)
+	fmt.Println(timeC)
+	testCases := []testCase{
+		{
+			name: "prepare error",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+				unread:     10,
+			},
+			want: want{
+				err: s.mockErr,
+			},
+			mockFunc: func() {
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryUpdateUnread),
+					).
+					WillReturnError(s.mockErr)
+
+			},
+		},
+		{
+			name: "query error",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+				unread:     10,
+			},
+			want: want{
+				err: s.mockErr,
+			},
+			mockFunc: func() {
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryUpdateUnread),
+					).
+					ExpectQuery().
+					WithArgs(int64(1), int64(2), int64(10)).
+					WillReturnError(s.mockErr)
+
+			},
+		},
+		{
+			name: "commit error",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+				unread:     10,
+			},
+			want: want{
+				err: s.mockErr,
+			},
+			mockFunc: func() {
+				rows := sqlmock.NewRows([]string{"id"})
+				rows.AddRow(1)
+
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryUpdateUnread),
+					).
+					ExpectQuery().
+					WithArgs(int64(1), int64(2), int64(10)).
+					WillReturnRows(rows)
+				s.mock.ExpectCommit().WillReturnError(s.mockErr)
+
+			},
+		},
+		{
+			name: "success",
+			args: args{
+				c:          context.Background(),
+				senderId:   1,
+				receiverId: 2,
+				unread:     10,
+			},
+			want: want{
+				err: nil,
+			},
+			mockFunc: func() {
+				rows := sqlmock.NewRows([]string{"id"})
+				rows.AddRow(1)
+
+				s.mock.ExpectBegin().WillReturnError(nil)
+				s.mock.
+					ExpectPrepare(
+						utils.CreatePrepareQuery(repository.QueryUpdateUnread),
+					).
+					ExpectQuery().
+					WithArgs(int64(1), int64(2), int64(10)).
+					WillReturnRows(rows)
+				s.mock.ExpectCommit().WillReturnError(nil)
+
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		s.Run(tt.name, func() {
+			tt.mockFunc()
+			err := persistence.UpdateUnread(tt.args.c, tt.args.senderId, tt.args.receiverId, tt.args.unread)
+			s.Equal(tt.want.err, err)
+		})
+	}
+}

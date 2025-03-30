@@ -11,8 +11,8 @@ down:
 
 push:
 	make build
-	docker tag consumer syamsuldocker/consumer:0.0.5
-	docker push syamsuldocker/consumer:0.0.5
+	docker tag consumer syamsuldocker/consumer:0.0.6
+	docker push syamsuldocker/consumer:0.0.6
 
 deploy:
 	make push

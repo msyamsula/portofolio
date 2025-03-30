@@ -226,6 +226,14 @@ async function switchUser(user) {
     }
 
     refreshConversation()
+
+    // send update unread
+    let msg = {
+        senderId: getPairId(),
+        receiverId: getUserId(),
+        unread: 0,
+    }
+    updateFriendUnread(msg, msg.unread)
 }
 
 function refreshFriendList() {
@@ -240,10 +248,15 @@ function refreshFriendList() {
             f.className = "offline"
         }
         f.innerHTML = friend.username
+        if (friend.unread) {
+            let unreadCount = `<span class="badge">${friend.unread}</span>`
+            f.innerHTML += unreadCount
+        }
         f.addEventListener("click", () => {
+            f.innerHTML = friend.username
             switchUser({
                 id: f.id,
-                username: f.innerHTML,
+                username: friend.username,
             })
         })
         friendTab.appendChild(f)
@@ -300,6 +313,15 @@ window.onload = async function () {
                 receiverId: msg.receiverId,
             }
             socket.emit("read", read)
+        } else {
+            let unread
+            for (f of friends) {
+                if (f.id == msg.senderId) {
+                    unread = f.unread
+                }
+            }
+            unread++
+            updateFriendUnread(msg, unread)
         }
         receiveMessage(msg)
     })
@@ -313,6 +335,29 @@ window.onload = async function () {
     })
 
 };
+
+function updateFriendUnread(msg, unread) {
+    for (f of friends) {
+        if (f.id == msg.senderId) {
+            f.unread = unread
+            unreadPlus = f.unread
+        }
+    }
+
+    for (f of friendsOnDisplay) {
+        if (f.id == msg.senderId) {
+            f.unread = unread
+        }
+    }
+
+    refreshFriendList()
+    let unreadMsg = {
+        senderId: msg.senderId,
+        receiverId: getUserId(),
+        unread: unread,
+    }
+    socket.emit("updateUnread", unreadMsg)
+}
 
 function updateFriendOnlineStatus(status, userId) {
     for (f of friends) {

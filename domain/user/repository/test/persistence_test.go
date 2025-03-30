@@ -481,7 +481,7 @@ func (s *RepositoryTestSuite) TestGetFriends() {
 				mock.ExpectPrepare(
 					utils.CreatePrepareQuery(repository.QueryGetFriends)).
 					ExpectQuery().
-					WithArgs(0, 0).
+					WithArgs(0, 0, 0).
 					WillReturnError(s.mockErr)
 			},
 		},
@@ -503,7 +503,7 @@ func (s *RepositoryTestSuite) TestGetFriends() {
 				mock.ExpectPrepare(
 					utils.CreatePrepareQuery(repository.QueryGetFriends)).
 					ExpectQuery().
-					WithArgs(0, 0).
+					WithArgs(0, 0, 0).
 					WillReturnRows(rows)
 
 				mock.ExpectCommit().WillReturnError(s.mockErr)
@@ -513,32 +513,38 @@ func (s *RepositoryTestSuite) TestGetFriends() {
 		{
 			name: "success",
 			args: args{
-				c:    context.Background(),
-				user: repository.User{},
+				c: context.Background(),
+				user: repository.User{
+					Id: 10,
+				},
 			},
 			want: want{
 				users: []repository.User{
 					{
 						Username: "admin",
 						Id:       1,
+						Online:   true,
+						Unread:   10,
 					},
 					{
 						Username: "testing",
 						Id:       19,
+						Online:   false,
+						Unread:   7,
 					},
 				},
 				err: nil,
 			},
 			mockFunc: func() {
-				rows := sqlmock.NewRows([]string{"id", "username"})
-				rows.AddRow(1, "admin")
-				rows.AddRow(19, "testing")
+				rows := sqlmock.NewRows([]string{"id", "username", "online", "unread"})
+				rows.AddRow(1, "admin", true, 10)
+				rows.AddRow(19, "testing", false, 7)
 
 				mock.ExpectBegin().WillReturnError(nil)
 				mock.ExpectPrepare(
 					utils.CreatePrepareQuery(repository.QueryGetFriends)).
 					ExpectQuery().
-					WithArgs(0, 0).
+					WithArgs(10, 10, 10).
 					WillReturnRows(rows)
 
 				mock.ExpectCommit().WillReturnError(nil)

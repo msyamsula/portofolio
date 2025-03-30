@@ -17,6 +17,7 @@ type User struct {
 	Username string `json:"username"`
 	Id       int64  `json:"id"`
 	Online   bool   `json:"online"`
+	Unread   int64  `json:"unread"`
 }
 
 func (s *Persistence) InsertUser(c context.Context, user User) (User, error) {
@@ -182,7 +183,7 @@ func (s *Persistence) GetFriends(c context.Context, user User) ([]User, error) {
 	users := []User{}
 	for rows.Next() {
 		tmp := User{}
-		err = rows.Scan(&tmp.Id, &tmp.Username, &tmp.Online)
+		err = rows.Scan(&tmp.Id, &tmp.Username, &tmp.Online, &tmp.Unread)
 		if err != nil {
 			continue
 		}

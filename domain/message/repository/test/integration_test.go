@@ -36,4 +36,7 @@ func (s *RepositoryTestSuite) TestIntegrationMessage() {
 	s.Nil(err)
 	s.Empty(msgs)
 
+	err = s.realConnection.UpdateUnread(context.Background(), 1, 4, 99)
+	s.Nil(err)
+
 }

@@ -61,7 +61,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: syamsuldocker/backend:0.0.4
+        image: syamsuldocker/backend:0.0.5
         ports:
         - containerPort: 12000
         # env:

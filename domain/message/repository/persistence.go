@@ -156,3 +156,38 @@ func (s *Persistence) ReadMessage(c context.Context, senderId, receiverId int64)
 	}
 	return nil
 }
+
+func (s *Persistence) UpdateUnread(c context.Context, senderId, receiverId, unread int64) error {
+	ctx, span := otel.Tracer("").Start(c, "repository.persistence.UpdateUnread")
+	defer span.End()
+
+	tx := s.MustBeginTx(ctx, nil)
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			tx.Rollback()
+		}
+	}()
+
+	var stmt *sqlx.NamedStmt
+	stmt, err = tx.PrepareNamedContext(ctx, QueryUpdateUnread)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.QueryContext(ctx, map[string]interface{}{
+		"sender_id":   senderId,
+		"receiver_id": receiverId,
+		"unread":      unread,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
