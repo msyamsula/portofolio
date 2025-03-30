@@ -48,7 +48,7 @@ spec:
     spec:
       containers:
       - name: websocket-server
-        image: syamsuldocker/websocket-server:0.0.7
+        image: syamsuldocker/websocket-server:0.0.8
         ports:
         - containerPort: 8080
         # env:

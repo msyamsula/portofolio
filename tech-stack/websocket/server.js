@@ -70,8 +70,12 @@ async function main() {
       })
 
       socket.on("updateUnread", msg => {
-        console.log("update unread", msg);
         w.publish(topicUpdateUnread, msg)
+      })
+
+      socket.on("addFriend", msg => {
+        msg.subevent = "addFriend"
+        socket.broadcast.emit(msg.receiverId, msg)
       })
 
 

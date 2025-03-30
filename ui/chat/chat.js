@@ -301,6 +301,16 @@ window.onload = async function () {
                 if (msg.senderId == getUserId() && msg.receiverId == getPairId()) {
                     updateRead()
                 }
+            } else if (msg.subevent == "addFriend") {
+                let newFriend = {
+                    username: msg.username,
+                    id: msg.senderId,
+                    online: msg.online,
+                    unread: msg.unread,
+                }
+                // friends.push(newFriend)
+                friendsOnDisplay.push(newFriend)
+                refreshFriendList()
             }
             return
         }
@@ -471,6 +481,16 @@ async function submitFriend() {
             if (r != null && !r.error) {
                 addFriend(newFriend)
                 switchUser(newFriend)
+
+                // notify other party when he is added as a friend
+                let msg = {
+                    senderId: getUserId(),
+                    receiverId: getPairId(),
+                    username: getUsername(),
+                    online: true,
+                    unread: 0,
+                }
+                socket.emit("addFriend", msg)
                 return
             } else {
                 alert("can't add user, please try again")
