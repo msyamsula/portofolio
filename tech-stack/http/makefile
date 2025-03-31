@@ -11,8 +11,8 @@ down:
 
 push:
 	make build
-	docker tag backend syamsuldocker/backend:0.0.7
-	docker push syamsuldocker/backend:0.0.7
+	docker tag backend syamsuldocker/backend:0.0.8
+	docker push syamsuldocker/backend:0.0.8
 
 deploy:
 #this one is not pushed, manually configure

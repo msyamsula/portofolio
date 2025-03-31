@@ -1,6 +1,8 @@
 module github.com/msyamsula/portofolio
 
-go 1.22.4
+go 1.23.0
+
+toolchain go1.23.7
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -20,11 +22,13 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0
 	go.opentelemetry.io/otel/sdk v1.34.0
 	go.opentelemetry.io/otel/trace v1.34.0
+	golang.org/x/oauth2 v0.28.0
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.5.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

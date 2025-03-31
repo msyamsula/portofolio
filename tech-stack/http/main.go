@@ -115,6 +115,8 @@ func initGoogleSigninService(userSvc *service.Service) *google.Service {
 		GoogleSecret:        os.Getenv("GOOGLE_SECRET"),
 		UserSvc:             userSvc,
 		RedirectChat:        os.Getenv("REDIRECT_CHAT"),
+		OauthStateLength:    25,
+		OauthCharacters:     os.Getenv("HASHER_CHARACTER_POOL"),
 	})
 }
 
@@ -152,8 +154,8 @@ func main() {
 	// create server routes
 	r := mux.NewRouter()
 	// google sign in
-	r.HandleFunc("/access/token", googleSigninHandler.RedirectToChat)
-	r.HandleFunc("/google/signin", googleSigninHandler.RedirectToOauthServer)
+	r.HandleFunc("/access/token", googleSigninHandler.HandleCallback)
+	r.HandleFunc("/google/signin", googleSigninHandler.HandleLogin)
 	// message
 	r.HandleFunc("/message", messageHandler.ManageMesage)
 	// user

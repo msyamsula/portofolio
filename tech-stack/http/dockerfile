@@ -1,4 +1,11 @@
-FROM ubuntu
+# base-backend
+# FROM ubuntu
+
+# WORKDIR /app
+
+# RUN apt update && apt install -y ca-certificates
+
+FROM base-backend
 
 WORKDIR /app
 
