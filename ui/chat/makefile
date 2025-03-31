@@ -10,8 +10,8 @@ down:
 
 push:
 	make build
-	docker tag chat-ui syamsuldocker/chat-ui:0.0.33
-	docker push syamsuldocker/chat-ui:0.0.33
+	docker tag chat-ui syamsuldocker/chat-ui:0.0.34
+	docker push syamsuldocker/chat-ui:0.0.34
 
 deploy:
 	make push
