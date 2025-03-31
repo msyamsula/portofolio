@@ -28,6 +28,6 @@ func (h *Handler) RedirectShortUrl(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// redirect to the longUrl
-	http.Redirect(w, req, longUrl, http.StatusSeeOther)
+	http.Redirect(w, req, longUrl, http.StatusPermanentRedirect)
 
 }

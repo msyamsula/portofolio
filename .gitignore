@@ -6,3 +6,6 @@ kubeconfig.yaml
 cover.out
 package-lock.json
 node_modules
+google-signin.json
+testing.json
+secret.*

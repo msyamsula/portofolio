@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/msyamsula/portofolio/domain/google"
 	graphhttp "github.com/msyamsula/portofolio/domain/graph/http"
 	messagehttp "github.com/msyamsula/portofolio/domain/message/http"
 	messagerepo "github.com/msyamsula/portofolio/domain/message/repository"
@@ -31,17 +32,10 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-func initUserHandler(pg *postgres.Postgres, re *redis.Redis) *userhttp.Handler {
+func initUserHandler(userSvc *service.Service) *userhttp.Handler {
 
 	handler := userhttp.New(userhttp.Dependencies{
-		Service: service.New(service.Dependencies{
-			Persistence: &repository.Persistence{
-				Postgres: pg,
-			},
-			Cache: &repository.Cache{
-				Redis: re,
-			},
-		}),
+		Service: userSvc,
 	})
 	return handler
 
@@ -114,6 +108,16 @@ func initMessageHandler(pg *postgres.Postgres) *messagehttp.Handler {
 
 }
 
+func initGoogleSigninService(userSvc *service.Service) *google.Service {
+	return google.New(google.Dependencies{
+		GoogleClientId:      os.Getenv("GOOGLE_CLIENT_ID"),
+		GoogleRedirectOauth: os.Getenv("GOOGLE_REDIRECT_OAUTH"),
+		GoogleSecret:        os.Getenv("GOOGLE_SECRET"),
+		UserSvc:             userSvc,
+		RedirectChat:        os.Getenv("REDIRECT_CHAT"),
+	})
+}
+
 func main() {
 	appName := "backend"
 
@@ -129,14 +133,27 @@ func main() {
 
 	pg, re := initDataLayer()
 
+	userSvc := service.New(service.Dependencies{
+		Persistence: &repository.Persistence{
+			Postgres: pg,
+		},
+		Cache: &repository.Cache{
+			Redis: re,
+		},
+	})
+
 	// create userHandler
-	userHandler := initUserHandler(pg, re)
+	userHandler := initUserHandler(userSvc)
 	urlHandler := initUrlHandler(pg, re)
 	graphHandler := initGraphHandler()
 	messageHandler := initMessageHandler(pg)
+	googleSigninHandler := initGoogleSigninService(userSvc)
 
 	// create server routes
 	r := mux.NewRouter()
+	// google sign in
+	r.HandleFunc("/access/token", googleSigninHandler.RedirectToChat)
+	r.HandleFunc("/google/signin", googleSigninHandler.RedirectToOauthServer)
 	// message
 	r.HandleFunc("/message", messageHandler.ManageMesage)
 	// user

@@ -33,4 +33,14 @@ window.onload = function () {
         // If username exists in localStorage, redirect to the chat page
         window.location.href = "chat.html";  // Redirect to chat page
     }
+
+    let param = new URLSearchParams(window.location.search)
+    if (param.get("username") && param.get("id")) {
+        localStorage.setItem("username", param.get("username"))
+        localStorage.setItem("id", param.get("id"))
+
+        setTimeout(()=>{
+            window.location.reload()
+        }, 200)
+    }
 };

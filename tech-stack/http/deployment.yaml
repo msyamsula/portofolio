@@ -17,6 +17,7 @@ stringData:
   HASHER_HOST: "https://api.syamsul.online"
   PORT: "12000"
   JAEGER_HOST: "jaeger-clusterip:4317"
+  REDIRECT_CHAT: https://chat.syamsul.online
 
 ---
 # cluster IP
@@ -61,7 +62,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: syamsuldocker/backend:0.0.5
+        image: syamsuldocker/backend:0.0.7
         ports:
         - containerPort: 12000
         # env:
@@ -72,6 +73,8 @@ spec:
         envFrom:
           - secretRef:
               name: backend-secret
+          - secretRef:
+              name: google-secret # this one is manually configure before deploying
         command: ["./main"]
         # - configMapRef:
         #     name: postgres-configmap

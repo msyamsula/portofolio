@@ -2,6 +2,10 @@
 
 const apiHost = "https://api.syamsul.online"
 
+async function googleSignin() {
+    window.location.href = `${apiHost}/google/signin`
+}
+
 
 async function getFriends(id) {
     let response = await fetch(`${apiHost}/user/friend?id=${id}`, {

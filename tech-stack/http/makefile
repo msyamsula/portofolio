@@ -11,10 +11,12 @@ down:
 
 push:
 	make build
-	docker tag backend syamsuldocker/backend:0.0.5
-	docker push syamsuldocker/backend:0.0.5
+	docker tag backend syamsuldocker/backend:0.0.7
+	docker push syamsuldocker/backend:0.0.7
 
 deploy:
+#this one is not pushed, manually configure
+# kubectl --kubeconfig=../../kubeconfig.yaml apply -f secret.yaml
 	make push
 	kubectl --kubeconfig=../../kubeconfig.yaml apply -f deployment.yaml
 
