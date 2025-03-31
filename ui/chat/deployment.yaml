@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: chat-ui
-          image: syamsuldocker/chat-ui:0.0.31
+          image: syamsuldocker/chat-ui:0.0.32
           ports:
           - containerPort: 80
           # volumeMounts:

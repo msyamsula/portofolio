@@ -39,6 +39,12 @@ window.onload = function () {
         localStorage.setItem("username", param.get("username"))
         localStorage.setItem("id", param.get("id"))
 
+        let msg = {
+            userId: getUserId()
+        }
+        
+        socket.emit("userLogin", msg)
+
         setTimeout(()=>{
             window.location.reload()
         }, 200)
