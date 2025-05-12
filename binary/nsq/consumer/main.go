@@ -8,11 +8,11 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
+	"github.com/msyamsula/portofolio/binary/postgres"
+	"github.com/msyamsula/portofolio/binary/telemetry"
 	messageconsumer "github.com/msyamsula/portofolio/domain/message/consumer"
 	"github.com/msyamsula/portofolio/domain/message/repository"
 	"github.com/msyamsula/portofolio/domain/message/service"
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
-	"github.com/msyamsula/portofolio/tech-stack/telemetry"
 	"github.com/nsqio/go-nsq"
 )
 

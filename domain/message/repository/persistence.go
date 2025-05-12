@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
+	"github.com/msyamsula/portofolio/binary/postgres"
 	"go.opentelemetry.io/otel"
 )
 

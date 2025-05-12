@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/msyamsula/portofolio/tech-stack/redis"
+	"github.com/msyamsula/portofolio/binary/redis"
 	"go.opentelemetry.io/otel"
 )
 

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/domain/message/repository"
 	"github.com/msyamsula/portofolio/domain/message/service"
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
 	"github.com/stretchr/testify/suite"
 )
 

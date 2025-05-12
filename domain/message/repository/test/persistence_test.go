@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/domain/message/repository"
 	"github.com/msyamsula/portofolio/domain/utils"
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
 )
 
 func (s *RepositoryTestSuite) TestAddMessage() {

@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/msyamsula/portofolio/binary/postgres"
+	"github.com/msyamsula/portofolio/binary/redis"
 	"github.com/msyamsula/portofolio/domain/user/repository"
 	"github.com/msyamsula/portofolio/domain/utils"
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
-	"github.com/msyamsula/portofolio/tech-stack/redis"
 	"github.com/stretchr/testify/assert"
 )
 

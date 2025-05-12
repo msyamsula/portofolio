@@ -41,6 +41,7 @@
             color: white;
             padding: 15px;
             overflow-y: auto;
+            justify-content: space-around;
         }
 
         /* Header with Add Friend Button */
@@ -48,7 +49,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin: 5%;
         }
 
         .add-friend-btn {
@@ -157,6 +158,7 @@
         .chat-box {
             flex: 1;
             padding: 15px;
+            /* padding-top: 60px; */
             overflow-y: auto;
             background: #f7f7f7;
             display: flex;
@@ -378,9 +380,6 @@
             padding: 4px 8px;
             position: absolute;
             right: 20px;
-            /* Adjust position */
-            /* top: 5px; */
-            /* min-width: 20px; */
         }
 
 
@@ -390,28 +389,46 @@
                 flex-direction: column;
             }
 
+            .chat-box {
+                padding: 2%;
+            }
+
             .chat-area {
                 overflow: scroll;
             }
 
             .chat-header {
-                padding-bottom: auto;
-                padding-left: auto;
+                padding: 15px;
+                height: 15%;
+                align-items: end;
+            }
+
+            .friend-search {
+                padding: 0;
             }
 
             .user-list-header {
-                width: 100%;
                 max-width: none;
                 text-align: center;
                 margin: 0;
+            }
+
+            .add-friend-btn {
+                width: 100%;
+                margin-left: 0;
             }
 
             .user-list {
                 width: 100%;
+                /* height: 15%; */
                 max-width: none;
                 text-align: center;
                 margin: 0;
-                padding-bottom: 0;
+                padding: 0;
+                padding-top: 10px;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-evenly;
             }
 
             .user-list ul {
@@ -422,30 +439,22 @@
             .user-list li {
                 flex: 1;
                 border-bottom: none;
-                padding: 15px;
+                padding: 3%;
             }
 
             .user-list ul {
-                /* display: none; */
                 flex-direction: row;
                 position: absolute;
                 background: #800020;
                 overflow-x: scroll;
-                width: 100%;
-                top: 60px;
-                left: 0;
+                width: 90%;
+                top: 8%;
                 z-index: 10;
+                border: white;
             }
 
             .friend-search {
-                position: absolute;
-                top: 2%;
-                bottom: 92%;
-                left: 55%;
-                right: 15%;
-                z-index: 10;
-                margin: 0;
-                padding: 0;
+                width: 60%;
             }
 
             .message-search {
@@ -453,20 +462,12 @@
             }
 
             .exit-btn {
-                position: absolute;
-                top: 2.5%;
-                bottom: 93.5%;
-                left: 30%;
-                right: 50%;
-                /* 
-                display: flex;
-                align-items: center; 
-                transform: translateX(-50%);
-                */
-                z-index: 10;
-                margin: 0;
-                padding: 0;
+                position: relative;
+                bottom: 0px;
+                left: 0px;
+                height: 100%;
             }
+
         }
     </style>
 </head>
@@ -494,6 +495,8 @@
                 <input type="text" id="friend-search-input" placeholder="Search friends..." oninput="searchFriends()">
             </div>
 
+            <div class="exit-btn" onclick="exitChat()">Exit</div>
+
             <ul id="users">
                 <li onclick="switchUser('Alice')">Alice</li>
                 <li onclick="switchUser('Bob')">Bob</li>
@@ -501,8 +504,6 @@
                 <li onclick="switchUser('David')">David</li>
                 <li onclick="switchUser('Emma')">Emma</li>
             </ul>
-
-            <button class="exit-btn" onclick="exitChat()">Exit</button>
         </div>
 
         <!-- Chat Area -->

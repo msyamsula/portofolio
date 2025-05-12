@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
-	"github.com/msyamsula/portofolio/tech-stack/redis"
+	"github.com/msyamsula/portofolio/binary/postgres"
+	"github.com/msyamsula/portofolio/binary/redis"
 )
 
 type Dependencies struct {

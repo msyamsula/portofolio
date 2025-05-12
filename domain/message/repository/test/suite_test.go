@@ -8,8 +8,8 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
+	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/domain/message/repository"
-	"github.com/msyamsula/portofolio/tech-stack/postgres"
 	"github.com/stretchr/testify/suite"
 )
 

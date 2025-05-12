@@ -1,5 +1,5 @@
 build:
-	docker build -t chat-ui .
+	docker build -t main-page .
 
 run:
 	make build
@@ -10,9 +10,10 @@ down:
 
 push:
 	make build
-	docker tag chat-ui syamsuldocker/chat-ui:0.0.35
-	docker push syamsuldocker/chat-ui:0.0.35
+	docker tag main-page syamsuldocker/main-page:0.0.3
+	docker push syamsuldocker/main-page:0.0.3
 
 deploy:
+	make down
 	make push
 	kubectl --kubeconfig=../../kubeconfig.yaml apply -f deployment.yaml

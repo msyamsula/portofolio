@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Code Review Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+    <div class="max-w-3xl mx-auto p-6 mt-10 bg-white shadow rounded">
+        <h1 class="text-2xl font-bold mb-4">🤖 Code Review Assistant</h1>
+
+        <label class="block mb-2 font-medium">Select Language:</label>
+        <select id="language" class="mb-4 p-2 border rounded w-full">
+            <option value="go">Go</option>
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+        </select>
+
+        <label class="block mb-2 font-medium">Paste your code:</label>
+        <textarea id="code" rows="10" class="w-full p-3 border rounded font-mono"
+            placeholder="Paste your code here..."></textarea>
+
+        <button onclick="analyzeCode()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Analyze Code
+        </button>
+
+        <div id="output" class="mt-6 space-y-4 hidden">
+            <div>
+                <h2 class="font-semibold">🔍 Explanation</h2>
+                <pre id="explanation" class="bg-gray-100 p-3 rounded whitespace-pre-wrap"></pre>
+            </div>
+            <div>
+                <h2 class="font-semibold">💡 Suggestions</h2>
+                <pre id="suggestions" class="bg-gray-100 p-3 rounded whitespace-pre-wrap"></pre>
+            </div>
+            <div>
+                <h2 class="font-semibold">⚠️ Warnings</h2>
+                <pre id="warnings" class="bg-gray-100 p-3 rounded whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeCode() {
+            const code = document.getElementById('code').value;
+            const language = document.getElementById('language').value;
+
+            const res = await fetch('http://localhost:3000/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, language }),
+            });
+
+            const data = await res.json();
+
+            document.getElementById('explanation').textContent = data.explanation || '(None)';
+            document.getElementById('suggestions').textContent = data.suggestions || '(None)';
+            document.getElementById('warnings').textContent = data.warnings || '(None)';
+            document.getElementById('output').classList.remove('hidden');
+        }
+    </script>
+
+</body>
+
+</html>
