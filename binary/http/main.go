@@ -14,6 +14,7 @@ import (
 	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/binary/redis"
 	"github.com/msyamsula/portofolio/binary/telemetry"
+	chatgpt "github.com/msyamsula/portofolio/domain/chat-gpt"
 	"github.com/msyamsula/portofolio/domain/google"
 	graphhttp "github.com/msyamsula/portofolio/domain/graph/http"
 	messagehttp "github.com/msyamsula/portofolio/domain/message/http"
@@ -120,6 +121,12 @@ func initGoogleSigninService(userSvc *service.Service) *google.Service {
 	})
 }
 
+func initChatGptHandler() *chatgpt.Handler {
+	token := os.Getenv("OPENAI_API_KEY")
+	svc := chatgpt.NewService(token)
+	return chatgpt.NewHandler(svc)
+}
+
 func main() {
 	appName := "backend"
 
@@ -150,6 +157,7 @@ func main() {
 	graphHandler := initGraphHandler()
 	messageHandler := initMessageHandler(pg)
 	googleSigninHandler := initGoogleSigninService(userSvc)
+	chatgptHandler := initChatGptHandler()
 
 	// create server routes
 	r := mux.NewRouter()
@@ -166,6 +174,8 @@ func main() {
 	// url
 	r.HandleFunc("/short", urlHandler.HashUrl)
 	r.HandleFunc("/{shortUrl}", urlHandler.RedirectShortUrl)
+	// chat gpt
+	r.HandleFunc("/code/review", chatgptHandler.CodeReview)
 
 	// cors option
 	c := cors.New(cors.Options{
