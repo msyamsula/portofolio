@@ -18,6 +18,17 @@ stringData:
   PORT: "12000"
   JAEGER_HOST: "jaeger-clusterip:4317"
   REDIRECT_CHAT: https://chat.syamsul.online
+  OPENAI_API_KEY: ""
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: google-secret
+stringData:
+  GOOGLE_CLIENT_ID: 
+  GOOGLE_REDIRECT_OAUTH: 
+  GOOGLE_SECRET: 
 
 ---
 # cluster IP
