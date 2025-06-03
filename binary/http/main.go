@@ -14,6 +14,7 @@ import (
 	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/binary/redis"
 	"github.com/msyamsula/portofolio/binary/telemetry"
+	chatgpt "github.com/msyamsula/portofolio/domain/chat-gpt"
 	"github.com/msyamsula/portofolio/domain/google"
 	graphhttp "github.com/msyamsula/portofolio/domain/graph/http"
 	messagehttp "github.com/msyamsula/portofolio/domain/message/http"
@@ -24,7 +25,6 @@ import (
 	urlrepo "github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
 	userhttp "github.com/msyamsula/portofolio/domain/user/http"
-	"github.com/msyamsula/portofolio/domain/user/repository"
 	"github.com/msyamsula/portofolio/domain/user/service"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -120,6 +120,12 @@ func initGoogleSigninService(userSvc *service.Service) *google.Service {
 	})
 }
 
+func initChatGptHandler() *chatgpt.Handler {
+	token := os.Getenv("OPENAI_API_KEY")
+	svc := chatgpt.NewService(token)
+	return chatgpt.NewHandler(svc)
+}
+
 func main() {
 	appName := "backend"
 
@@ -133,39 +139,42 @@ func main() {
 	prometheus.MustRegister(urlhttp.HashCounter)
 	prometheus.MustRegister(urlhttp.RedirectCounter)
 
-	pg, re := initDataLayer()
+	// pg, re := initDataLayer()
 
-	userSvc := service.New(service.Dependencies{
-		Persistence: &repository.Persistence{
-			Postgres: pg,
-		},
-		Cache: &repository.Cache{
-			Redis: re,
-		},
-	})
+	// userSvc := service.New(service.Dependencies{
+	// 	Persistence: &repository.Persistence{
+	// 		Postgres: pg,
+	// 	},
+	// 	Cache: &repository.Cache{
+	// 		Redis: re,
+	// 	},
+	// })
 
 	// create userHandler
-	userHandler := initUserHandler(userSvc)
-	urlHandler := initUrlHandler(pg, re)
-	graphHandler := initGraphHandler()
-	messageHandler := initMessageHandler(pg)
-	googleSigninHandler := initGoogleSigninService(userSvc)
+	// userHandler := initUserHandler(userSvc)
+	// urlHandler := initUrlHandler(pg, re)
+	// graphHandler := initGraphHandler()
+	// messageHandler := initMessageHandler(pg)
+	// googleSigninHandler := initGoogleSigninService(userSvc)
+	chatgptHandler := initChatGptHandler()
 
 	// create server routes
 	r := mux.NewRouter()
-	// google sign in
-	r.HandleFunc("/access/token", googleSigninHandler.HandleCallback)
-	r.HandleFunc("/google/signin", googleSigninHandler.HandleLogin)
-	// message
-	r.HandleFunc("/message", messageHandler.ManageMesage)
-	// user
-	r.HandleFunc("/user/friend", userHandler.ManageFriend)
-	r.HandleFunc("/user", userHandler.ManageUser)
-	// graph
-	r.HandleFunc("/graph/{algo}", http.HandlerFunc(graphHandler.InitGraph(http.HandlerFunc(graphHandler.Algorithm))))
-	// url
-	r.HandleFunc("/short", urlHandler.HashUrl)
-	r.HandleFunc("/{shortUrl}", urlHandler.RedirectShortUrl)
+	// // google sign in
+	// r.HandleFunc("/access/token", googleSigninHandler.HandleCallback)
+	// r.HandleFunc("/google/signin", googleSigninHandler.HandleLogin)
+	// // message
+	// r.HandleFunc("/message", messageHandler.ManageMesage)
+	// // user
+	// r.HandleFunc("/user/friend", userHandler.ManageFriend)
+	// r.HandleFunc("/user", userHandler.ManageUser)
+	// // graph
+	// r.HandleFunc("/graph/{algo}", http.HandlerFunc(graphHandler.InitGraph(http.HandlerFunc(graphHandler.Algorithm))))
+	// // url
+	// r.HandleFunc("/short", urlHandler.HashUrl)
+	// r.HandleFunc("/{shortUrl}", urlHandler.RedirectShortUrl)
+	// chat gpt
+	r.HandleFunc("/code/review", chatgptHandler.CodeReview)
 
 	// cors option
 	c := cors.New(cors.Options{
