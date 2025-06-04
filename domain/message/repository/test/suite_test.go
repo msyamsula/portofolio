@@ -8,8 +8,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/msyamsula/portofolio/binary/postgres"
-	"github.com/msyamsula/portofolio/domain/message/repository"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,8 +22,6 @@ type RepositoryTestSuite struct {
 	mock   sqlmock.Sqlmock
 	sqlxDb *sqlx.DB
 	mockDb *sql.DB
-
-	realConnection *repository.Persistence
 }
 
 func (s *RepositoryTestSuite) SetupSuite() {
@@ -39,16 +35,6 @@ func (s *RepositoryTestSuite) SetupSuite() {
 	s.mock = mock
 	s.sqlxDb = sqlxDb
 	s.mockDb = mockDb
-
-	s.realConnection = &repository.Persistence{
-		Postgres: postgres.New(postgres.Config{
-			Username: "admin",
-			Password: "admin",
-			DbName:   "postgres",
-			Host:     "0.0.0.0",
-			Port:     "5432",
-		}),
-	}
 }
 func (s *RepositoryTestSuite) TearDownSuite() {
 	s.ctrl.Finish()

@@ -5,9 +5,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/msyamsula/portofolio/binary/postgres"
-	"github.com/msyamsula/portofolio/domain/message/repository"
-	"github.com/msyamsula/portofolio/domain/message/service"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,8 +17,6 @@ type ServiceTestSuite struct {
 	ctrl    *gomock.Controller
 
 	mockPersistence *MockPersistenceLayer
-
-	realService *service.Service
 }
 
 func (s *ServiceTestSuite) SetupSuite() {
@@ -29,17 +24,6 @@ func (s *ServiceTestSuite) SetupSuite() {
 	s.mockErr = errors.New("ops")
 
 	s.mockPersistence = NewMockPersistenceLayer(s.ctrl)
-	s.realService = &service.Service{
-		Persistence: &repository.Persistence{
-			Postgres: postgres.New(postgres.Config{
-				Username: "admin",
-				Password: "admin",
-				DbName:   "postgres",
-				Host:     "0.0.0.0",
-				Port:     "5432",
-			}),
-		},
-	}
 }
 func (s *ServiceTestSuite) TearDownSuite() {
 	s.ctrl.Finish()

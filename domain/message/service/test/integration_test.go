@@ -6,11 +6,25 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/domain/message/repository"
+	"github.com/msyamsula/portofolio/domain/message/service"
 	"github.com/msyamsula/portofolio/domain/utils"
 )
 
 func (s *ServiceTestSuite) TestIntegrationMessage() {
+
+	realService := &service.Service{
+		Persistence: &repository.Persistence{
+			Postgres: postgres.New(postgres.Config{
+				Username: "admin",
+				Password: "admin",
+				DbName:   "postgres",
+				Host:     "0.0.0.0",
+				Port:     "5432",
+			}),
+		},
+	}
 
 	msg := repository.Message{
 		Id:         0,
@@ -20,7 +34,7 @@ func (s *ServiceTestSuite) TestIntegrationMessage() {
 	}
 	ctx := context.Background()
 	var err error
-	msg, err = s.realService.AddMessage(ctx, msg)
+	msg, err = realService.AddMessage(ctx, msg)
 	s.Nil(err)
 	s.NotZero(msg.Id)
 	var msgs []repository.Message
