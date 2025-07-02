@@ -1,0 +1,13 @@
+package fpriority
+
+import "fmt"
+
+type Info struct{}
+
+func (c Info) Format(m string) string {
+	return fmt.Sprintf("Info, %s", m)
+}
+
+func NewInfo() Info {
+	return Info{}
+}
