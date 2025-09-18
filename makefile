@@ -2,7 +2,7 @@ start-kubernetes:
 	kind create cluster --config kind-config.yaml --name my-cluster
 
 stop-kubernetes:
-	kind create cluster --config kind-config.yaml --name my-cluster
+	kind delete cluster --name my-cluster
 
 load-postgres:
 	sh ./binary/postgres/load.sh 
