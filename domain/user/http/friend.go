@@ -11,15 +11,14 @@ import (
 )
 
 func (h *Handler) ManageFriend(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodPost {
+	switch req.Method {
+	case http.MethodPost:
 		h.addFriend(w, req)
-	} else if req.Method == http.MethodGet {
+	case http.MethodGet:
 		h.getFriends(w, req)
-	} else {
+	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	return
 }
 
 func (h *Handler) addFriend(w http.ResponseWriter, req *http.Request) {
@@ -73,7 +72,6 @@ func (h *Handler) addFriend(w http.ResponseWriter, req *http.Request) {
 	}
 
 	statusCode = http.StatusOK
-	return
 
 }
 
@@ -129,6 +127,5 @@ func (h *Handler) getFriends(w http.ResponseWriter, req *http.Request) {
 
 	statusCode = http.StatusOK
 	response.Data = users
-	return
 
 }

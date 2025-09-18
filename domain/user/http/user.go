@@ -38,15 +38,15 @@ type Response struct {
 }
 
 func (h *Handler) ManageUser(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodGet {
+	switch req.Method {
+	case http.MethodGet:
 		h.getUser(w, req)
-	} else if req.Method == http.MethodPost {
+	case http.MethodPost:
 		h.setUser(w, req)
-	} else {
+	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 
-	return
 }
 
 func (h *Handler) setUser(w http.ResponseWriter, req *http.Request) {
@@ -96,7 +96,6 @@ func (h *Handler) setUser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	statusCode = http.StatusOK
-	return
 
 }
 
@@ -139,6 +138,5 @@ func (h *Handler) getUser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	statusCode = http.StatusOK
-	return
 
 }
