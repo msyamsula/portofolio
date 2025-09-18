@@ -8,8 +8,7 @@ load-postgres:
 	sh ./binary/postgres/load.sh 
 
 postgres-secret:
-	kubectl delete secret postgres-secret
-	kubectl create secret generic postgres-secret --from-env-file=./binary/postgres/.env
+	kubectl create secret generic postgres-secret --from-env-file=./binary/postgres/.env --dry-run=client -o yaml | kubectl apply -f -
 
 postgres:
 	kubectl apply -f ./binary/postgres/deployment.yaml
@@ -18,8 +17,7 @@ forward-postgres:
 	kubectl port-forward svc/postgres-clusterip 5432:5432
 
 redis-secret:
-	kubectl delete secret redis-secret
-	kubectl create secret generic redis-secret --from-env-file=./binary/redis/.env
+	kubectl create secret generic redis-secret --from-env-file=./binary/redis/.env --dry-run=client -o yaml | kubectl apply -f -
 
 load-redis:
 	sh ./binary/redis/load.sh
@@ -31,8 +29,7 @@ forward-redis:
 	kubectl port-forward svc/redis-clusterip 6379:6379
 
 http-secret:
-	kubectl delete secret http-secret
-	kubectl create secret generic http-secret --from-env-file=./binary/http/.env
+	kubectl create secret generic http-secret --from-env-file=./binary/http/.env --dry-run=client -o yaml | kubectl apply -f -
 
 build-http:
 	docker build -f ./binary/http/Dockerfile -t syamsuldocker/http:0.0.0 .
