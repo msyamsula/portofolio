@@ -1,43 +1,3 @@
-#Secret
-# secret value is left empty, I add it manually to ensure security
-apiVersion: v1
-kind: Secret
-metadata:
-  name: postgres-secret
-stringData:
-  POSTGRES_USER: admin
-  POSTGRES_PASSWORD: admin
-  POSTGRES_DB: postgres
-
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: postgres-configmap
-# data:
-#   POSTGRES_USER: 
-#   POSTGRES_PASSWORD: 
-
----
-# nodeport, can be closed for better security
-# leave it open for debug purpose
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-nodeport
-  labels:
-    app: postgres
-    type: nodeport
-spec:
-  type: NodePort
-  selector:
-    app: postgres
-    type: pod
-  ports:
-    - protocol: TCP
-      port: 5432 #container port
-      targetPort: 5432 #service port
-      nodePort: 30000 #open port
-      name: postgres-nodeport
 
 ---
 # cluster IP
@@ -82,16 +42,10 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres
+        image: postgres:16.3
         ports:
         - containerPort: 5432
-        # env:
-        #   - name: POSTGRES_USER
-        #     value: admin
-        #   - name: POSTGRES_PASSWORD
-        #     value: admin
         envFrom:
           - secretRef:
               name: postgres-secret
-          # - configMapRef:
-          #     name: postgres-configmap
+

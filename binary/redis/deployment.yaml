@@ -1,48 +1,3 @@
-#Secret
-# secret value is left empty, I add it manually to ensure security
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: redis-secret
-# stringData:
-#   REDIS_PASSWORD: 
-
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: redis-configmap
-# data:
-#   redis_USER: 
-#   redis_PASSWORD: 
-
-apiVersion: v1
-kind: Secret
-metadata:
-  name: redis-secret
-stringData:
-  REDIS_PASSWORD: admin
-
----
-# nodeport, can be closed for better security
-# leave it open for debug purpose
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-nodeport
-  labels:
-    app: redis
-    type: nodeport
-spec:
-  type: NodePort
-  selector:
-    app: redis
-    type: pod
-  ports:
-    - protocol: TCP
-      port: 6379 #container port
-      targetPort: 6379 #service port
-      nodePort: 30001 #open port
-      name: redis-nodeport
 
 ---
 # cluster IP
@@ -94,13 +49,4 @@ spec:
           - secretRef:
               name: redis-secret
         command: ["redis-server", "--requirepass", "$(REDIS_PASSWORD)"]
-        # env:
-        #   - name: redis_USER
-        #     value: admin
-        #   - name: redis_PASSWORD
-        #     value: admin
-        # envFrom:
-        #   - secretRef:
-        #       name: redis-secret
-          # - configMapRef:
-          #     name: redis-configmap
+

@@ -1,53 +1,45 @@
-run:
-	docker-compose -f tech-stack/nsq/nsqlookupd/docker-compose.yaml up -d
-	docker-compose -f tech-stack/postgres/docker-compose.yaml up -d
-	docker-compose -f tech-stack/redis/docker-compose.yaml up -d
-	
-	docker-compose -f ui/chat/docker-compose.yaml up -d
-	docker-compose -f ui/graph/docker-compose.yaml up -d
-	docker-compose -f ui/main-page/docker-compose.yaml up -d
-	docker-compose -f ui/url/docker-compose.yaml up -d
-	
-	docker-compose -f tech-stack/nsq/nsqadmin/docker-compose.yaml up -d
-	docker-compose -f tech-stack/nsq/nsqd/docker-compose.yaml up -d
-	docker-compose -f tech-stack/nsq/consumer/docker-compose.yaml up -d
-	docker-compose -f tech-stack/telemetry/jaeger/docker-compose.yaml up -d
-	docker-compose -f tech-stack/telemetry/prometheus/docker-compose.yaml up -d
+start-kubernetes:
+	kind create cluster --config kind-config.yaml --name my-cluster
 
-	docker-compose -f tech-stack/websocket/docker-compose.yaml up -d
-	docker-compose -f tech-stack/http/docker-compose.yaml up -d
+stop-kubernetes:
+	kind create cluster --config kind-config.yaml --name my-cluster
 
+load-postgres:
+	sh ./binary/postgres/load.sh 
 
+postgres-secret:
+	kubectl create secret generic postgres-secret --from-env-file=./binary/postgres/.env
 
-down:
-	docker-compose -f tech-stack/nsq/nsqlookupd/docker-compose.yaml down
-	docker-compose -f tech-stack/postgres/docker-compose.yaml down
-	docker-compose -f tech-stack/redis/docker-compose.yaml down
+postgres:
+	kubectl apply -f ./binary/postgres/deployment.yaml
 
-	docker-compose -f tech-stack/telemetry/jaeger/docker-compose.yaml down
-	docker-compose -f tech-stack/telemetry/prometheus/docker-compose.yaml down
-	docker-compose -f tech-stack/http/docker-compose.yaml down
-	docker-compose -f tech-stack/nsq/nsqadmin/docker-compose.yaml down
-	docker-compose -f tech-stack/nsq/nsqd/docker-compose.yaml down
-	docker-compose -f tech-stack/nsq/consumer/docker-compose.yaml down
-	docker-compose -f tech-stack/websocket/docker-compose.yaml down
+forward-postgres:
+	kubectl port-forward svc/postgres-clusterip 5432:5432
 
-	docker-compose -f ui/chat/docker-compose.yaml down
-	docker-compose -f ui/graph/docker-compose.yaml down
-	docker-compose -f ui/main-page/docker-compose.yaml down
-	docker-compose -f ui/url/docker-compose.yaml down
+redis-secret:
+	kubectl create secret generic redis-secret --from-env-file=./binary/redis/.env
 
-deploy:
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f ui/chat/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f ui/graph/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f ui/main-page/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f ui/url/deployment.yaml
+load-redis:
+	sh ./binary/redis/load.sh
 
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/http/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/nsq/consumer/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/nsq/nsqadmin/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/nsq/nsqd/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/nsq/nsqlookupd/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/telemetry/jaeger/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/telemetry/prometheus/deployment.yaml
-	kubectl --kubeconfig="./kubeconfig.yaml" apply -f tech-stack/websocket/deployment.yaml
+redis:
+	kubectl apply -f ./binary/redis/deployment.yaml
+
+forward-redis:
+	kubectl port-forward svc/redis-clusterip 6379:6379
+
+http-secret:
+	kubectl create secret generic http-secret --from-env-file=./binary/http/.env
+
+build-http:
+	docker build -f ./binary/http/Dockerfile -t syamsuldocker/http:0.0.0 .
+
+load-http:
+	kind load docker-image syamsuldocker/http:0.0.0 --name my-cluster
+
+http:
+	kubectl apply -f ./binary/http/deployment.yaml
+
+forward-http:
+	kubectl port-forward svc/http-clusterip 12000:12000
+

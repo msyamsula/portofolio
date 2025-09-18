@@ -1,15 +1,14 @@
-package google
+package oauth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/user/repository"
 	usersvc "github.com/msyamsula/portofolio/domain/user/service"
+	"github.com/msyamsula/portofolio/domain/user/session"
 	"go.opentelemetry.io/otel"
 
 	"golang.org/x/oauth2"
@@ -20,7 +19,6 @@ type Service struct {
 	userSvc      *usersvc.Service
 	redirectChat string
 	oauthConfig  *oauth2.Config
-	oauthState   string
 }
 
 type Dependencies struct {
@@ -42,16 +40,10 @@ func New(dep Dependencies) *Service {
 		Endpoint:     google.Endpoint,
 	}
 
-	h := hasher.New(hasher.Config{
-		Length: dep.OauthStateLength,
-		Word:   dep.OauthCharacters,
-	})
-
 	svc := &Service{
 		userSvc:      dep.UserSvc,
 		redirectChat: dep.RedirectChat,
 		oauthConfig:  oauthConfig,
-		oauthState:   h.Hash(context.Background()),
 	}
 
 	return svc
@@ -61,14 +53,13 @@ func (s *Service) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	_, span := otel.Tracer("").Start(r.Context(), "oauth.Login")
 	defer span.End()
 
-	url := s.oauthConfig.AuthCodeURL(s.oauthState, oauth2.AccessTypeOffline)
+	url := s.oauthConfig.AuthCodeURL("", oauth2.AccessTypeOffline)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		http.Error(w, "error create request oauth", http.StatusInternalServerError)
 		return
 	}
 	query := req.URL.Query()
-	query.Set("state", s.oauthState)
 	req.URL.RawQuery = query.Encode()
 
 	http.Redirect(w, req, req.URL.String(), http.StatusFound)
@@ -120,6 +111,6 @@ func (s *Service) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := fmt.Sprintf("%s?username=%s&id=%d", s.redirectChat, user.Username, user.Id)
-	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", session.CreatToken(user.Id, user.Username)))
+	http.Redirect(w, r, s.redirectChat, http.StatusPermanentRedirect)
 }
