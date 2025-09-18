@@ -22,6 +22,9 @@ Please follow all the instructions to have full working systems
     - run postgres: `make postgres`
     - **optional**: you can test the postgres is up by forward the connection to your localhost: `make forward-postgres` and connect to it
 
+        - _**user domain database**_: setup the required table for user domain by executing sql file in ```/domain/user/repository/table/ddl.sql```
+        
+
 2. Redis
     - make sure that `.env` file in `./binary/redis` is set accordingly. This acts as an environment variable when running
     - create secret: `make redis-secret`
@@ -36,9 +39,9 @@ Please follow all the instructions to have full working systems
     - build the http image: `make build-http`
     - load docker image to kind cluster: `make load-http`
     - run: `make http`
-    - **optional**: you can test the http is up by forward the connection to your localhost: `make forward-http` and connect to it
+    - **optional**: you can test the http is up by forward the connection to your localhost: `make forward-http` and connect to it. use postman ```portofolio.postman_collection.json``` to test the API
 
 
 # Architechture
-visit this diagram to understand more about the architecture: https://drive.google.com/file/d/16osGglyMotNDbr098PLH6Mqbj7DCFZUl/view?usp=sharing
+visit this diagram to understand more about the architecture: https://app.diagrams.net/#G16osGglyMotNDbr098PLH6Mqbj7DCFZUl#%7B%22pageId%22%3A%22cIc-d2nl0CKd4vElDnhN%22%7D
 

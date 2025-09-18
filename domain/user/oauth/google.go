@@ -112,5 +112,12 @@ func (s *Service) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", session.CreatToken(user.Id, user.Username)))
+
+	type response struct {
+		Token string `json:"token"`
+	}
+	json.NewEncoder(w).Encode(response{
+		Token: session.CreatToken(user.Id, user.Username),
+	})
 	http.Redirect(w, r, s.redirectChat, http.StatusPermanentRedirect)
 }

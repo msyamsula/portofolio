@@ -8,6 +8,7 @@ load-postgres:
 	sh ./binary/postgres/load.sh 
 
 postgres-secret:
+	kubectl delete secret postgres-secret
 	kubectl create secret generic postgres-secret --from-env-file=./binary/postgres/.env
 
 postgres:
@@ -17,6 +18,7 @@ forward-postgres:
 	kubectl port-forward svc/postgres-clusterip 5432:5432
 
 redis-secret:
+	kubectl delete secret redis-secret
 	kubectl create secret generic redis-secret --from-env-file=./binary/redis/.env
 
 load-redis:
@@ -29,6 +31,7 @@ forward-redis:
 	kubectl port-forward svc/redis-clusterip 6379:6379
 
 http-secret:
+	kubectl delete secret http-secret
 	kubectl create secret generic http-secret --from-env-file=./binary/http/.env
 
 build-http:

@@ -1,0 +1,125 @@
+{
+	"info": {
+		"_postman_id": "732d724b-c22a-4f96-8fd7-036d7dc1ac53",
+		"name": "portofolio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13426072"
+	},
+	"item": [
+		{
+			"name": "user",
+			"item": [
+				{
+					"name": "check",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQHRlc3RpbmcuY29tIiwiaWQiOjQsImlhdCI6MTc1Nzc0MjUzNiwiZXhwIjoxNzU3NzQ2MTM2fQ.SbHSHCFjZqedvQ41YzLWZ4R2XpOkg3tlPjMo3u0xF_A",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "stockbit-secret-api-key",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:12000/check",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"check"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQHRlc3RpbmcuY29tIiwiaWQiOjQsImlhdCI6MTc1Nzc0MjUzNiwiZXhwIjoxNzU3NzQ2MTM2fQ.SbHSHCFjZqedvQ41YzLWZ4R2XpOkg3tlPjMo3u0xF_A",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "stockbit-secret-api-key",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:12000/google/signin",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"google",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "user token",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:12000/access/token?code=token&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid&authuser=0&prompt=consent",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"access",
+								"token"
+							],
+							"query": [
+								{
+									"key": "code",
+									"value": "token"
+								},
+								{
+									"key": "scope",
+									"value": "email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid"
+								},
+								{
+									"key": "authuser",
+									"value": "0"
+								},
+								{
+									"key": "prompt",
+									"value": "consent"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl http://localhost:12000/access/token?code=4%2F0AVGzR1B5_b2-bVcpTUNmh8MOkl0Cnnv5nWa8vcjiRD9o8P4CLZHa_G94wQHXw4qto6loVQ&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid&authuser=0&prompt=consent"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
