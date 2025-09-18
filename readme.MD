@@ -38,3 +38,7 @@ Please follow all the instructions to have full working systems
     - run: `make http`
     - **optional**: you can test the http is up by forward the connection to your localhost: `make forward-http` and connect to it
 
+
+# Architechture
+visit this diagram to understand more about the architecture: https://drive.google.com/file/d/16osGglyMotNDbr098PLH6Mqbj7DCFZUl/view?usp=sharing
+
