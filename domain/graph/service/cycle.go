@@ -15,7 +15,9 @@ func (s *Algorithm) IsCycle(g *Graph) (log []string, cycles [][]string) {
 		if u.Color == Black {
 			continue
 		}
-		s.isCycle(u, g.IsDirected)
+		if s.isCycle(u, g.IsDirected) {
+			break
+		}
 	}
 
 	cycles = make([][]string, 0)
@@ -26,9 +28,13 @@ func (s *Algorithm) IsCycle(g *Graph) (log []string, cycles [][]string) {
 	return s.cycleLog, cycles
 }
 
-func (s *Algorithm) isCycle(u *Node, directed bool) {
+func (s *Algorithm) isCycle(u *Node, directed bool) bool {
 	u.Color = Grey
 	s.cycleLog = append(s.cycleLog, fmt.Sprintf("grey:%s", u.Id))
+	defer func() {
+		u.Color = Black
+		s.cycleLog = append(s.cycleLog, fmt.Sprintf("black:%s", u.Id))
+	}()
 
 	for v := range u.Neighbors {
 		if u.Parent == v && !directed {
@@ -38,7 +44,9 @@ func (s *Algorithm) isCycle(u *Node, directed bool) {
 		switch v.Color {
 		case White:
 			v.Parent = u
-			s.isCycle(v, directed)
+			if s.isCycle(v, directed) {
+				return true
+			}
 		case Black:
 			// do nothing
 		default:
@@ -48,13 +56,12 @@ func (s *Algorithm) isCycle(u *Node, directed bool) {
 				start: v,
 				end:   u,
 			})
-			s.cycleExist = true
+			return true
 		}
 		s.cycleLog = append(s.cycleLog, fmt.Sprintf("deEdge:%s:%s", u.Id, v.Id))
 	}
 
-	u.Color = Black
-	s.cycleLog = append(s.cycleLog, fmt.Sprintf("black:%s", u.Id))
+	return false
 }
 
 func (s *Algorithm) constructPath(end, start *Node) []string {

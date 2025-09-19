@@ -23,5 +23,7 @@ func Run(r *mux.Router) {
 	graphHandler := graphhttp.NewHandler()
 
 	// graph
-	r.HandleFunc("/graph/{algo}", http.HandlerFunc(graphHandler.InitGraph(http.HandlerFunc(graphHandler.Algorithm))))
+	r.HandleFunc("/graph/{algo}", http.HandlerFunc(graphHandler.InitGraph(
+		http.HandlerFunc(graphHandler.Algorithm)),
+	)).Methods(http.MethodGet)
 }
