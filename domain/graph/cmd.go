@@ -25,5 +25,5 @@ func Run(r *mux.Router) {
 	// graph
 	r.HandleFunc("/graph/{algo}", http.HandlerFunc(graphHandler.InitGraph(
 		http.HandlerFunc(graphHandler.Algorithm)),
-	)).Methods(http.MethodGet)
+	)).Methods(http.MethodPost)
 }
