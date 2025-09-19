@@ -120,6 +120,65 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "url",
+			"item": [
+				{
+					"name": "short",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:12000/short?long_url=hello",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"short"
+							],
+							"query": [
+								{
+									"key": "long_url",
+									"value": "hello"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "redirect",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:12000/short?long_url=testing",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"short"
+							],
+							"query": [
+								{
+									"key": "long_url",
+									"value": "testing"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
