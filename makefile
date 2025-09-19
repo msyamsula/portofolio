@@ -43,3 +43,20 @@ http:
 forward-http:
 	kubectl port-forward svc/http-clusterip 12000:12000
 
+build-main-page:
+	docker build -f ./ui/main-page/Dockerfile -t syamsuldocker/main-page:0.0.0 ./ui/main-page
+
+load-main-page:
+	kind load docker-image syamsuldocker/main-page:0.0.0 --name my-cluster
+
+run-main-page:
+	kubectl apply -f ./ui/main-page/deployment.yaml
+
+forward-main-page:
+	kubectl port-forward svc/main-page-clusterip 13000:80
+
+delete-main-page:
+	kubectl delete deployment main-page-deployment
+
+prepare-main-page: delete-main-page build-main-page load-main-page run-main-page
+
