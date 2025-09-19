@@ -160,18 +160,119 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:12000/short?long_url=testing",
+							"raw": "localhost:12000/4lRBOwQMDQ",
 							"host": [
 								"localhost"
 							],
 							"port": "12000",
 							"path": [
-								"short"
+								"4lRBOwQMDQ"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "graph",
+			"item": [
+				{
+					"name": "dfs",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nodes\": [\n        \"1\",\n        \"2\",\n        \"3\",\n        \"4\",\n        \"5\",\n        \"6\"\n    ],\n    \"edges\": [\n        {\n            \"from\": \"1\",\n            \"to\": \"2\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"2\",\n            \"to\": \"3\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"1\",\n            \"to\": \"3\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"1\",\n            \"to\": \"4\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"5\",\n            \"to\": \"6\",\n            \"weight\": \"1\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:12000/graph/dfs?isDirected=false",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"graph",
+								"dfs"
 							],
 							"query": [
 								{
-									"key": "long_url",
-									"value": "testing"
+									"key": "isDirected",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bfs",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nodes\": [\n        \"1\",\n        \"2\",\n        \"3\",\n        \"4\",\n        \"5\",\n        \"6\"\n    ],\n    \"edges\": [\n        {\n            \"from\": \"1\",\n            \"to\": \"2\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"2\",\n            \"to\": \"3\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"1\",\n            \"to\": \"3\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"1\",\n            \"to\": \"4\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"5\",\n            \"to\": \"6\",\n            \"weight\": \"1\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:12000/graph/bfs?isDirected=false",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"graph",
+								"bfs"
+							],
+							"query": [
+								{
+									"key": "isDirected",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "cycle",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nodes\": [\n        \"1\",\n        \"2\",\n        \"3\",\n        \"4\",\n        \"5\",\n        \"6\"\n    ],\n    \"edges\": [\n        {\n            \"from\": \"1\",\n            \"to\": \"2\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"2\",\n            \"to\": \"3\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"1\",\n            \"to\": \"3\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"1\",\n            \"to\": \"4\",\n            \"weight\": \"1\"\n        },\n        {\n            \"from\": \"5\",\n            \"to\": \"6\",\n            \"weight\": \"1\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:12000/graph/cycle?isDirected=false",
+							"host": [
+								"localhost"
+							],
+							"port": "12000",
+							"path": [
+								"graph",
+								"cycle"
+							],
+							"query": [
+								{
+									"key": "isDirected",
+									"value": "false"
 								}
 							]
 						}
