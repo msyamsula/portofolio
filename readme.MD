@@ -59,7 +59,15 @@ notes: to make the project simpler, I am not using any frontend framework. All t
 
     - instead of doing build, create, load and run separately you may execute: ```make prepare-main-page```, but make sure that each step is covered correctly to prevent partial failure. I only recommend to execute this for restart or refresh the changes into the pods
 
-2. URL shortener
+    main page is my portofolio, it will consist of my home made projects start from url shortener, chat, graph visualizer, monitoring, etc
+
+
+# Projects
+
+1. Url Shortener: it is self explanatory, just try it
+2. Graph Visualizer: this is a project where i want to visualize several popular graph algorithms, thus make an easier understanding of the algorithms
+3. Chat: self explanatory, you may test this app with your browser and incognito browser.
+4. Code review: this is an integration with chat-GPT and Github. Whenever I create a pull request to this repo, an AI assistant will give some comments to give several insight that we might overlooked.
 
 # Architechture
 visit this diagram to understand more about the architecture: https://app.diagrams.net/#G16osGglyMotNDbr098PLH6Mqbj7DCFZUl#%7B%22pageId%22%3A%22cIc-d2nl0CKd4vElDnhN%22%7D
