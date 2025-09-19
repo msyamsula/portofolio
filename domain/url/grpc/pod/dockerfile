@@ -1,7 +1,0 @@
-FROM ubuntu
-
-WORKDIR /app
-
-# COPY domain/url/pod/main 
-COPY ./main ./main
-

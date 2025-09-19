@@ -3,7 +3,6 @@ package url
 import (
 	"testing"
 
-	"github.com/msyamsula/portofolio/domain/url/hasher"
 	"github.com/msyamsula/portofolio/domain/url/repository"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,8 +10,10 @@ import (
 func TestNew(t *testing.T) {
 
 	dep := Dependencies{
-		Repo:   &repository.Repository{},
-		Hasher: &hasher.Service{},
+		Repo:          &repository.Repository{},
+		Host:          "",
+		Length:        0,
+		CharacterPool: "",
 	}
 
 	db := New(dep)

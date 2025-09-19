@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	neturl "net/url"
 
 	url "github.com/msyamsula/portofolio/domain/url/service"
 	"go.opentelemetry.io/otel"
@@ -25,31 +26,44 @@ func New(dep Dependencies) *Handler {
 }
 
 func (h *Handler) HashUrl(w http.ResponseWriter, req *http.Request) {
-
 	HashCounter.Inc()
 	ctx, span := otel.Tracer("").Start(req.Context(), "handler.HashUrl")
 	defer span.End()
 
 	query := req.URL.Query()
 	longUrl := query.Get("long_url")
+
+	type response struct {
+		Error    string `json:"error"`
+		ShortUrl string `json:"short_url,omitempty"`
+	}
+	resp := response{}
+	var err error
+	if err = checkUrl(longUrl); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		resp.Error = err.Error()
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
 	shortUrl, err := h.urlService.SetShortUrl(ctx, longUrl)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-	}
-
-	response := struct {
-		ShortUrl string `json:"short_url,omitempty"`
-	}{
-		ShortUrl: shortUrl,
-	}
-	resp, err := json.Marshal(response)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(resp)
+		resp.Error = err.Error()
+		json.NewEncoder(w).Encode(resp)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	resp.ShortUrl = shortUrl
+	json.NewEncoder(w).Encode(resp)
 
+}
+
+func checkUrl(u string) error {
+	if _, err := neturl.ParseRequestURI(u); err != nil {
+		return err
+	}
+
+	return nil
 }

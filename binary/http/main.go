@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	urlbinary "github.com/msyamsula/portofolio/domain/url"
 	userbinary "github.com/msyamsula/portofolio/domain/user"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
@@ -20,9 +21,6 @@ func main() {
 	// create server routes
 	r := mux.NewRouter()
 
-	// run user binary
-	userbinary.Run(r)
-
 	// cors option
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},                              // Allow all origins (adjust for security)
@@ -31,6 +29,10 @@ func main() {
 		AllowCredentials: true,                                       // Allows credentials (cookies, authorization headers)
 	})
 	corsHandler := c.Handler(r)
+
+	// run user binary
+	userbinary.Run(r)
+	urlbinary.Run(r)
 
 	// server handler
 	http.Handle("/", otelhttp.NewHandler(corsHandler, "")) // use otelhttp for telemetry

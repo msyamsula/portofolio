@@ -1,5 +1,4 @@
-const host = "http://http-clusterip:80"
-// const host = "http://0.0.0.0:12000"
+const host = "http://0.0.0.0:12000"
 function shortenURL() {
     const url = document.getElementById('urlInput').value;
     if (url === '') {
@@ -10,12 +9,13 @@ function shortenURL() {
     var shortUrl
     fetch(`${host}/short?long_url=${url}`)  // Replace with your API URL
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
             return response.json(); // Parse the JSON from the response
         })
         .then(data => {
+            if (data.error !== "") {
+                const error = new Error(data.error)
+                throw error;
+            }
             shortUrl = data.short_url
             // Update the displayed shortened URL
             document.getElementById('shortenedLink').href = shortUrl;
@@ -23,7 +23,7 @@ function shortenURL() {
             document.getElementById('shortenedResult').style.display = 'block';
         })
         .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
+            alert(error);
         });
 }
 
