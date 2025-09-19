@@ -21,8 +21,9 @@ Please follow all the instructions to have full working systems
     - load docker image to kind cluster: `make load-postgres`
     - run postgres: `make postgres`
     - **optional**: you can test the postgres is up by forward the connection to your localhost: `make forward-postgres` and connect to it
-
-        - _**user domain database**_: setup the required table for user domain by executing sql file in ```/domain/user/repository/table/ddl.sql```
+    - do not forget to execute the tables for each domain
+        - user: ```/domain/user/repository/table/ddl.sql```
+        - url shortener (url): ```/domain/url/repository/table/ddl.sql```
         
 
 2. Redis
@@ -41,6 +42,8 @@ Please follow all the instructions to have full working systems
     - build the http image: `make build-http`
     - load docker image to kind cluster: `make load-http`
     - run: `make http`
+
+    - instead of doing build, create, load and run separately you may execute: ```make prepare-http```, but make sure that each step is covered correctly to prevent partial failure. I only recommend to execute this for restart or refresh the changes into the pods
     - **optional**: you can test the http is up by forward the connection to your localhost: `make forward-http` and connect to it. use postman ```portofolio.postman_collection.json``` to test the API
 
 
@@ -54,7 +57,7 @@ notes: to make the project simpler, I am not using any frontend framework. All t
     - forward port: ```make forward-main-page```, port that I use is 13000, feel free to configure it in makefile
     - check: in your browser, go to ```localhost:13000``` to check the page
 
-    from this page, you can usually 
+    - instead of doing build, create, load and run separately you may execute: ```make prepare-main-page```, but make sure that each step is covered correctly to prevent partial failure. I only recommend to execute this for restart or refresh the changes into the pods
 
 2. URL shortener
 

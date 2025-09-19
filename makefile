@@ -60,3 +60,11 @@ delete-main-page:
 
 prepare-main-page: delete-main-page build-main-page load-main-page run-main-page
 
+delete-http:
+	kubectl delete deployment http-deployment
+
+delete-http-secret:
+	kubectl delete secret http-secret
+
+prepare-http: delete-http-secret delete-http http-secret build-http load-http http
+
