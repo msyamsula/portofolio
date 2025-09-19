@@ -1,6 +1,6 @@
 // const host = process.env.HOST
-// const host = "http://0.0.0.0:12000"
-const host = "https://api.syamsul.online"
+const host = "http://0.0.0.0:12000"
+// const host = "https://api.syamsul.online"
 console.log(host);
 
 // Initialize nodes and edges
