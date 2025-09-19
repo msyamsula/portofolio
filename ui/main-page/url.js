@@ -1,4 +1,4 @@
-const host = "https://api.syamsul.online"
+const host = "http://http-clusterip:80"
 // const host = "http://0.0.0.0:12000"
 function shortenURL() {
     const url = document.getElementById('urlInput').value;
