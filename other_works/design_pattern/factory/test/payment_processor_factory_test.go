@@ -3,8 +3,8 @@ package factory
 import (
 	"testing"
 
-	"github.com/msyamsula/portofolio/design_pattern/factory"
-	paymentprocessor "github.com/msyamsula/portofolio/design_pattern/factory/payment_processor"
+	"github.com/msyamsula/portofolio/other_works/design_pattern/factory"
+	paymentprocessor "github.com/msyamsula/portofolio/other_works/design_pattern/factory/payment_processor"
 )
 
 func TestFactory(t *testing.T) {

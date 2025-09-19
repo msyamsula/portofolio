@@ -1,6 +1,6 @@
 package local
 
-import "github.com/msyamsula/portofolio/design_pattern/adapter/fixed"
+import "github.com/msyamsula/portofolio/other_works/design_pattern/adapter/fixed"
 
 type LocalAdapter struct {
 	logger *fixed.LocalLog
