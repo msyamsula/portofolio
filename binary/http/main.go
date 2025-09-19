@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	userbinary "github.com/msyamsula/portofolio/domain/user/binary"
+	userbinary "github.com/msyamsula/portofolio/domain/user"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
