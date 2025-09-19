@@ -1,12 +1,10 @@
-package algorithm
-
-import "github.com/msyamsula/portofolio/domain/graph"
+package service
 
 type CyclePair struct {
-	start *graph.Node
-	end   *graph.Node
+	start *Node
+	end   *Node
 }
-type Service struct {
+type Algorithm struct {
 	// dfs
 	dfsLog []string
 
@@ -34,6 +32,6 @@ type Service struct {
 	dfsTree   []string
 }
 
-func New() *Service {
-	return &Service{}
+func New() *Algorithm {
+	return &Algorithm{}
 }

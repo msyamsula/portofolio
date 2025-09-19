@@ -1,16 +1,12 @@
-package algorithm
+package service
 
-import (
-	"github.com/msyamsula/portofolio/domain/graph"
-)
-
-func (s *Service) Eulerian(g *graph.Service) (path []string) {
+func (s *Algorithm) Eulerian(g *Graph) (path []string) {
 	for _, n := range g.Grabber {
 		n.Visited = false
 	}
 	s.eulerPath = []string{}
 
-	var start *graph.Node
+	var start *Node
 	if !g.IsDirected {
 		var odd, even int
 		for _, n := range g.Grabber {
@@ -39,14 +35,15 @@ func (s *Service) Eulerian(g *graph.Service) (path []string) {
 		var pOne, nOne, zero int
 		for _, n := range g.Grabber {
 			degree := n.Outdegree - n.Indegree
-			if degree == -1 {
+			switch degree {
+			case -1:
 				nOne++
-			} else if degree == 1 {
+			case 1:
 				pOne++
 				start = n
-			} else if degree == 0 {
+			case 0:
 				zero++
-			} else {
+			default:
 				// if exist then no path or cycle
 				return []string{}
 			}
@@ -78,7 +75,7 @@ func (s *Service) Eulerian(g *graph.Service) (path []string) {
 	return s.eulerPath
 }
 
-func (s *Service) ep(u *graph.Node, directed bool) {
+func (s *Algorithm) ep(u *Node, directed bool) {
 	s.dfsTree = append(s.dfsTree, u.Id)
 
 	for v := range u.Neighbors {

@@ -1,21 +1,19 @@
-package algorithm
+package service
 
 import (
 	"sort"
-
-	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) transpose(g *graph.Service) *graph.Service {
-	gt := &graph.Service{
-		Grabber:    make(map[string]*graph.Node),
+func (s *Algorithm) transpose(g *Graph) *Graph {
+	gt := &Graph{
+		Grabber:    make(map[string]*Node),
 		IsDirected: g.IsDirected,
 	}
 
 	for id := range g.Grabber {
-		gt.Grabber[id] = &graph.Node{
+		gt.Grabber[id] = &Node{
 			Id:        id,
-			Neighbors: make(map[*graph.Node]int),
+			Neighbors: make(map[*Node]int),
 		}
 	}
 
@@ -28,9 +26,9 @@ func (s *Service) transpose(g *graph.Service) *graph.Service {
 	return gt
 }
 
-func (s *Service) StronglyConnectedComponents(g *graph.Service) (log []string, comp [][]string) {
+func (s *Algorithm) StronglyConnectedComponents(g *Graph) (log []string, comp [][]string) {
 
-	nodeList := []*graph.Node{}
+	nodeList := []*Node{}
 	for _, n := range g.Grabber {
 		n.Visited = false
 		n.Tout = 0
@@ -65,7 +63,7 @@ func (s *Service) StronglyConnectedComponents(g *graph.Service) (log []string, c
 	return []string{}, comp
 }
 
-func (s *Service) getSccTree(u *graph.Node) {
+func (s *Algorithm) getSccTree(u *Node) {
 	u.Visited = true
 	s.sccTree = append(s.sccTree, u.Id)
 
@@ -78,7 +76,7 @@ func (s *Service) getSccTree(u *graph.Node) {
 	}
 }
 
-func (s *Service) dfsTimer(u *graph.Node, timer *int) {
+func (s *Algorithm) dfsTimer(u *Node, timer *int) {
 	u.Visited = true
 	*timer++
 	u.Tin = *timer

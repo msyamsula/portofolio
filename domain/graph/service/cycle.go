@@ -1,20 +1,18 @@
-package algorithm
+package service
 
 import (
 	"fmt"
-
-	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) IsCycle(g *graph.Service) (log []string, cycles [][]string) {
+func (s *Algorithm) IsCycle(g *Graph) (log []string, cycles [][]string) {
 	for _, n := range g.Grabber {
-		n.Color = graph.White
+		n.Color = White
 	}
 	s.cycleLog = []string{}
 	s.cycleExist = false
 
 	for _, u := range g.Grabber {
-		if u.Color == graph.Black {
+		if u.Color == Black {
 			continue
 		}
 		s.isCycle(u, g.IsDirected)
@@ -28,8 +26,8 @@ func (s *Service) IsCycle(g *graph.Service) (log []string, cycles [][]string) {
 	return s.cycleLog, cycles
 }
 
-func (s *Service) isCycle(u *graph.Node, directed bool) {
-	u.Color = graph.Grey
+func (s *Algorithm) isCycle(u *Node, directed bool) {
+	u.Color = Grey
 	s.cycleLog = append(s.cycleLog, fmt.Sprintf("grey:%s", u.Id))
 
 	for v := range u.Neighbors {
@@ -37,12 +35,13 @@ func (s *Service) isCycle(u *graph.Node, directed bool) {
 			continue
 		}
 		s.cycleLog = append(s.cycleLog, fmt.Sprintf("edge:%s:%s", u.Id, v.Id))
-		if v.Color == graph.White {
+		switch v.Color {
+		case White:
 			v.Parent = u
 			s.isCycle(v, directed)
-		} else if v.Color == graph.Black {
+		case Black:
 			// do nothing
-		} else {
+		default:
 			// cycle detected
 			s.cycleLog = append(s.cycleLog, fmt.Sprintf("cycle:%s:%s", u.Id, v.Id))
 			s.cycle = append(s.cycle, CyclePair{
@@ -54,6 +53,24 @@ func (s *Service) isCycle(u *graph.Node, directed bool) {
 		s.cycleLog = append(s.cycleLog, fmt.Sprintf("deEdge:%s:%s", u.Id, v.Id))
 	}
 
-	u.Color = graph.Black
+	u.Color = Black
 	s.cycleLog = append(s.cycleLog, fmt.Sprintf("black:%s", u.Id))
+}
+
+func (s *Algorithm) constructPath(end, start *Node) []string {
+	ptr := end
+	backPath := []string{}
+	for ptr != start {
+		backPath = append(backPath, ptr.Id)
+		ptr = ptr.Parent
+	}
+
+	backPath = append(backPath, start.Id)
+
+	path := []string{}
+	for i := len(backPath) - 1; i >= 0; i-- {
+		path = append(path, backPath[i])
+	}
+
+	return path
 }

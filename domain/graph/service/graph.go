@@ -1,4 +1,4 @@
-package graph
+package service
 
 import "strconv"
 
@@ -25,21 +25,21 @@ type Node struct {
 	IsArticulationPoint bool
 }
 
-type Service struct {
+type Graph struct {
 	Grabber    map[string]*Node
 	IsDirected bool
 }
 
-func (s *Service) GetNode(id string) *Node {
+func (s *Graph) GetNode(id string) *Node {
 	return s.Grabber[id]
 }
 
-func New(nodes []string, edges [][]string, isDirected ...bool) *Service {
+func NewGraph(nodes []string, edges [][]string, isDirected ...bool) *Graph {
 	directed := false
 	if len(isDirected) > 0 {
 		directed = isDirected[0]
 	}
-	s := &Service{
+	s := &Graph{
 		Grabber:    make(map[string]*Node),
 		IsDirected: directed,
 	}
@@ -73,10 +73,6 @@ func New(nodes []string, edges [][]string, isDirected ...bool) *Service {
 			}
 		}
 
-		if nu.Neighbors == nil {
-			nu.Neighbors = make(map[*Node]int)
-		}
-
 		nu.Neighbors[nv] = w
 		nv.Indegree++
 		nu.Outdegree++
@@ -85,9 +81,6 @@ func New(nodes []string, edges [][]string, isDirected ...bool) *Service {
 			continue // only process explicit edge if directed graph
 		}
 
-		if nv.Neighbors == nil {
-			nv.Neighbors = make(map[*Node]int)
-		}
 		nv.Neighbors[nu] = w
 		nu.Indegree++
 		nv.Outdegree++

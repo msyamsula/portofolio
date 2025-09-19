@@ -1,12 +1,10 @@
-package algorithm
+package service
 
 import (
 	"fmt"
-
-	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) BreadthFirstSearch(g *graph.Service) []string {
+func (s *Algorithm) BreadthFirstSearch(g *Graph) []string {
 	// clean up previous work first
 	for _, n := range g.Grabber {
 		n.Visited = false
@@ -23,8 +21,8 @@ func (s *Service) BreadthFirstSearch(g *graph.Service) []string {
 	return s.bfsLog
 }
 
-func (s *Service) bfs(start *graph.Node) {
-	queue := make([]*graph.Node, 0)
+func (s *Algorithm) bfs(start *Node) {
+	queue := make([]*Node, 0)
 	queue = append(queue, start)
 	start.Parent = nil
 	start.Visited = true

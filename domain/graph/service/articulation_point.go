@@ -1,15 +1,13 @@
-package algorithm
+package service
 
 import (
 	"fmt"
-
-	"github.com/msyamsula/portofolio/domain/graph"
 )
 
-func (s *Service) ArticulationPointAndBridge(g *graph.Service) (log []string, id []string, bridge [][]string) {
+func (s *Algorithm) ArticulationPointAndBridge(g *Graph) (log []string, id []string, bridge [][]string) {
 	for _, n := range g.Grabber {
 		n.Parent = nil
-		n.Color = graph.White
+		n.Color = White
 		n.Tin = 0
 		n.Low = 0
 	}
@@ -19,7 +17,7 @@ func (s *Service) ArticulationPointAndBridge(g *graph.Service) (log []string, id
 
 	timer := 0
 	for _, n := range g.Grabber {
-		if n.Color == graph.Black {
+		if n.Color == Black {
 			continue
 		}
 		rootChild := 0
@@ -29,9 +27,9 @@ func (s *Service) ArticulationPointAndBridge(g *graph.Service) (log []string, id
 	return s.apLog, s.apId, s.bridge
 }
 
-func (s *Service) ap(u *graph.Node, timer *int, root *graph.Node, child *int) {
+func (s *Algorithm) ap(u *Node, timer *int, root *Node, child *int) {
 	*timer++
-	u.Color = graph.Grey
+	u.Color = Grey
 	u.Tin = *timer
 	s.apLog = append(s.apLog, fmt.Sprintf("grey:%s", u.Id))
 
@@ -42,13 +40,14 @@ func (s *Service) ap(u *graph.Node, timer *int, root *graph.Node, child *int) {
 			continue
 		}
 		s.apLog = append(s.apLog, fmt.Sprintf("edge:%s:%s", u.Id, v.Id))
-		if v.Color == graph.Grey {
+		switch v.Color {
+		case Grey:
 			u.Low = min(u.Low, v.Tin)
 			s.apLog = append(s.apLog, fmt.Sprintf("label:%s:%d:%d", u.Id, u.Tin, u.Low))
-		} else if v.Color == graph.Black {
+		case Black:
 			u.Low = min(u.Low, v.Low)
 			s.apLog = append(s.apLog, fmt.Sprintf("label:%s:%d:%d", u.Id, u.Tin, u.Low))
-		} else {
+		default:
 			if u == root {
 				*child++
 			}
@@ -76,6 +75,6 @@ func (s *Service) ap(u *graph.Node, timer *int, root *graph.Node, child *int) {
 		s.apId = append(s.apId, u.Id)
 	}
 
-	u.Color = graph.Black
+	u.Color = Black
 	s.apLog = append(s.apLog, fmt.Sprintf("white:%s", u.Id))
 }

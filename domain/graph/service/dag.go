@@ -1,17 +1,13 @@
-package algorithm
+package service
 
-import (
-	"github.com/msyamsula/portofolio/domain/graph"
-)
-
-func (s *Service) DirectedAcyclicGraph(g *graph.Service) (path []string, acyclic bool) {
+func (s *Algorithm) DirectedAcyclicGraph(g *Graph) (path []string, acyclic bool) {
 	for _, n := range g.Grabber {
 		n.Visited = false
 	}
 	s.dagPath = []string{}
 	if g.IsDirected {
 		// use kahn
-		startNodes := []*graph.Node{}
+		startNodes := []*Node{}
 		for _, n := range g.Grabber {
 			if n.Indegree == 0 {
 				startNodes = append(startNodes, n)
@@ -55,7 +51,7 @@ func (s *Service) DirectedAcyclicGraph(g *graph.Service) (path []string, acyclic
 	return s.dagPath, true
 }
 
-func (s *Service) dag(u *graph.Node) {
+func (s *Algorithm) dag(u *Node) {
 	u.Visited = true
 	s.dfsLog = append(s.dfsLog, u.Id)
 
@@ -70,7 +66,7 @@ func (s *Service) dag(u *graph.Node) {
 	s.dagPath = append(s.dagPath, u.Id)
 }
 
-func (s *Service) kahn(nodes []*graph.Node) {
+func (s *Algorithm) kahn(nodes []*Node) {
 	queue := nodes
 
 	s.dagPath = []string{}

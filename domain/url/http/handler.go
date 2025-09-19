@@ -7,12 +7,10 @@ import (
 
 	url "github.com/msyamsula/portofolio/domain/url/service"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
 	urlService *url.Service
-	tracer     trace.Tracer
 }
 
 type Dependencies struct {
