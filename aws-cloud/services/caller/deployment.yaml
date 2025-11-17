@@ -1,0 +1,65 @@
+---
+# load balancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: caller-loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: caller
+    type: pod
+  ports:
+    - port: 80        # Public port
+      targetPort: 8000 # Container port
+      protocol: TCP
+
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: caller-clusterip
+  labels:
+    app: caller
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: caller
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 8000 # service port
+      targetPort: 8000 # container port
+      name: caller-clusterip
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caller-deployment
+  labels:
+    app: caller
+    type: deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: caller
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: caller
+        type: pod
+    spec:
+      containers:
+      - name: caller
+        image: <ECR>
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        command: ["./dummy"]
+

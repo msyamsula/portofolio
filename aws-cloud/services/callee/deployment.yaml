@@ -1,0 +1,65 @@
+---
+# load balancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: callee-loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: callee
+    type: pod
+  ports:
+    - port: 80        # Public port
+      targetPort: 8000 # Container port
+      protocol: TCP
+
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: callee-clusterip
+  labels:
+    app: callee
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: callee
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 8000 # service port
+      targetPort: 8000 # container port
+      name: callee-clusterip
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: callee-deployment
+  labels:
+    app: callee
+    type: deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: callee
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: callee
+        type: pod
+    spec:
+      containers:
+      - name: callee
+        image: <ECR>
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        command: ["./dummy"]
+
