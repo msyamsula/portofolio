@@ -1,0 +1,68 @@
+---
+# load balancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: http
+    type: pod
+  ports:
+    - port: 80        # Public port
+      targetPort: 8000 # Container port
+      protocol: TCP
+
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-clusterip
+  labels:
+    app: http
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: http
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 8000 # service port
+      targetPort: 8000 # container port
+      name: dummy-clusterip
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-deployment
+  labels:
+    app: http
+    type: deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: http
+      type: pod
+  template:
+    metadata:
+      labels:
+        app: http
+        type: pod
+    spec:
+      containers:
+      - name: http
+        image: <ECR_IMAGE>
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        envFrom:
+          - secretRef:
+              name: http-secret
+        command: ["./http"]
+
