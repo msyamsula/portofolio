@@ -10,7 +10,7 @@
 - caller: `docker build --platform linux/amd64,linux/arm64 -t caller -f aws-cloud/services/caller/dockerfile .`
 - run: use docker desktop for easy to use, run testing image
 
-# connect to ect
+# connect to ecr
 - get account id: `aws sts get-caller-identity`
 - login to ecr: `aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <ID>.dkr.ecr.<REGION>.amazonaws.com`
 - proper tagging: `docker tag <YOUR_IMAGE> <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/my-app:latest`
