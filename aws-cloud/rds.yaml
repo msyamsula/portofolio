@@ -15,7 +15,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: "Allow database access from developer IP"
-      VpcId: vpc-REPLACE_ME #replace this
+      VpcId: <VPC>
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 5432
@@ -30,15 +30,15 @@ Resources:
     Properties:
       DBSubnetGroupDescription: "Subnet group for RDS"
       SubnetIds:
-        - subnet-REPLACE_PRIVATE_1 #replace this
-        - subnet-REPLACE_PRIVATE_2
+        - <SUBNET_1>
+        - <SUBNET_2>
 
   RDSInstance:
     Type: AWS::RDS::DBInstance
     Properties:
       DBName: mydb
       Engine: postgres
-      MasterUsername: admin
+      MasterUsername: culcalcul
       MasterUserPassword: !Ref DBPassword
       AllocatedStorage: 20
       DBInstanceClass: db.t3.micro
@@ -46,7 +46,7 @@ Resources:
         - !Ref RDSSecurityGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       MultiAZ: false
-      PubliclyAccessible: false
+      PubliclyAccessible: true
       StorageType: gp3
       Port: 5432
 
