@@ -1,20 +1,4 @@
 ---
-# load balancer
-apiVersion: v1
-kind: Service
-metadata:
-  name: callee-loadbalancer
-spec:
-  type: LoadBalancer
-  selector:
-    app: callee
-    type: pod
-  ports:
-    - port: 80        # Public port
-      targetPort: 8000 # Container port
-      protocol: TCP
-
----
 # cluster IP
 apiVersion: v1
 kind: Service
