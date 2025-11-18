@@ -23,7 +23,7 @@ import (
 
 var (
 	pgPassword = os.Getenv("POSTGRES_PASSWORD")
-	pgUsername = os.Getenv("POSTGRES_USERNAME")
+	pgUsername = os.Getenv("POSTGRES_USER")
 	pgDbName   = os.Getenv("POSTGRES_DB")
 	pgHost     = os.Getenv("POSTGRES_HOST")
 	pgPort     = os.Getenv("POSTGRES_PORT")
