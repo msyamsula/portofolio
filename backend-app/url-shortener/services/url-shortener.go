@@ -35,9 +35,11 @@ func (s *urlShortener) SetLongUrl(ctx context.Context, shortUrl, longUrl string)
 
 func (s *urlShortener) Short(ctx context.Context, longUrl string) (string, error) {
 
-	if shortUrl, err := s.cache.Get(ctx, longUrl); err == nil {
-		// cache hit
-		return fmt.Sprintf("%s/%s", s.callbackUri, shortUrl), nil
+	if s.cache != nil {
+		if shortUrl, err := s.cache.Get(ctx, longUrl); err == nil {
+			// cache hit
+			return fmt.Sprintf("%s/%s", s.callbackUri, shortUrl), nil
+		}
 	}
 
 	shortUrl, err := s.persistence.GetShortUrl(ctx, longUrl)
