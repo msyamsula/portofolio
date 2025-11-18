@@ -26,7 +26,7 @@ type Config struct {
 
 func New(config Config) Repository {
 	// postgre
-	connectionString := fmt.Sprintf("user=%s dbname=%s sslmode=disable password=%s host=%s port=%s",
+	connectionString := fmt.Sprintf("user=%s dbname=%s sslmode=require password=%s host=%s port=%s",
 		config.Username, config.Name, config.Password, config.Host, config.Port,
 	)
 	db, err := sqlx.Connect("postgres", connectionString)
