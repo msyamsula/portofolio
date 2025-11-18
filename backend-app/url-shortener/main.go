@@ -54,6 +54,7 @@ func Route(r *mux.Router) *mux.Router {
 				Host:     pgHost,
 				Port:     pgPort,
 			}),
+			// Cache: nil,
 			Cache: cache.New(cache.Config{
 				Host:     redisHost,
 				Port:     redisPort,
@@ -91,7 +92,7 @@ func main() {
 	finalHandler := cors.Handler(tracedHandler)
 
 	// server start
-	port := 5000
+	port := 10000
 	server := &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: finalHandler,
