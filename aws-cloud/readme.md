@@ -5,6 +5,8 @@
 - run aws services: `aws cloudformation deploy --template-file <YAML> --stack-name <NAME> --parameter-overrides DBPassword='<PASSWORD>' YourIP='<IP>'`
 - delete: `aws cloudformation delete-stack --stack-name <NAME>`
 
+# setup rds
+- run: `aws cloudformation deploy --template-file <YAML> --stack-name <NAME> --parameter-overrides DBPassword='<PASSWORD>' YourIP='<IP>'`
 
 # dummy program
 - callee: `docker build --platform linux/amd64,linux/arm64 -t callee -f aws-cloud/services/callee/dockerfile .`
