@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Public Container Registry"
 
 Resources:
-  CalleeRepository:
+  UrlShortenerRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: url-shortener
