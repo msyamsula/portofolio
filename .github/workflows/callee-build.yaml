@@ -38,25 +38,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 4. Build Docker image
-      - name: Build Docker image
+      # 4. Build and Push Docker image
+      - name: Build and Push Docker image
         run: |
+          ECR_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
           COMMIT_HASH=$(echo $GITHUB_SHA | cut -c1-7)
           TAG="${COMMIT_HASH}-${GITHUB_RUN_NUMBER}"
-          docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME:latest -t $IMAGE_NAME:$TAG -f aws-cloud/services/callee/dockerfile .
+          docker buildx build --platform linux/amd64,linux/arm64 -t $ECR_URI:latest -t $ECR_URI:$TAG -f aws-cloud/services/callee/dockerfile --push .
           echo "Image tags: latest, $TAG"
-
-      # 5. Tag image with ECR repository URI
-      - name: Tag Docker image for ECR
-        run: |
-          ECR_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
-          docker tag $IMAGE_NAME:latest $ECR_URI:latest
-          docker tag $IMAGE_NAME:$TAG $ECR_URI:$TAG
-          echo "ECR Image: $ECR_URI:$TAG"
-
-      # 6. Push Docker image to ECR
-      - name: Push Docker image to ECR
-        run: |
-          ECR_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
-          docker push $ECR_URI:latest
-          docker push $ECR_URI:$TAG
