@@ -6,7 +6,8 @@
 - delete: `aws cloudformation delete-stack --stack-name <NAME>`
 
 # setup rds
-- run: `aws cloudformation deploy --template-file <YAML> --stack-name <NAME> --parameter-overrides DBPassword='<PASSWORD>' YourIP='<IP>'`
+- create: `aws cloudformation deploy --template-file <YAML> --stack-name <NAME> --parameter-overrides DBPassword='<PASSWORD>' YourIP='<IP>'`
+- delete: `aws cloudformation delete-stack --stack-name <NAME>`
 
 # dummy program
 - callee: `docker build --platform linux/amd64,linux/arm64 -t callee -f aws-cloud/services/callee/dockerfile .`
@@ -15,14 +16,13 @@
 
 # setup ecr (aws docker repository)
 - get account id: `aws sts get-caller-identity`
+- create: `aws cloudformation deploy --template-file <YAML> --stack-name <NAME>`
 - login to ecr: `aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <ID>.dkr.ecr.<REGION>.amazonaws.com`
 - proper tagging: `docker tag <YOUR_IMAGE> <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/my-app:latest`
 - push: `docker push <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/my-app:latest`
 - pull: `docker pull <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/my-app:latest`
+- delete: `aws cloudformation delete-stack --stack-name <NAME>`
 
 # setup eks
+- create: `aws cloudformation deploy --template-file <FILE> --stack-name <NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM`
 - add cluster to kubectl context for discovery: `aws eks --region <REGION> update-kubeconfig --name <CLUSTER>`
-- run eks: `aws cloudformation deploy --template-file <FILE> --stack-name <NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM`
-
-
-
