@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: url-shortener
-        image: <ECR>
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:224bf7e-15
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 10000
