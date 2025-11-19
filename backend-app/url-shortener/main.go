@@ -61,7 +61,11 @@ func createLogFile() *os.File {
 			log.Printf("failed to open log file: %v\n", err)
 			return nil
 		}
-		log.SetOutput(f)
+		if env == "docker" {
+			log.SetOutput(os.Stdout)
+		} else {
+			log.SetOutput(f)
+		}
 
 		return f
 	}
