@@ -9,7 +9,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/binary/postgres"
-	"github.com/msyamsula/portofolio/binary/telemetry"
 	messageconsumer "github.com/msyamsula/portofolio/domain/message/consumer"
 	"github.com/msyamsula/portofolio/domain/message/repository"
 	"github.com/msyamsula/portofolio/domain/message/service"
@@ -17,12 +16,10 @@ import (
 )
 
 func main() {
-	appName := "consumer"
 
 	// load env
 	godotenv.Load(".env")
 
-	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"))
 	var err error
 
 	consumers := []*messageconsumer.Consumer{}

@@ -11,7 +11,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/binary/redis"
-	"github.com/msyamsula/portofolio/binary/telemetry"
 	userhttp "github.com/msyamsula/portofolio/domain/user/http"
 	useroauth "github.com/msyamsula/portofolio/domain/user/oauth"
 	"github.com/msyamsula/portofolio/domain/user/repository"
@@ -65,13 +64,9 @@ func initGoogleSigninService(userSvc *service.Service) *useroauth.Service {
 }
 
 func Run(r *mux.Router) {
-	appName := "user"
 
 	// load env
 	godotenv.Load(".env")
-
-	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"))
 
 	pg, re := initDataLayer()
 

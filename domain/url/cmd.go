@@ -12,7 +12,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/binary/postgres"
 	"github.com/msyamsula/portofolio/binary/redis"
-	"github.com/msyamsula/portofolio/binary/telemetry"
 	urlhttp "github.com/msyamsula/portofolio/domain/url/http"
 	urlrepo "github.com/msyamsula/portofolio/domain/url/repository"
 	url "github.com/msyamsula/portofolio/domain/url/service"
@@ -72,13 +71,9 @@ func initUrlHandler(pg *postgres.Postgres, re *redis.Redis) *urlhttp.Handler {
 }
 
 func Run(r *mux.Router) {
-	appName := "url"
 
 	// load env
 	godotenv.Load(".env")
-
-	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, os.Getenv("JAEGER_HOST"))
 
 	// register prometheus metrics
 	prometheus.MustRegister(urlhttp.HashCounter)
