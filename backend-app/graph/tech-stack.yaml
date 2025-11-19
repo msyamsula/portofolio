@@ -4,7 +4,7 @@ Description: "Stack for Graph"
 Resources:
 
   # ECR Repository for Url Shortener
-  UrlShortenerRepository:
+  GraphRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: graph
