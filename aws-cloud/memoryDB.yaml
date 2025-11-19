@@ -31,7 +31,6 @@ Resources:
     Properties:
       GroupDescription: Security group for MemoryDB cluster
       VpcId: !Ref AWS::NoValue
-      # Default VPC automatically selected
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 6379
@@ -48,7 +47,6 @@ Resources:
         - subnet-1
         - subnet-2
         - subnet-3
-      # (AWS automatically resolves default VPC subnets)
 
   # --- Parameter Group (Optional) ---
   MemoryDBParameterGroup:
@@ -59,7 +57,7 @@ Resources:
       Description: Custom Redis parameters
       Parameters:
         # Example parameters, adjust as needed
-        timeout: "0"
+        timeout: "500"
         maxmemory-policy: "allkeys-lru"
 
   # --- ACL User (optional, recommended) ---
