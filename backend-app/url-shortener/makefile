@@ -1,3 +1,8 @@
+SHELL := /bin/bash
+
+rungo:
+	export $(grep -v '^#' .env | xargs) && go run main.go > /dev/null
+
 build:
 	docker build --platform linux/amd64,linux/arm64 -t url-shortener .
 

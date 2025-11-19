@@ -59,7 +59,7 @@ func NewDynamo(config DynamoConfig) Repository {
 	// Create DynamoDB client
 	svc := dynamodb.NewFromConfig(cfg)
 
-	fmt.Println("connected to dynamo db")
+	log.Println("connected to dynamo db")
 
 	return &dynamo{
 		ttl:       config.Ttl,

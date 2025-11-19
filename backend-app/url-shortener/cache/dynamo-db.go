@@ -33,11 +33,12 @@ func (r *dynamo) Get(ctx context.Context, key string) (string, error) {
 	}
 	resp, err := r.conn.Query(ctx, dynamoQuery)
 	if err != nil {
-		log.Fatalf("failed to get item: %v", err)
+		log.Printf("failed to get item: %v\n", err)
+		return "", err
 	}
 
 	if len(resp.Items) == 0 {
-		fmt.Println("Item not found")
+		log.Println("Item not found")
 		return "", nil
 	}
 

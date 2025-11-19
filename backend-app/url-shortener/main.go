@@ -49,7 +49,28 @@ var (
 	dynamoTable = os.Getenv("DYNAMO_TABLE")
 )
 
-func Route(r *mux.Router) *mux.Router {
+func createLogFile() *os.File {
+	// Include file name and line number in log output
+	log.SetFlags(log.LstdFlags | log.Llongfile)
+
+	// Open (or create) a log file
+	if pgHost == "localhost" {
+		log.Println("local")
+		f, err := os.OpenFile(fmt.Sprintf("%s_log", appName), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Printf("failed to open log file: %v\n", err)
+			return nil
+		}
+		log.SetOutput(f)
+
+		return f
+	}
+
+	return nil
+
+}
+
+func route(r *mux.Router) *mux.Router {
 
 	// initialize instrumentation
 	telemetryv2.InitializeTelemetryTracing(appName, jaegerHost)
@@ -83,9 +104,12 @@ func Route(r *mux.Router) *mux.Router {
 
 func main() {
 
+	f := createLogFile()
+	defer f.Close()
+
 	// create server routes
 	r := mux.NewRouter()
-	r = Route(r)
+	r = route(r)
 
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	tracedHandler := otelhttp.NewHandler(r, "")
@@ -101,10 +125,11 @@ func main() {
 
 	// server start
 	server := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Addr:    fmt.Sprintf("0.0.0.0:%s", port),
 		Handler: finalHandler,
 	}
 
+	log.Println("server starting...")
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server failed: %v", err)
