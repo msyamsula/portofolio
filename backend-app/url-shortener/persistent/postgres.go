@@ -29,9 +29,7 @@ func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, er
 		return "", err
 	}
 
-	dest := struct {
-		LongUrl string `db:"long_url,omitempty"`
-	}{}
+	dest := ""
 	dbCtx, dbSpan := otel.Tracer("").Start(ctx, "db.getExecution")
 	defer dbSpan.End()
 	err = stmt.GetContext(dbCtx, &dest, map[string]interface{}{
@@ -41,7 +39,7 @@ func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, er
 		return "", err
 	}
 
-	return dest.LongUrl, nil
+	return dest, nil
 
 }
 
@@ -62,9 +60,7 @@ func (repo *postgres) GetLongUrl(c context.Context, shortUrl string) (string, er
 		return "", err
 	}
 
-	dest := struct {
-		LongUrl string `db:"long_url,omitempty"`
-	}{}
+	dest := ""
 	dbCtx, dbSpan := otel.Tracer("").Start(ctx, "db.getExecution")
 	defer dbSpan.End()
 	err = stmt.GetContext(dbCtx, &dest, map[string]interface{}{
@@ -74,7 +70,7 @@ func (repo *postgres) GetLongUrl(c context.Context, shortUrl string) (string, er
 		return "", err
 	}
 
-	return dest.LongUrl, nil
+	return dest, nil
 
 }
 
