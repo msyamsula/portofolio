@@ -23,6 +23,7 @@ import (
 
 var (
 	appName = "url-shortener"
+	env     = os.Getenv("ENVIRONMENT")
 
 	pgPassword = os.Getenv("POSTGRES_PASSWORD")
 	pgUsername = os.Getenv("POSTGRES_USER")
@@ -53,7 +54,7 @@ func createLogFile() *os.File {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 
 	// Open (or create) a log file
-	if pgHost == "localhost" {
+	if env != "production" {
 		log.Println("local")
 		f, err := os.OpenFile(fmt.Sprintf("%s_log", appName), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
