@@ -6,7 +6,7 @@ rungo:
 	set -a; source .env; set +a; go run main.go
 
 build:
-	docker build --platform linux/amd64,linux/arm64 -t url-shortener .
+	docker build --platform linux/arm64 -t url-shortener .
 
 run:
 	docker run -it --name url-shortener --network=test --rm \
@@ -20,10 +20,10 @@ runkube:
 	kubectl apply -f deployment.yaml
 
 deploy-canary:
-	kubectl set image deployment/url-shortener-canary-deployment url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:679441d-21
+	kubectl set image deployment/url-shortener-canary-deployment url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${version}
 
 deploy:
-	kubectl set image deployment/url-shortener-deployment url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:679441d-21
+	kubectl set image deployment/url-shortener-deployment url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${version}
 
 
 create-aws-stack:
