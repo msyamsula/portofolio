@@ -19,6 +19,12 @@ runkube:
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
 
+deploy-canary:
+	kubectl set image deployment/url-shortener-canary-deployment url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:679441d-21
+
+deploy:
+	kubectl set image deployment/url-shortener-deployment url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:679441d-21
+
 
 create-aws-stack:
 	aws cloudformation deploy --template-file tech-stack.yaml \
