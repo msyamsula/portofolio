@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create a DynamoDB table
+
+Parameters:
+  TableName:
+    Type: String
+    Default: MyDynamoTable
+    Description: Name of DynamoDB table
+
+Resources:
+
+  MyDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+
+      BillingMode: PAY_PER_REQUEST  # No capacity planning needed
+
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH     # Partition Key
+        - AttributeName: sk
+          KeyType: RANGE    # Sort Key
+
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: sk
+              KeyType: HASH
+            - AttributeName: pk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+      SSESpecification:
+        SSEEnabled: true  # Server-side encryption
+
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+      Tags:
+        - Key: Environment
+          Value: Dev
+        - Key: Owner
+          Value: CloudFormation
+
+Outputs:
+  TableName:
+    Value: !Ref MyDynamoDBTable
+    Description: DynamoDB table name
+
+  TableArn:
+    Value: !GetAtt MyDynamoDBTable.Arn
+    Description: DynamoDB table ARN
