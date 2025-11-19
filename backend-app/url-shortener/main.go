@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -61,11 +62,9 @@ func createLogFile() *os.File {
 			log.Printf("failed to open log file: %v\n", err)
 			return nil
 		}
-		if env == "docker" {
-			log.SetOutput(os.Stdout)
-		} else {
-			log.SetOutput(f)
-		}
+
+		multiOuput := io.MultiWriter(os.Stdout, f)
+		log.SetOutput(multiOuput)
 
 		return f
 	}
