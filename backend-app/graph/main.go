@@ -32,7 +32,7 @@ func Route(r *mux.Router) *mux.Router {
 		Service: service.New(),
 	})
 
-	r.HandleFunc("/graph/{algo}", h.Solve).Methods(http.MethodGet)
+	r.HandleFunc("/graph/{algo}", h.Solve).Methods(http.MethodPost)
 
 	return r
 
