@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: caller-configmap
 data:
-  CALLEE_HOST: <ADDRESS>
+  CALLEE_HOST: "http://callee-clusterip:8000"

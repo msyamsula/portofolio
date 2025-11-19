@@ -57,7 +57,7 @@ spec:
     spec:
       containers:
       - name: caller
-        image: <ECR>
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/caller:0.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000

@@ -24,10 +24,11 @@ Resources:
       Version: "1.34"
       ResourcesVpcConfig:
         SubnetIds:
-          - subnet-11111111
-          - subnet-22222222
+          - subnet-0eb111d17198bcafb
+          - subnet-09ab8991a3557fbea
+          - subnet-0ef76cf997890286e
         SecurityGroupIds:
-          - sg-12345678
+          - sg-0ced17272be198cb8
 
   # IAM Role for Node Group (EC2 Worker Nodes)
   NodeGroupRole:
@@ -51,11 +52,12 @@ Resources:
       ClusterName: !Ref MyEKSCluster
       NodeRole: !GetAtt NodeGroupRole.Arn
       Subnets:
-        - subnet-11111111
-        - subnet-22222222
+        - subnet-0eb111d17198bcafb
+        - subnet-09ab8991a3557fbea
+        - subnet-0ef76cf997890286e
       ScalingConfig:
         MinSize: 1
-        MaxSize: 3
-        DesiredSize: 2
+        MaxSize: 5
+        DesiredSize: 3
       InstanceTypes:
-        - t3.medium 
+        - t3.medium
