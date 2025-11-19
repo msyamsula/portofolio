@@ -39,6 +39,7 @@ var (
 	characterPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqrstuvwxyz"
 
 	callbackUri = os.Getenv("CALLBACK_URI")
+	port        = os.Getenv("PORT")
 )
 
 func Route(r *mux.Router) *mux.Router {
@@ -93,7 +94,6 @@ func main() {
 	finalHandler := cors.Handler(tracedHandler)
 
 	// server start
-	port := 10000
 	server := &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: finalHandler,

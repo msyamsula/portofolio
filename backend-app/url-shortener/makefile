@@ -7,9 +7,9 @@ run:
 	-e POSTGRES_PASSWORD=admin \
 	-e POSTGRES_USER=admin \
 	-e POSTGRES_DB=postgres \
-	-e POSTGRES_HOST=musing_bhabha \
+	-e POSTGRES_HOST=postgres \
 	-e POSTGRES_PORT=5432 \
-	-e REDIS_HOST=reverent_dijkstra \
+	-e REDIS_HOST=redis \
 	-e REDIS_PORT=6379 \
 	-e REDIS_PASSWORD=admin \
 	-e JAEGER_HOST=jaeger \
