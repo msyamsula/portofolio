@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy a Redis-compatible MemoryDB cluster in the default VPC.
+
+Parameters:
+  ClusterName:
+    Type: String
+    Default: my-memorydb
+    Description: Name of MemoryDB cluster
+
+  NodeType:
+    Type: String
+    Default: db.t4g.small
+    AllowedValues:
+      - db.t4g.small
+      - db.t4g.medium
+      - db.t4g.large
+
+  NumShards:
+    Type: Number
+    Default: 1
+
+  ReplicasPerShard:
+    Type: Number
+    Default: 1
+
+Resources:
+
+  # --- Security Group ---
+  MemoryDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for MemoryDB cluster
+      VpcId: !Ref AWS::NoValue
+      # Default VPC automatically selected
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: 0.0.0.0/0   # ⚠️ Replace with VPN SG or Application SG
+
+  # --- Subnet Group (using default VPC subnets) ---
+  MemoryDBSubnetGroup:
+    Type: AWS::MemoryDB::SubnetGroup
+    Properties:
+      SubnetGroupName: memorydb-default-subnets
+      Description: MemoryDB subnet group using default VPC
+      SubnetIds:
+        - subnet-1
+        - subnet-2
+        - subnet-3
+      # (AWS automatically resolves default VPC subnets)
+
+  # --- Parameter Group (Optional) ---
+  MemoryDBParameterGroup:
+    Type: AWS::MemoryDB::ParameterGroup
+    Properties:
+      ParameterGroupName: memorydb-custom-params
+      Family: memorydb-redis6
+      Description: Custom Redis parameters
+      Parameters:
+        # Example parameters, adjust as needed
+        timeout: "0"
+        maxmemory-policy: "allkeys-lru"
+
+  # --- ACL User (optional, recommended) ---
+  MemoryDBUser:
+    Type: AWS::MemoryDB::User
+    Properties:
+      UserName: default
+      AuthenticationMode:
+        Type: password
+        Passwords:
+          - "ChangeMe123!"   # Replace using AWS Secrets Manager in real production
+      AccessString: "on ~* +@all"
+
+  # --- ACL ---
+  MemoryDBACL:
+    Type: AWS::MemoryDB::ACL
+    Properties:
+      ACLName: my-acl
+      UserNames:
+        - !Ref MemoryDBUser
+
+  # --- MemoryDB Cluster ---
+  MemoryDBCluster:
+    Type: AWS::MemoryDB::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName
+      Engine: redis
+      EngineVersion: "6.2"
+      ACLName: !Ref MemoryDBACL
+      NumShards: !Ref NumShards
+      ReplicasPerShard: !Ref ReplicasPerShard
+      NodeType: !Ref NodeType
+      TLSEnabled: true
+      ParameterGroupName: !Ref MemoryDBParameterGroup
+      SubnetGroupName: !Ref MemoryDBSubnetGroup
+      SecurityGroupIds:
+        - !Ref MemoryDBSecurityGroup
+
+Outputs:
+  MemoryDBEndpoint:
+    Description: Primary endpoint of MemoryDB Redis cluster
+    Value: !GetAtt MemoryDBCluster.ClusterEndpoint.Address
+
+  MemoryDBPort:
+    Description: Redis port
+    Value: !GetAtt MemoryDBCluster.ClusterEndpoint.Port
