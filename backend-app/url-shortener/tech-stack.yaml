@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Stack for Url Shortener Application including RDS, EKS, and ECR"
+Description: "Stack for Url Shortener Application including RDS, DynamoDB and ECR"
 
 Parameters:
   DbPassword:
