@@ -27,3 +27,7 @@
 - create: `aws cloudformation deploy --template-file <FILE> --stack-name <NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM`
 - add cluster to kubectl context for discovery: `aws eks --region <REGION> update-kubeconfig --name <CLUSTER>`
 - delete: `aws cloudformation delete-stack --stack-name <NAME>`
+
+# setup dynamoDB
+- create: `aws cloudformation deploy --template-file <FILE> --stack-name <NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM`
+- delete: `aws cloudformation delete-stack --stack-name <NAME>`
