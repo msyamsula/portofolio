@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/msyamsula/portofolio/domain/graph"
 	userbinary "github.com/msyamsula/portofolio/domain/user"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
@@ -32,7 +31,6 @@ func main() {
 
 	// run user binary
 	userbinary.Run(r)
-	graph.Run(r)
 
 	// server handler
 	http.Handle("/", otelhttp.NewHandler(corsHandler, "")) // use otelhttp for telemetry
