@@ -40,6 +40,13 @@ var (
 
 	callbackUri = os.Getenv("CALLBACK_URI")
 	port        = os.Getenv("PORT")
+
+	awsAccessKeyId     = os.Getenv("AWS_ACCESS_KEY_ID")
+	awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+	awsSessionToken    = os.Getenv("AWS_SESSION_TOKEN")
+	awsRegion          = os.Getenv("AWS_REGION")
+
+	dynamoTable = os.Getenv("DYNAMO_TABLE")
 )
 
 func Route(r *mux.Router) *mux.Router {
@@ -57,11 +64,10 @@ func Route(r *mux.Router) *mux.Router {
 				Port:     pgPort,
 			}),
 			// Cache: nil,
-			Cache: cache.New(cache.Config{
-				Host:     redisHost,
-				Port:     redisPort,
-				Password: redisPassword,
-				Ttl:      5 * time.Minute,
+			Cache: cache.NewDynamo(cache.DynamoConfig{
+				Ttl:       5 * time.Minute,
+				Region:    awsRegion,
+				TableName: dynamoTable,
 			}),
 			CharacterPool: characterPool,
 			Size:          10,

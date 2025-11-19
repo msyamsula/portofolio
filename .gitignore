@@ -9,4 +9,4 @@ node_modules
 google-signin.json
 testing.json
 secret.*
-*.prod.yaml
+*.prod*
