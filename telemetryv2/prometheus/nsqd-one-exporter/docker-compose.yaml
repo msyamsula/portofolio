@@ -1,0 +1,33 @@
+services:
+
+  nsqd-one-exporter:
+    container_name: nsqd-one-exporter-clusterip
+    hostname: nsqd-one-exporter-clusterip
+    image: lovoo/nsq_exporter
+    env_file:
+      - ".env"
+    networks:
+      - my-network
+    ports:
+      - "9117:9117"
+    # depends_on:
+    #   - nsqd
+    #   - nsqlookupd
+    # environment:
+    #   NSQD_ADDRESS: "nsqd:4151"
+    #   LOOKUPD_ADDRESS: "nsqlookupd:4161"
+    #   PORT: "9117"
+    # command:
+    #   - --config.file=/config.yaml
+    #   - --storage.tsdb.retention.time=7d
+    #   - --web.external-url=/nsqd-one-exporter
+    # volumes:
+    #   - ./config.yaml:/config.yaml:ro
+    # working_dir: /app
+    # command: ["/bin/bash"]
+
+  
+networks:
+  my-network:
+    name: my-network
+    external: true

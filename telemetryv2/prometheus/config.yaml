@@ -1,0 +1,40 @@
+global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'codelab-monitor'
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    metrics_path: '/prometheus/metrics'
+    static_configs:
+      - targets: ['prometheus-clusterip:9090']
+  - job_name: 'backend'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['backend-clusterip:12000']
+  - job_name: 'postgres'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['postgres-exporter-clusterip:9187']
+  - job_name: 'nsqd-one'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['nsqd-one-exporter-clusterip:9117']
+  - job_name: 'nsqd-two'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['nsqd-two-exporter-clusterip:9117']
+
+      
