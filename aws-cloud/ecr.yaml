@@ -2,6 +2,32 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Public Container Registry"
 
 Resources:
+  GraphRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: graph
+      ImageScanningConfiguration:
+        scanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire untagged images after 30 days",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 30
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
   UrlShortenerRepository:
     Type: AWS::ECR::Repository
     Properties:
