@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"time"
 
@@ -27,6 +28,7 @@ func New(cfg Config) Repository {
 		DB:             0,            // Use default DB
 		Protocol:       2,            // Connection protocol
 		PoolSize:       10,
+		TLSConfig:      &tls.Config{},
 		DialTimeout:    2 * time.Second,
 		PoolTimeout:    1 * time.Second,
 		MaxActiveConns: 7,
