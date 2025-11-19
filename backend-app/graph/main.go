@@ -21,6 +21,7 @@ import (
 var (
 	appName    = "graph"
 	jaegerHost = os.Getenv("JAEGER_HOST")
+	port       = os.Getenv("PORT")
 )
 
 func Route(r *mux.Router) *mux.Router {
