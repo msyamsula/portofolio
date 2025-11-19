@@ -15,13 +15,15 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/handler"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/persistent"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/services"
-	"github.com/msyamsula/portofolio/binary/telemetry"
+	"github.com/msyamsula/portofolio/telemetryv2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 var (
+	appName = "url-shortener"
+
 	pgPassword = os.Getenv("POSTGRES_PASSWORD")
 	pgUsername = os.Getenv("POSTGRES_USER")
 	pgDbName   = os.Getenv("POSTGRES_DB")
@@ -40,10 +42,9 @@ var (
 )
 
 func Route(r *mux.Router) *mux.Router {
-	appName := "url"
 
 	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
+	telemetryv2.InitializeTelemetryTracing(appName, jaegerHost)
 
 	h := handler.New(handler.Config{
 		Svc: services.New(services.Config{
@@ -79,7 +80,8 @@ func main() {
 	r := mux.NewRouter()
 	r = Route(r)
 
-	http.Handle("/metrics", promhttp.Handler()) // endpoint exporter, for prometheus scrapping
+	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
+	tracedHandler := otelhttp.NewHandler(r, "")
 
 	// cors option
 	cors := cors.New(cors.Options{
@@ -88,7 +90,6 @@ func main() {
 		AllowedHeaders:   []string{"Content-Type"},                   // Allow headers
 		AllowCredentials: true,                                       // Allows credentials (cookies, authorization headers)
 	})
-	tracedHandler := otelhttp.NewHandler(r, "")
 	finalHandler := cors.Handler(tracedHandler)
 
 	// server start
