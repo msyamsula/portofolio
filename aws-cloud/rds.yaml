@@ -5,9 +5,6 @@ Parameters:
   DBPassword:
     Type: String
     NoEcho: true
-  YourIP:
-    Type: String
-    Description: "Your IP (example: 123.123.123.123/32)"
 
 Resources:
 
@@ -20,7 +17,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
-          CidrIp: !Ref YourIP
+          CidrIp: "172.31.0.0/16"
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: "0.0.0.0/0"
@@ -36,12 +33,12 @@ Resources:
   RDSInstance:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBName: mydb
+      DBName: postgres
       Engine: postgres
       MasterUsername: culcalcul
       MasterUserPassword: !Ref DBPassword
       AllocatedStorage: 20
-      DBInstanceClass: db.t3.micro
+      DBInstanceClass: db.t3.medium
       VPCSecurityGroups:
         - !Ref RDSSecurityGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
