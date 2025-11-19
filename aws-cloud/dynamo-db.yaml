@@ -4,7 +4,7 @@ Description: Create a DynamoDB table
 Parameters:
   TableName:
     Type: String
-    Default: MyDynamoTable
+    Default: url-shortener-cache
     Description: Name of DynamoDB table
 
 Resources:
@@ -17,26 +17,23 @@ Resources:
       BillingMode: PAY_PER_REQUEST  # No capacity planning needed
 
       AttributeDefinitions:
-        - AttributeName: pk
+        - AttributeName: key
           AttributeType: S
-        - AttributeName: sk
+        - AttributeName: value
           AttributeType: S
 
       KeySchema:
-        - AttributeName: pk
+        - AttributeName: key
           KeyType: HASH     # Partition Key
-        - AttributeName: sk
-          KeyType: RANGE    # Sort Key
 
-      GlobalSecondaryIndexes:
-        - IndexName: GSI1
-          KeySchema:
-            - AttributeName: sk
-              KeyType: HASH
-            - AttributeName: pk
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+      # for index
+      # GlobalSecondaryIndexes:
+      #   - IndexName: pair_url_index
+      #     KeySchema:
+      #       - AttributeName: pair_url
+      #         KeyType: HASH
+      #     Projection:
+      #       ProjectionType: ALL
 
       SSESpecification:
         SSEEnabled: true  # Server-side encryption
