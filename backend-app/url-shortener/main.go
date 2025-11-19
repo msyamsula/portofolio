@@ -43,7 +43,6 @@ var (
 
 	awsAccessKeyId     = os.Getenv("AWS_ACCESS_KEY_ID")
 	awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	awsSessionToken    = os.Getenv("AWS_SESSION_TOKEN")
 	awsRegion          = os.Getenv("AWS_REGION")
 
 	dynamoTable = os.Getenv("DYNAMO_TABLE")
