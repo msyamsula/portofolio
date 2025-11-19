@@ -15,9 +15,10 @@ run:
 	graph
 
 runkube:
-	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EksClusterName}
+	aws eks --region ap-southeast-1 update-kubeconfig --name ${EksClusterName}
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
+	kubectl apply -f canary.yaml
 
 create-aws-stack:
 	aws cloudformation deploy --template-file tech-stack.yaml \
