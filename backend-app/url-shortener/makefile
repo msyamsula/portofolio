@@ -32,9 +32,6 @@ create-aws-stack:
 	--parameter-overrides DbPassword='${POSTGRES_PASSWORD}' \
 		 VpcCidr='${VPC_CIDR}' \
 		 DbUsername='${POSTGRES_USER}' \
-		 EksClusterName='${EKS_CLUSTER_NAME}' \
-		 EksMaxNodes='${EKS_MAX_NODES}' \
-		 EksDesiredNodes='${EKS_DESIRE_NODES}' \
 		 DynamoTableName='${DYNAMO_TABLE}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
