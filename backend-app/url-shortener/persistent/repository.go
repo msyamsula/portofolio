@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -27,7 +28,7 @@ type Config struct {
 func New(config Config) Repository {
 	// postgre
 	sslmode := "require"
-	if config.Host == "localhost" {
+	if os.Getenv("ENVIRONMENT") != "production" {
 		// disable for dev
 		sslmode = "disable"
 	}
