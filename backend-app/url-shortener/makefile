@@ -11,3 +11,8 @@ run:
 	-p 10000:10000 \
 	--env-file .env \
 	url-shortener
+
+runkube:
+	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -f deployment.yaml
+
