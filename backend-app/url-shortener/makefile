@@ -16,3 +16,21 @@ runkube:
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
 
+
+include stack.env
+
+create-aws-stack:
+	aws cloudformation deploy --template-file tech-stack.yaml \
+	--stack-name url-shortener-stack \
+	--parameter-overrides DbPassword='${DbPassword}' \
+		 VpcCidr='${VpcCidr}' \
+		 DbUsername='${DbUsername}' \
+		 EksClusterName='${EksClusterName}' \
+		 EksMaxNodes='${EksMaxNodes}' \
+		 EksDesiredNodes='${EksDesiredNodes}' \
+		 DynamoTableName='${DynamoTableName}' \
+	--capabilities CAPABILITY_NAMED_IAM
+
+destroy-aws-stack:
+	aws cloudformation delete-stack --stack-name url-shortener-stack
+
