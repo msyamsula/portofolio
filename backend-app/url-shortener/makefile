@@ -1,4 +1,6 @@
 SHELL := /bin/bash
+include stack.env
+include .env
 
 rungo:
 	set -a; source .env; set +a; go run main.go
@@ -13,11 +15,10 @@ run:
 	url-shortener
 
 runkube:
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EksClusterName}
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
 
-
-include stack.env
 
 create-aws-stack:
 	aws cloudformation deploy --template-file tech-stack.yaml \
