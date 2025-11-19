@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: graph
-        image: <ECR>
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:92482e9-2
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 10000
