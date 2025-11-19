@@ -15,10 +15,16 @@ run:
 	graph
 
 runkube:
-	aws eks --region ap-southeast-1 update-kubeconfig --name ${EksClusterName}
-	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+	aws eks --region ap-southeast-1 update-kubeconfig --name ${EKS_CLUSTER_NAME}
+	kubectl create configmap graph-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
 	kubectl apply -f canary.yaml
+
+deploy-canary:
+	kubectl set image deployment/graph-canary-deployment graph-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
+
+deploy:
+	kubectl set image deployment/graph-deployment graph=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
 
 create-aws-stack:
 	aws cloudformation deploy --template-file tech-stack.yaml \
