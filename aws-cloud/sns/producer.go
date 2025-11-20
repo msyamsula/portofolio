@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -14,7 +16,7 @@ type producer struct {
 	topicArn  string
 }
 
-func (p *producer) Publish(ctx context.Context, message string) error {
+func (p *producer) publish(ctx context.Context, message string) error {
 
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(context.TODO())
@@ -39,4 +41,11 @@ func (p *producer) Publish(ctx context.Context, message string) error {
 
 	log.Println("Message published, ID:", *result.MessageId)
 	return nil
+}
+
+func (p *producer) foreverloop() {
+	for {
+		time.Sleep(1 * time.Second)
+		p.publish(context.Background(), fmt.Sprintf("hello world %s", time.Now().String()))
+	}
 }

@@ -2,4 +2,4 @@ SHELL := /bin/bash
 include .env
 
 run:
-	go run main.go
+	set -a; source .env; set +a; go run main.go consumer.go producer.go

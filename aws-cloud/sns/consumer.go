@@ -21,13 +21,15 @@ type consumer struct {
 func (c *consumer) Start(ch chan os.Signal) {
 	// create server routes
 	r := mux.NewRouter()
-	r.HandleFunc("/short", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/sns", func(w http.ResponseWriter, r *http.Request) {
 		bInput, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Println("failed to read request body:", err)
 			http.Error(w, "failed to read request body", http.StatusBadRequest)
 			return
 		}
+
+		log.Println("Received SNS message:", string(bInput))
 
 		type message struct {
 			Text string `json:"text"`
