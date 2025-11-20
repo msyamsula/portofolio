@@ -10,3 +10,4 @@ google-signin.json
 testing.json
 secret.*
 *.prod*
+dist*
