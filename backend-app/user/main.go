@@ -40,6 +40,19 @@ var (
 	awsRegion          = os.Getenv("AWS_REGION")
 )
 
+func init() {
+	if env != "production" {
+		fmt.Println("ENVIRONMENT:", env)
+		fmt.Println("POSTGRES_USER:", pgUsername)
+		fmt.Println("POSTGRES_DB:", pgDbName)
+		fmt.Println("POSTGRES_HOST:", pgHost)
+		fmt.Println("POSTGRES_PORT:", pgPort)
+		fmt.Println("JAEGER_HOST:", jaegerHost)
+		fmt.Println("PORT:", port)
+		fmt.Println("AWS_REGION:", awsRegion)
+	}
+}
+
 func createLogFile() *os.File {
 	// Include file name and line number in log output
 	log.SetFlags(log.LstdFlags | log.Llongfile)
