@@ -1,16 +1,12 @@
 package binary
 
 import (
-	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/msyamsula/portofolio/binary/postgres"
-	"github.com/msyamsula/portofolio/binary/redis"
 	userhttp "github.com/msyamsula/portofolio/domain/user/http"
 	useroauth "github.com/msyamsula/portofolio/domain/user/oauth"
 	"github.com/msyamsula/portofolio/domain/user/repository"
@@ -26,7 +22,7 @@ func initUserHandler(userSvc *service.Service) *userhttp.Handler {
 
 }
 
-func initDataLayer() (*postgres.Postgres, *redis.Redis) {
+func initDataLayer() *postgres.Postgres {
 
 	pg := postgres.New(postgres.Config{
 		Username: os.Getenv("POSTGRES_PASSWORD"),
@@ -36,19 +32,7 @@ func initDataLayer() (*postgres.Postgres, *redis.Redis) {
 		Port:     os.Getenv("POSTGRES_PORT"),
 	})
 
-	ttl, err := strconv.Atoi(os.Getenv("REDIS_TTL"))
-	if err != nil {
-		log.Fatal("redis ttl error")
-	}
-	redisTtl := time.Duration(ttl) * time.Millisecond
-	re := redis.New(redis.Config{
-		Host:     os.Getenv("REDIS_HOST"),
-		Port:     os.Getenv("REDIS_PORT"),
-		Password: os.Getenv("REDIS_PASSWORD"),
-		Ttl:      redisTtl,
-	})
-
-	return pg, re
+	return pg
 }
 
 func initGoogleSigninService(userSvc *service.Service) *useroauth.Service {
@@ -68,14 +52,11 @@ func Run(r *mux.Router) {
 	// load env
 	godotenv.Load(".env")
 
-	pg, re := initDataLayer()
+	pg := initDataLayer()
 
 	userSvc := service.New(service.Dependencies{
 		Persistence: &repository.Persistence{
 			Postgres: pg,
-		},
-		Cache: &repository.Cache{
-			Redis: re,
 		},
 	})
 

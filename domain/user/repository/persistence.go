@@ -48,12 +48,11 @@ func (s *Persistence) InsertUser(c context.Context, user User) (User, error) {
 		return User{}, err
 	}
 
-	for rows.Next() {
+	if rows.Next() {
 		err = rows.Scan(&user.Id)
 		if err != nil {
 			return User{}, err
 		}
-		break
 	}
 
 	err = tx.Commit()
