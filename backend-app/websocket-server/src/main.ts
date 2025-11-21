@@ -1,6 +1,7 @@
 import { websocket } from "./websocket/websocket.js"
+import type { ServerOptions } from "socket.io";
+import { getMonggoCollectionAdapter, newMongoAdapter } from "./adapter/mongo.js";
 import { newSqsSnsAdapter } from "./adapter/sqs-sns.js";
-import { newMongoAdapter, getMonggoCollectionAdapter } from "./adapter/mongo.js";
 
 const ENVIRONMENT = process.env.ENVIRONMENT
 const PORT = process.env.PORT || "3000";
@@ -12,38 +13,49 @@ const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || ""
 const AWS_REGION = process.env.AWS_REGION || ""
 const SNS_TOPIC = process.env.SNS_TOPIC || ""
 const SQS_PREFIX_QUEUE = process.env.SQS_PREFIX_QUEUE || ""
+const ADAPTER_TYPE = process.env.ADAPTER_TYPE || ""
 
 function showEnv() {
-    console.log(ENVIRONMENT);
-    console.log(PORT);
-    console.log(MONGO_ADAPTER_DB)
-    console.log(MONGO_ADAPTER_COLLECTION)
-    console.log(MONGO_ADAPTER_URI)
-    console.log(AWS_SECRET_ACCESS_KEY);
-    console.log(AWS_ACCESS_KEY_ID);
-    console.log(AWS_REGION);
-    console.log(SQS_PREFIX_QUEUE);
-    console.log(SNS_TOPIC);
-    
+    console.log("ENVIRONMENT:", ENVIRONMENT);
+    console.log("PORT:", PORT);
+    console.log("MONGO_ADAPTER_DB:", MONGO_ADAPTER_DB);
+    console.log("MONGO_ADAPTER_COLLECTION:", MONGO_ADAPTER_COLLECTION);
+    console.log("MONGO_ADAPTER_URI:", MONGO_ADAPTER_URI);
+    console.log("AWS_SECRET_ACCESS_KEY:", AWS_SECRET_ACCESS_KEY);
+    console.log("AWS_ACCESS_KEY_ID:", AWS_ACCESS_KEY_ID);
+    console.log("AWS_REGION:", AWS_REGION);
+    console.log("SQS_PREFIX_QUEUE:", SQS_PREFIX_QUEUE);
+    console.log("SNS_TOPIC:", SNS_TOPIC);
+    console.log("ADAPTER_TYPE:", ADAPTER_TYPE);
+
 }
 
+async function getAdapter(cfg: Partial<ServerOptions>): Promise<Partial<ServerOptions>> {
+    switch (ADAPTER_TYPE) {
+        case "mongo":
+            let collection = await getMonggoCollectionAdapter(MONGO_ADAPTER_DB, MONGO_ADAPTER_COLLECTION, MONGO_ADAPTER_URI)
+            cfg.adapter = newMongoAdapter(collection, {})
+            break;
+        case "sqs":
+            cfg.adapter = newSqsSnsAdapter({
+                topicName: SNS_TOPIC,
+                queuePrefix: SQS_PREFIX_QUEUE,
+            })
+            break;
+
+        default:
+            break;
+    }
+
+    return cfg
+}
 
 async function main() {
     if (ENVIRONMENT != "production") {
         showEnv()
     }
 
-
-    let adapter = newSqsSnsAdapter({
-        topicName: SNS_TOPIC,
-        queuePrefix: SQS_PREFIX_QUEUE,
-    });
-
-    // const mongoCollectionAdapter = await getMonggoCollectionAdapter(MONGO_ADAPTER_DB, MONGO_ADAPTER_COLLECTION, MONGO_ADAPTER_URI);
-    // let adapter = newMongoAdapter(mongoCollectionAdapter);
-
-
-    let ws = new websocket(PORT, {
+    let serverConfig: Partial<ServerOptions> = {
         cors: {
             origin: "*",
         },
@@ -52,8 +64,13 @@ async function main() {
             skipMiddlewares: true
         },
         transports: ["websocket"],
-        adapter: adapter,
-    });
+    }
+    serverConfig = await getAdapter(serverConfig) // select adapter
+
+    console.log("server adapter", serverConfig.adapter);
+    
+
+    let ws = new websocket(PORT, serverConfig);
 
     ws.run();
 }

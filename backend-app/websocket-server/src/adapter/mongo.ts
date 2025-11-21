@@ -1,5 +1,5 @@
 import { Collection, MongoClient } from "mongodb";
-import { createAdapter, MongoAdapter } from "@socket.io/mongo-adapter";
+import { createAdapter, MongoAdapter, type MongoAdapterOptions } from "@socket.io/mongo-adapter";
 
 type adapter = (nsp: any) => MongoAdapter;
 
@@ -20,8 +20,8 @@ export async function getMonggoCollectionAdapter(db: string, collection: string,
     return mongoClient.db(db).collection(collection);
 }
 
-export function newMongoAdapter(collection: Collection): adapter {
-    return createAdapter(collection);
+export function newMongoAdapter(collection: Collection, opts?: Partial<MongoAdapterOptions>): adapter {
+    return createAdapter(collection, opts);
 }
 
 
