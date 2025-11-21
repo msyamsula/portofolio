@@ -104,7 +104,7 @@ func route(r *mux.Router) *mux.Router {
 		Svc: services.New(services.Config{
 			Persistence: persistent.NewPostgres(persistent.PostgresConfig{
 				Username: pgUsername,
-				Name:     appName,
+				Name:     pgDbName,
 				Password: pgPassword,
 				Host:     pgHost,
 				Port:     pgPort,
