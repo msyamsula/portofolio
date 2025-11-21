@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -11,9 +12,11 @@ import (
 )
 
 type Persistence interface {
-	InsertMessage(c context.Context, msg Message, table string) (Message, error)
-	GetReadConversation(c context.Context, conversationId string, table string) ([]Message, error)
-	ReadMessage(c context.Context, conversationId string) error
+	GetMessage(c context.Context, tx *sqlx.Tx, conversationId string, table string) ([]Message, error)
+	InsertMessage(c context.Context, tx *sqlx.Tx, msg Message, table string) (Message, error)
+	InsertBulkMessage(c context.Context, tx *sqlx.Tx, msg []Message, table string) error
+	DeleteBulkMessage(ctx context.Context, tx *sqlx.Tx, conversationId string, table string) ([]Message, error)
+	MustBeginTx(context.Context, *sql.TxOptions) *sqlx.Tx
 }
 
 func NewPostgres(config PostgresConfig, env string) Persistence {
