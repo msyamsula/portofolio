@@ -2,8 +2,8 @@ SHELL := /bin/bash
 include .env
 
 create-aws-stack:
-	aws cloudformation deploy --template-file eks-cluster.yaml \
-	--stack-name eks \
+	aws cloudformation deploy --template-file tech-stack.yaml \
+	--stack-name my-app \
 	--parameter-overrides \
 		EksClusterName='${EKS_CLUSTER_NAME}' \
 		EksMaxNodes='${EKS_MAX_NODES}' \
@@ -16,6 +16,6 @@ create-aws-stack:
 	--capabilities CAPABILITY_NAMED_IAM
 
 destroy-aws-stack:
-	aws cloudformation delete-stack --stack-name eks
+	aws cloudformation delete-stack --stack-name my-app
 
 
