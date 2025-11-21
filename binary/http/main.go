@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	userbinary "github.com/msyamsula/portofolio/domain/user"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -28,9 +27,6 @@ func main() {
 		AllowCredentials: true,                                       // Allows credentials (cookies, authorization headers)
 	})
 	corsHandler := c.Handler(r)
-
-	// run user binary
-	userbinary.Run(r)
 
 	// server handler
 	http.Handle("/", otelhttp.NewHandler(corsHandler, "")) // use otelhttp for telemetry
