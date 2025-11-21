@@ -30,7 +30,8 @@ async function main() {
 
 
     let adapter = newSqsSnsAdapter({
-        topicName: "socket-io"
+        topicName: "socket-io",
+        queuePrefix: "socket-io",
     });
 
     // const mongoCollectionAdapter = await getMonggoCollectionAdapter(MONGO_ADAPTER_DB, MONGO_ADAPTER_COLLECTION, MONGO_ADAPTER_URI);
