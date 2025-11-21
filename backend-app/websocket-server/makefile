@@ -1,12 +1,12 @@
 SHELL := /bin/bash
-include ./src/.env
+include .env
 
 tidy:
 	rm -rf node_modules package-lock.json
 	npm install
 
 run:
-	set -a; source src/.env; set +a; node dist/main.js
+	set -a; source .env; set +a; node dist/main.js
 
 build:
 	npx tsc
@@ -20,7 +20,7 @@ builddocker:
 rundocker:
 	docker run --name websocket \
 	--rm -p ${PORT}:${PORT} --network test \
-	--env-file ./src/.env \
+	--env-file .env \
 	websocket
 
 
