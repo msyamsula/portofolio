@@ -5,6 +5,7 @@ go 1.24.4
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/msyamsula/portofolio/telemetryv2 v0.0.0-20251121113916-0a0ee14f193a
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/cors v1.11.1
