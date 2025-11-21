@@ -78,16 +78,16 @@ func route(r *mux.Router) *mux.Router {
 	// initialize instrumentation
 	telemetryv2.InitializeTelemetryTracing(appName, jaegerHost)
 
+	// var h handler.Handler
 	h := handler.New(handler.Config{
 		Svc: services.New(services.Config{
-			Persistence: persistent.New(persistent.Config{
+			Persistence: persistent.NewPostgres(persistent.PostgresConfig{
 				Username: pgUsername,
-				Name:     pgDbName,
+				Name:     appName,
 				Password: pgPassword,
 				Host:     pgHost,
-				Port:     pgPort,
+				Port:     port,
 			}),
-			// Cache: nil,
 			Cache: cache.NewDynamo(cache.DynamoConfig{
 				Ttl:       5 * time.Minute,
 				Region:    awsRegion,
