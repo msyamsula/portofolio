@@ -17,15 +17,7 @@ type Repository interface {
 	GetLongUrl(c context.Context, shortUrl string) (string, error)
 }
 
-type Config struct {
-	Username string
-	Name     string
-	Password string
-	Host     string
-	Port     string
-}
-
-func New(config Config) Repository {
+func NewPostgres(config PostgresConfig) Repository {
 	// postgre
 	sslmode := "require"
 	if os.Getenv("ENVIRONMENT") != "production" {
