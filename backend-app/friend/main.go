@@ -36,6 +36,19 @@ var (
 	port = os.Getenv("PORT")
 )
 
+func init() {
+	if env != "production" {
+		log.Printf("ENVIRONMENT: %s", env)
+		log.Printf("POSTGRES_USER: %s", pgUsername)
+		log.Printf("POSTGRES_PASSWORD: %s", pgPassword)
+		log.Printf("POSTGRES_DB: %s", pgDbName)
+		log.Printf("POSTGRES_HOST: %s", pgHost)
+		log.Printf("POSTGRES_PORT: %s", pgPort)
+		log.Printf("JAEGER_HOST: %s", jaegerHost)
+		log.Printf("PORT: %s", port)
+	}
+}
+
 func createLogFile() *os.File {
 	// Include file name and line number in log output
 	log.SetFlags(log.LstdFlags | log.Llongfile)
@@ -72,7 +85,7 @@ func route(r *mux.Router) *mux.Router {
 				Password: pgPassword,
 				DbName:   pgDbName,
 				Host:     pgHost,
-				Port:     port,
+				Port:     pgPort,
 			}),
 		}),
 	})

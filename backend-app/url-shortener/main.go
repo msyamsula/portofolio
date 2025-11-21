@@ -50,6 +50,27 @@ var (
 	dynamoTable = os.Getenv("DYNAMO_TABLE")
 )
 
+func init() {
+	if env != "production" {
+		fmt.Println("ENVIRONMENT:", env)
+		fmt.Println("POSTGRES_PASSWORD:", pgPassword)
+		fmt.Println("POSTGRES_USER:", pgUsername)
+		fmt.Println("POSTGRES_DB:", pgDbName)
+		fmt.Println("POSTGRES_HOST:", pgHost)
+		fmt.Println("POSTGRES_PORT:", pgPort)
+		fmt.Println("REDIS_HOST:", redisHost)
+		fmt.Println("REDIS_PORT:", redisPort)
+		fmt.Println("REDIS_PASSWORD:", redisPassword)
+		fmt.Println("JAEGER_HOST:", jaegerHost)
+		fmt.Println("CALLBACK_URI:", callbackUri)
+		fmt.Println("PORT:", port)
+		fmt.Println("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
+		fmt.Println("AWS_SECRET_ACCESS_KEY:", awsSecretAccessKey)
+		fmt.Println("AWS_REGION:", awsRegion)
+		fmt.Println("DYNAMO_TABLE:", dynamoTable)
+	}
+}
+
 func createLogFile() *os.File {
 	// Include file name and line number in log output
 	log.SetFlags(log.LstdFlags | log.Llongfile)
