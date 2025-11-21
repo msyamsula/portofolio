@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 include .env
 
-create-aws-stack:
+create:
 	aws cloudformation deploy --template-file tech-stack.yaml \
-	--stack-name my-app \
+	--stack-name ${STACK_NAME} \
 	--parameter-overrides \
 		EksClusterName='${EKS_CLUSTER_NAME}' \
 		EksMaxNodes='${EKS_MAX_NODES}' \
@@ -13,10 +13,11 @@ create-aws-stack:
 		DbUsername='${POSTGRES_USER}' \
 		VpcCidr='${VPC_CIDR}' \
 		DynamoTableName='${DYNAMO_TABLE}' \
-		SqsQueueName='${SQS_QUEUE_NAME}' \
+		SnsPersistenceTopic='${SNS_PERSISTENCE_TOPIC}' \
+		SqsPersistenceName='${SQS_PERSISTENCE_NAME}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
-destroy-aws-stack:
-	aws cloudformation delete-stack --stack-name my-app
+destroy:
+	aws cloudformation delete-stack --stack-name ${STACK_NAME}
 
 

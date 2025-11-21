@@ -30,7 +30,10 @@ Parameters:
   DynamoTableName:
     Type: String
 
-  SqsQueueName:
+  SqsPersistenceName:
+    Type: String
+
+  SnsPersistenceTopic:
     Type: String
 
 Resources:
@@ -322,10 +325,21 @@ Resources:
       #   - Protocol: email # optional
       #     Endpoint: example@example.com # optional
 
+  PersistenceTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref SnsPersistenceTopic
+      DisplayName: !Ref SnsPersistenceTopic
+      # FifoTopic: true
+      # ContentBasedDeduplication: true
+      # Subscription:
+      #   - Protocol: email # optional
+      #     Endpoint: example@example.com # optional
+
   MyQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Ref SqsQueueName
+      QueueName: !Ref SqsPersistenceName
       # FifoQueue: true
       # ContentBasedDeduplication: true
       VisibilityTimeout: 30
@@ -346,12 +360,12 @@ Resources:
             Resource: !GetAtt MyQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !Ref SocketTopic
+                aws:SourceArn: !Ref PersistenceTopic
 
   MySubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      TopicArn: !Ref SocketTopic
+      TopicArn: !Ref PersistenceTopic
       Protocol: sqs
       Endpoint: !GetAtt MyQueue.Arn
       RawMessageDelivery: true
