@@ -89,7 +89,7 @@ func route(r *mux.Router) *mux.Router {
 				Password: pgPassword,
 				DbName:   pgDbName,
 				Host:     pgHost,
-				Port:     port,
+				Port:     pgPort,
 			}),
 		}),
 	})
