@@ -17,6 +17,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@socket.io/aws-sqs-adapter": "^0.1.1",
+    "@socket.io/mongo-adapter": "^0.4.0",
     "express": "^5.1.0",
     "socket.io": "^4.8.1"
   }
