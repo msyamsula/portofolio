@@ -1,7 +1,19 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Stack for Messaging"
+  
+Parameters:
+  SnsTopic:
+    Type: String
 
 Resources:
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref SnsTopic
+      DisplayName: !Ref SnsTopic
+      # Subscription:
+      #   - Protocol: email # optional
+      #     Endpoint: example@example.com # optional
 
   # ECR Repository for Url Shortener
   WebsocketRepository:

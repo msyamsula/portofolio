@@ -1,11 +1,13 @@
 SHELL := /bin/bash
-# include .env
+include ./websocket-server/src/.env
 
 create-aws-stack:
 	aws cloudformation deploy --template-file tech-stack.yaml \
-	--stack-name messaging
+	--stack-name messaging \
+	--parameter-overrides \
+		SnsTopic='${SNS_TOPIC}' \
 
 destroy-aws-stack:
-	aws cloudformation delete-stack --stack-name eks
+	aws cloudformation delete-stack --stack-name messaging
 
 
