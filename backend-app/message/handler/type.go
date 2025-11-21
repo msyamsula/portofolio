@@ -13,3 +13,8 @@ type conversationResponse struct {
 	Error        string                `json:"error,omitempty"`
 	Conversation []persistence.Message `json:"conversation,omitempty"`
 }
+
+type SqsConfig struct {
+	Config
+	QueueUrl string
+}
