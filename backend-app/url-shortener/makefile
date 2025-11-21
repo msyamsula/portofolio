@@ -25,17 +25,3 @@ deploy-canary:
 deploy:
 	kubectl set image deployment/url-shortener-deployment url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
 
-
-create-aws-stack:
-	aws cloudformation deploy --template-file tech-stack.yaml \
-	--stack-name url-shortener-stack \
-	--parameter-overrides DbPassword='${POSTGRES_PASSWORD}' \
-		 VpcCidr='${VPC_CIDR}' \
-		 DbUsername='${POSTGRES_USER}' \
-		 DynamoTableName='${DYNAMO_TABLE}' \
-	--capabilities CAPABILITY_NAMED_IAM
-
-destroy-aws-stack:
-	aws cloudformation delete-stack --stack-name url-shortener-stack
-
-
