@@ -23,3 +23,11 @@ rundocker:
 	--env-file ./src/.env \
 	websocket
 
+
+runkube:
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+	kubectl create configmap websocket-env --from-env-file=./src/.env --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -f deployment.yaml
+
+deploy:
+	kubectl set image deployment/websocket-deployment websocket=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/websocket:${VERSION}

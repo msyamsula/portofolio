@@ -3,50 +3,50 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: graph-clusterip
+  name: websocket-clusterip
   labels:
-    app: graph
+    app: websocket
     type: clusterip
 spec:
   type: ClusterIP
   selector:
-    app: graph
+    app: websocket
     type: pod
   ports:
     - protocol: TCP
-      port: 10000 # service port
-      targetPort: 10000 # container port
-      name: graph-clusterip
+      port: 12000 # service port
+      targetPort: 12000 # container port
+      name: websocket-clusterip
 
 ---
 #Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: graph-deployment
+  name: websocket-deployment
   labels:
-    app: graph
+    app: websocket
     type: deployment
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: graph
+      app: websocket
       type: pod
   template:
     metadata:
       labels:
-        app: graph
+        app: websocket
         type: pod
     spec:
       containers:
-      - name: graph
-        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:92482e9-2
+      - name: websocket
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/websocket:cabf0e8-18
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 10000
+        - containerPort: 12000
         envFrom:
           - configMapRef:
-              name: graph-env
-        command: ["./main"]
+              name: websocket-env
+        command: ["node", "dist/main.js"]
 
