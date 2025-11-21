@@ -14,6 +14,6 @@ type Service interface {
 
 func New(config Config) Service {
 	return &service{
-		persistence: config.persistence,
+		persistence: config.Persistence,
 	}
 }

@@ -2,6 +2,7 @@ import { websocket } from "./websocket/websocket.js"
 import type { ServerOptions } from "socket.io";
 import { getMonggoCollectionAdapter, newMongoAdapter } from "./adapter/mongo.js";
 import { newSqsSnsAdapter } from "./adapter/sqs-sns.js";
+import { SnsPublisher } from "./sns/publisher.js";
 
 const ENVIRONMENT = process.env.ENVIRONMENT
 const PORT = process.env.PORT || "12000";
@@ -14,6 +15,7 @@ const AWS_REGION = process.env.AWS_REGION || ""
 const SNS_TOPIC = process.env.SNS_TOPIC || ""
 const SQS_PREFIX_QUEUE = process.env.SQS_PREFIX_QUEUE || ""
 const ADAPTER_TYPE = process.env.ADAPTER_TYPE || ""
+const PERSISTENCE_SNS_TOPIC_ARN = process.env.PERSISTENCE_SNS_TOPIC_ARN || ""
 
 function showEnv() {
     console.log("ENVIRONMENT:", ENVIRONMENT);
@@ -27,6 +29,7 @@ function showEnv() {
     console.log("SQS_PREFIX_QUEUE:", SQS_PREFIX_QUEUE);
     console.log("SNS_TOPIC:", SNS_TOPIC);
     console.log("ADAPTER_TYPE:", ADAPTER_TYPE);
+    console.log("PERSISTENCE_SNS_TOPIC_ARN:", PERSISTENCE_SNS_TOPIC_ARN);
 
 }
 
@@ -66,11 +69,11 @@ async function main() {
         transports: ["websocket"],
     }
     serverConfig = await getAdapter(serverConfig) // select adapter
-
     console.log("server adapter", serverConfig.adapter);
+    let publisher = new SnsPublisher(AWS_REGION, PERSISTENCE_SNS_TOPIC_ARN)
     
 
-    let ws = new websocket(PORT, serverConfig);
+    let ws = new websocket(PORT, publisher, serverConfig);
 
     ws.run();
 }

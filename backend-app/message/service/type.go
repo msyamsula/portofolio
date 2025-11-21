@@ -11,5 +11,5 @@ var (
 )
 
 type Config struct {
-	persistence persistence.Persistence
+	Persistence persistence.Persistence
 }
