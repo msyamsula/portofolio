@@ -1,6 +1,6 @@
 package factory
 
-import "github.com/msyamsula/portofolio/other_works/design_pattern/bridge_factory/fchannel"
+import "github.com/msyamsula/portofolio/other-works/design-pattern/bridge-factory/fchannel"
 
 const (
 	ChannelDefault = iota
