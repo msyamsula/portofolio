@@ -25,10 +25,3 @@ deploy-canary:
 
 deploy:
 	kubectl set image deployment/graph-deployment graph=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
-
-create-aws-stack:
-	aws cloudformation deploy --template-file tech-stack.yaml \
-	--stack-name graph-stack
-
-destroy-aws-stack:
-	aws cloudformation delete-stack --stack-name graph-stack

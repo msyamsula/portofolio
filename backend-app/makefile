@@ -5,9 +5,14 @@ create-aws-stack:
 	aws cloudformation deploy --template-file eks-cluster.yaml \
 	--stack-name eks \
 	--parameter-overrides \
-		 EksClusterName='${EKS_CLUSTER_NAME}' \
-		 EksMaxNodes='${EKS_MAX_NODES}' \
-		 EksDesiredNodes='${EKS_DESIRE_NODES}' \
+		EksClusterName='${EKS_CLUSTER_NAME}' \
+		EksMaxNodes='${EKS_MAX_NODES}' \
+		EksDesiredNodes='${EKS_DESIRE_NODES}' \
+		SnsTopic='${SNS_TOPIC}' \
+		DbPassword='${POSTGRES_PASSWORD}' \
+		VpcCidr='${VPC_CIDR}' \
+		DbUsername='${POSTGRES_USER}' \
+		DynamoTableName='${DYNAMO_TABLE}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
 destroy-aws-stack:
