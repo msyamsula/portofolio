@@ -13,6 +13,7 @@ create-aws-stack:
 		DbUsername='${POSTGRES_USER}' \
 		VpcCidr='${VPC_CIDR}' \
 		DynamoTableName='${DYNAMO_TABLE}' \
+		SqsQueueName='${SQS_QUEUE_NAME}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
 destroy-aws-stack:
