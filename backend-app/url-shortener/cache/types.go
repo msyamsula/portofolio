@@ -8,7 +8,7 @@ type DynamoConfig struct {
 	TableName string
 }
 
-type Config struct {
+type RedisConfig struct {
 	Host     string
 	Port     string
 	Password string

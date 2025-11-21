@@ -17,7 +17,7 @@ type Repository interface {
 	Set(ctx context.Context, key string, value string) error
 }
 
-func New(cfg Config) Repository {
+func New(cfg RedisConfig) Repository {
 	client := redisPkg.NewClient(&redisPkg.Options{
 		Addr:           fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Password:       cfg.Password, // No password set
