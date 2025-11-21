@@ -4,7 +4,7 @@ import { getMonggoCollectionAdapter, newMongoAdapter } from "./adapter/mongo.js"
 import { newSqsSnsAdapter } from "./adapter/sqs-sns.js";
 
 const ENVIRONMENT = process.env.ENVIRONMENT
-const PORT = process.env.PORT || "3000";
+const PORT = process.env.PORT || "12000";
 const MONGO_ADAPTER_DB = process.env.MONGO_DB || "my-mongodb"
 const MONGO_ADAPTER_COLLECTION = process.env.MONGO_COLLECTION || "socket-io-adapter"
 const MONGO_ADAPTER_URI = process.env.MONGO_URI || "mongodb://localhost:27017"
