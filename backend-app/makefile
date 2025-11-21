@@ -10,8 +10,8 @@ create-aws-stack:
 		EksDesiredNodes='${EKS_DESIRE_NODES}' \
 		SnsTopic='${SNS_TOPIC}' \
 		DbPassword='${POSTGRES_PASSWORD}' \
-		VpcCidr='${VPC_CIDR}' \
 		DbUsername='${POSTGRES_USER}' \
+		VpcCidr='${VPC_CIDR}' \
 		DynamoTableName='${DYNAMO_TABLE}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
