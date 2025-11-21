@@ -19,7 +19,7 @@ builddocker:
 
 rundocker:
 	docker run --name websocket \
-	--rm -p ${PORT}:12000 --network test \
+	--rm -p ${PORT}:${PORT} --network test \
 	--env-file ./src/.env \
 	websocket
 
