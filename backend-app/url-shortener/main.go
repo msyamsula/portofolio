@@ -107,7 +107,7 @@ func route(r *mux.Router) *mux.Router {
 				Name:     appName,
 				Password: pgPassword,
 				Host:     pgHost,
-				Port:     port,
+				Port:     pgPort,
 			}),
 			Cache: cache.NewDynamo(cache.DynamoConfig{
 				Ttl:       5 * time.Minute,

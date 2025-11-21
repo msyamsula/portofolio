@@ -13,3 +13,15 @@ rundocker:
 	--env-file .env \
 	--name friend \
 	friend
+
+runkube:
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+	kubectl create configmap friend-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -f deployment.yaml
+	kubectl apply -f canary.yaml
+
+deploy-canary:
+	kubectl set image deployment/friend-canary-deployment friend-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/friend:${VERSION}
+
+deploy:
+	kubectl set image deployment/friend-deployment friend=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/friend:${VERSION}

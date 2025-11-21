@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -17,8 +18,13 @@ type Repository interface {
 
 func NewPostgres(config PostgresConfig) Repository {
 	// postgre
-	connectionString := fmt.Sprintf("user=%s dbname=%s sslmode=disable password=%s host=%s port=%s",
-		config.Username, config.DbName, config.Password, config.Host, config.Port,
+	sslmode := "require"
+	if os.Getenv("ENVIRONMENT") != "production" {
+		// disable for dev
+		sslmode = "disable"
+	}
+	connectionString := fmt.Sprintf("user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
+		config.Username, config.DbName, sslmode, config.Password, config.Host, config.Port,
 	)
 	db, err := sqlx.Connect("postgres", connectionString)
 	if err != nil {
