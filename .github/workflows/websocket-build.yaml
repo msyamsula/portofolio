@@ -1,4 +1,4 @@
-name: url-shortener Builder
+name: websocket Builder
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - master
 
 env:
-  IMAGE_NAME: url-shortener  # Change to your ECR repo name
+  IMAGE_NAME: websocket  # Change to your ECR repo name
   AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
       # 4. Build and Push Docker image
       - name: Build and Push Docker image
         run: |
-          cd backend-app/url-shortener
+          cd backend-app/messaging/websocket-server
           ECR_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
           COMMIT_HASH=$(echo $GITHUB_SHA | cut -c1-7)
           TAG="${COMMIT_HASH}"

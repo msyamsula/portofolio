@@ -44,6 +44,6 @@ jobs:
           cd backend-app/graph
           ECR_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
           COMMIT_HASH=$(echo $GITHUB_SHA | cut -c1-7)
-          TAG="${COMMIT_HASH}-${GITHUB_RUN_NUMBER}"
+          TAG="${COMMIT_HASH}"
           docker buildx build --platform linux/amd64 -t $ECR_URI:latest -t $ECR_URI:$TAG --push .
           echo "Image tags: latest, $TAG"
