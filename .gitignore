@@ -11,3 +11,4 @@ testing.json
 secret.*
 *.prod*
 dist*
+*_log
