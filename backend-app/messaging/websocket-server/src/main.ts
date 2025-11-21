@@ -10,6 +10,8 @@ const MONGO_ADAPTER_URI = process.env.MONGO_URI || "mongodb://localhost:27017"
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || ""
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || ""
 const AWS_REGION = process.env.AWS_REGION || ""
+const SNS_TOPIC = process.env.SNS_TOPIC || ""
+const SQS_PREFIX_QUEUE = process.env.SQS_PREFIX_QUEUE || ""
 
 function showEnv() {
     console.log(ENVIRONMENT);
@@ -20,6 +22,9 @@ function showEnv() {
     console.log(AWS_SECRET_ACCESS_KEY);
     console.log(AWS_ACCESS_KEY_ID);
     console.log(AWS_REGION);
+    console.log(SQS_PREFIX_QUEUE);
+    console.log(SNS_TOPIC);
+    
 }
 
 
@@ -30,8 +35,8 @@ async function main() {
 
 
     let adapter = newSqsSnsAdapter({
-        topicName: "socket-io",
-        queuePrefix: "socket-io",
+        topicName: SNS_TOPIC,
+        queuePrefix: SQS_PREFIX_QUEUE,
     });
 
     // const mongoCollectionAdapter = await getMonggoCollectionAdapter(MONGO_ADAPTER_DB, MONGO_ADAPTER_COLLECTION, MONGO_ADAPTER_URI);
@@ -47,7 +52,7 @@ async function main() {
             skipMiddlewares: true
         },
         transports: ["websocket"],
-        // adapter: adapter,
+        adapter: adapter,
     });
 
     ws.run();
