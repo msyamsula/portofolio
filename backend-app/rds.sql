@@ -30,9 +30,22 @@ create table users (
 );
 create index username on users (username);
 
+CREATE TABLE read_messages (
+	id varchar(1000) PRIMARY KEY NOT NULL,
+	sender_id bigserial NOT NULL,
+	receiver_id bigserial NOT NULL,
+    group_id bigserial NOT NULL,
+	data varchar(10000) NOT NULL,
+	create_time timestamp DEFAULT current_timestamp NOT NULL,
+	update_time timestamp NOT NULL DEFAULT current_timestamp
+);
 
-select * FROM users;
-select * from friendship;
-select * from url;
-
-
+CREATE TABLE unread_messages (
+	id varchar(1000) PRIMARY KEY NOT NULL,
+	sender_id bigserial NOT NULL,
+    group_id bigserial NOT NULL,
+	receiver_id bigserial NOT NULL,
+	data varchar(10000) NOT NULL,
+	create_time timestamp DEFAULT current_timestamp NOT NULL,
+	update_time timestamp NOT NULL DEFAULT current_timestamp
+);
