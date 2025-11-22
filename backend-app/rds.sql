@@ -30,7 +30,7 @@ create table users (
 );
 create index username on users (username);
 
-CREATE TABLE read_messages (
+CREATE TABLE messages (
 	id varchar(1000) PRIMARY KEY NOT NULL,
 	sender_id bigserial NOT NULL,
 	receiver_id bigserial NOT NULL,
@@ -39,18 +39,6 @@ CREATE TABLE read_messages (
 	create_time timestamp DEFAULT current_timestamp NOT NULL,
 	update_time timestamp NOT NULL DEFAULT current_timestamp
 );
-create index read_conversation_id on read_messages (conversation_id);
-create index read_message_pk on read_messages (id);
-
-CREATE TABLE unread_messages (
-	id varchar(1000) PRIMARY KEY NOT NULL,
-	sender_id bigserial NOT NULL,
-	receiver_id bigserial NOT NULL,
-    conversation_id varchar(1000) NOT NULL,
-	data varchar(10000) NOT NULL,
-	create_time timestamp DEFAULT current_timestamp NOT NULL,
-	update_time timestamp NOT NULL DEFAULT current_timestamp
-);
-create index unread_message_pk on unread_messages (id);
-create index unread_conversation_id on unread_messages (conversation_id);
+create index messages_conversation_create_time on read_messages (conversation_id, create_time);
+create index messages_pk on messages (id);
 
