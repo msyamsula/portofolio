@@ -22,3 +22,7 @@ type SqsConfig struct {
 type Config struct {
 	SqsConfig
 }
+
+var (
+	eventSend = "SEND"
+)
