@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"github.com/msyamsula/portofolio/backend-app/message/persistence"
 	"go.opentelemetry.io/otel"
@@ -67,6 +68,7 @@ func (s *service) GetConversation(c context.Context, conversationId string) ([]p
 	conversations := []persistence.Message{}
 	conversations, err = s.persistence.GetMessage(c, tx, conversationId, persistence.TableMessage)
 	if err != nil {
+		log.Println("persistence", err.Error())
 		return []persistence.Message{}, err
 	}
 

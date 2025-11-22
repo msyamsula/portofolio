@@ -27,9 +27,22 @@ func newSqsConsumer(c SqsConfig) *sqsConsumer {
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
+	client := sqs.NewFromConfig(cfg)
+
+	// test the connection, if fail then stop early
+	_, err = client.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
+		QueueUrl:              aws.String(c.QueueUrl),
+		MaxNumberOfMessages:   10,
+		WaitTimeSeconds:       20, // long poll
+		VisibilityTimeout:     30, // seconds
+		MessageAttributeNames: []string{"All"},
+	})
+	if err != nil {
+		log.Fatalf("sqs error: %v", err.Error())
+	}
 
 	return &sqsConsumer{
-		client: sqs.NewFromConfig(cfg),
+		client: client,
 		url:    c.QueueUrl,
 		svc:    c.Svc,
 	}
@@ -85,6 +98,9 @@ func (s *sqsConsumer) Consume() {
 func (s *sqsConsumer) process(m persistence.Message) error {
 	if m.Event == eventSend {
 		_, err := s.svc.InsertMessage(context.Background(), m)
+		if err != nil {
+			log.Println(err.Error())
+		}
 		return err
 	}
 

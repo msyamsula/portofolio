@@ -14,7 +14,7 @@ type PostgresConfig struct {
 }
 
 type SnsEvent struct {
-	Event string `json:"event"`
+	Event string `json:"event,omitempty"`
 }
 
 type Message struct {

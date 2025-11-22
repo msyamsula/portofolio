@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/msyamsula/portofolio/backend-app/message/service"
@@ -35,6 +36,7 @@ func (h *httpHandler) GetConversation(w http.ResponseWriter, req *http.Request) 
 	ctx := req.Context()
 	resp.Conversation, err = h.svc.GetConversation(ctx, conversation_id)
 	if err != nil {
+		log.Println("get conversation", err.Error())
 		return
 	}
 }

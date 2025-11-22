@@ -122,7 +122,6 @@ func (s *postgres) GetMessage(c context.Context, tx *sqlx.Tx, conversationId str
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
-			tx.Rollback()
 		}
 	}()
 
@@ -152,14 +151,9 @@ func (s *postgres) GetMessage(c context.Context, tx *sqlx.Tx, conversationId str
 		messages = append(messages, m)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return []Message{}, err
-	}
-
 	return messages, nil
 }
 
 func (s *postgres) MustBeginTx(c context.Context, opt *sql.TxOptions) *sqlx.Tx {
-	return s.MustBeginTx(c, opt)
+	return s.DB.MustBeginTx(c, opt)
 }
