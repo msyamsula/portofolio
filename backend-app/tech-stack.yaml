@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Kubernetes Cluster"
+Description: "App Tech Stack, EKS, RDS, Elasticache, DynamoDB, Networking (VPC, Private Subnet), ECR, Bastion, SQS, SNS, NATGateway"
 
 Parameters:
   PrivateSubnetCidr1:
@@ -436,6 +436,7 @@ Resources:
       VpcId: !Ref TheVpcId
       CidrBlock: !Ref PrivateSubnetCidr1
       MapPublicIpOnLaunch: false
+      AvailabilityZone: ap-southeast-1a
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
@@ -443,6 +444,7 @@ Resources:
       VpcId: !Ref TheVpcId
       CidrBlock: !Ref PrivateSubnetCidr2
       MapPublicIpOnLaunch: false
+      AvailabilityZone: ap-southeast-1b
 
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
@@ -499,7 +501,7 @@ Resources:
       MultiAZEnabled: true
       NumNodeGroups: 1
       ReplicasPerNodeGroup: 2
-      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      CacheSubnetGroupName: !Ref RedisSubnetGroup # subnet group must consist of at least 2 "private" subnet that live in "different" AZ
       SecurityGroupIds:
         - !Ref RedisSecurityGroup
       AtRestEncryptionEnabled: true
