@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/msyamsula/portofolio/telemetryv2 v0.0.0-20251119052643-e4cacbeec73b
+	github.com/msyamsula/portofolio/telemetry v0.0.0-20251122001157-d47dfc5306d4
 	github.com/prometheus/client_golang v1.21.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rs/cors v1.11.1

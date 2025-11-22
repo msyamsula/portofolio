@@ -4,7 +4,7 @@ go 1.24.4
 
 require (
 	github.com/gorilla/mux v1.8.1
-	github.com/msyamsula/portofolio/telemetryv2 v0.0.0-20251119052643-e4cacbeec73b
+	github.com/msyamsula/portofolio/telemetry v0.0.0-20251122001157-d47dfc5306d4
 	github.com/rs/cors v1.11.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0
 )

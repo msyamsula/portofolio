@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/graph/handler"
 	"github.com/msyamsula/portofolio/backend-app/graph/service"
-	"github.com/msyamsula/portofolio/telemetryv2"
+	"github.com/msyamsula/portofolio/telemetry"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -27,7 +27,7 @@ var (
 func Route(r *mux.Router) *mux.Router {
 
 	// initialize instrumentation
-	telemetryv2.InitializeTelemetryTracing(appName, jaegerHost)
+	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
 	h := handler.NewHandler(handler.Config{
 		Service: service.New(),
 	})

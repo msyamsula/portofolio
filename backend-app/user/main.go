@@ -15,7 +15,7 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/user/handler"
 	"github.com/msyamsula/portofolio/backend-app/user/persistent"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
-	"github.com/msyamsula/portofolio/telemetryv2"
+	"github.com/msyamsula/portofolio/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -79,7 +79,7 @@ func createLogFile() *os.File {
 func route(r *mux.Router) *mux.Router {
 
 	// initialize instrumentation
-	telemetryv2.InitializeTelemetryTracing(appName, jaegerHost)
+	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
 
 	// var h handler.Handler
 	h := handler.New(handler.Config{
