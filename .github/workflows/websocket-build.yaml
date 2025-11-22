@@ -41,7 +41,7 @@ jobs:
       # 4. Build and Push Docker image
       - name: Build and Push Docker image
         run: |
-          cd backend-app/messaging/websocket-server
+          cd backend-app/websocket-server
           ECR_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
           COMMIT_HASH=$(echo $GITHUB_SHA | cut -c1-7)
           TAG="${COMMIT_HASH}"
