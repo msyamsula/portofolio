@@ -1,11 +1,11 @@
 package textrendering
 
 import (
-	"github.com/msyamsula/portofolio/other-works/design-pattern/flyweight/text_rendering/font"
-	"github.com/msyamsula/portofolio/other-works/design-pattern/flyweight/text_rendering/font/color"
-	"github.com/msyamsula/portofolio/other-works/design-pattern/flyweight/text_rendering/font/family"
-	"github.com/msyamsula/portofolio/other-works/design-pattern/flyweight/text_rendering/font/size"
-	"github.com/msyamsula/portofolio/other-works/design-pattern/flyweight/text_rendering/font/weight"
+	"github.com/msyamsula/portofolio/learning/design-pattern/flyweight/text_rendering/font"
+	"github.com/msyamsula/portofolio/learning/design-pattern/flyweight/text_rendering/font/color"
+	"github.com/msyamsula/portofolio/learning/design-pattern/flyweight/text_rendering/font/family"
+	"github.com/msyamsula/portofolio/learning/design-pattern/flyweight/text_rendering/font/size"
+	"github.com/msyamsula/portofolio/learning/design-pattern/flyweight/text_rendering/font/weight"
 )
 
 type FontFlyweight interface {

@@ -1,6 +1,6 @@
 package factory
 
-import paymentprocessor "github.com/msyamsula/portofolio/other-works/design-pattern/factory/payment_processor"
+import paymentprocessor "github.com/msyamsula/portofolio/learning/design-pattern/factory/payment_processor"
 
 func newBlankProcessor() PaymentProcessor {
 	return &paymentprocessor.BlankProcessor{}

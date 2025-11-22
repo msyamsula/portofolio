@@ -1,8 +1,8 @@
 package bridge
 
 import (
-	"github.com/msyamsula/portofolio/other-works/design-pattern/bridge/channel"
-	"github.com/msyamsula/portofolio/other-works/design-pattern/bridge/priority"
+	"github.com/msyamsula/portofolio/learning/design-pattern/bridge/channel"
+	"github.com/msyamsula/portofolio/learning/design-pattern/bridge/priority"
 )
 
 type Notification struct {

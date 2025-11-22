@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/msyamsula/portofolio/other-works/design-pattern/bridge-factory/factory"
+	"github.com/msyamsula/portofolio/learning/design-pattern/bridge-factory/factory"
 )
 
 func TestNotifications(t *testing.T) {

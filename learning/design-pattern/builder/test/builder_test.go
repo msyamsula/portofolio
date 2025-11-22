@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/msyamsula/portofolio/other-works/design-pattern/builder"
+	"github.com/msyamsula/portofolio/learning/design-pattern/builder"
 	"github.com/stretchr/testify/assert"
 )
 

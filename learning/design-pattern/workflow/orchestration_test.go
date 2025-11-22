@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/msyamsula/portofolio/other-works/design-pattern/workflow/steps"
+	"github.com/msyamsula/portofolio/learning/design-pattern/workflow/steps"
 )
 
 func TestOrchestration(t *testing.T) {

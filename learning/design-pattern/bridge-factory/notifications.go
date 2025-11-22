@@ -1,7 +1,7 @@
 package bridgefactory
 
 import (
-	"github.com/msyamsula/portofolio/other-works/design-pattern/bridge-factory/factory"
+	"github.com/msyamsula/portofolio/learning/design-pattern/bridge-factory/factory"
 )
 
 type Notification struct {

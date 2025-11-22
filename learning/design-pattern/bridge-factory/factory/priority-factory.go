@@ -1,7 +1,7 @@
 package factory
 
 import (
-	"github.com/msyamsula/portofolio/other-works/design-pattern/bridge-factory/fpriority"
+	"github.com/msyamsula/portofolio/learning/design-pattern/bridge-factory/fpriority"
 )
 
 type Priority interface {

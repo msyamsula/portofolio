@@ -3,7 +3,7 @@ package adapter
 import (
 	"testing"
 
-	"github.com/msyamsula/portofolio/other-works/design-pattern/adapter/local"
+	"github.com/msyamsula/portofolio/learning/design-pattern/adapter/local"
 )
 
 func TestAdapter(t *testing.T) {
