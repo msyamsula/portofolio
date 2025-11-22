@@ -19,11 +19,13 @@ type Repository interface {
 
 func NewRedis(cfg RedisConfig) Repository {
 	client := redisPkg.NewClient(&redisPkg.Options{
-		Addr:           fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
-		DB:             0, // Use default DB
-		Protocol:       2, // Connection protocol
-		PoolSize:       10,
-		TLSConfig:      &tls.Config{},
+		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
+		DB:       0, // Use default DB
+		Protocol: 2, // Connection protocol
+		PoolSize: 10,
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true, // need proper tls
+		},
 		DialTimeout:    2 * time.Second,
 		PoolTimeout:    1 * time.Second,
 		MaxActiveConns: 7,
