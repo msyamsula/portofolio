@@ -36,7 +36,7 @@ var (
 
 	port = os.Getenv("PORT")
 
-	sqsQueueUrl = os.Getenv("SQS_QUEUE_URL")
+	sqsQueueUrl = os.Getenv("SQS_PERSISTENCE_QUEUE_URL")
 )
 
 func init() {
@@ -49,7 +49,7 @@ func init() {
 		fmt.Println("POSTGRES_PORT:", pgPort)
 		fmt.Println("JAEGER_HOST:", jaegerHost)
 		fmt.Println("PORT:", port)
-		fmt.Println("SQS_QUEUE_URL:", sqsQueueUrl)
+		fmt.Println("SQS_PERSISTENCE_QUEUE_URL:", sqsQueueUrl)
 	}
 }
 
