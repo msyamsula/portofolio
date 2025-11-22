@@ -12,7 +12,7 @@ const MONGO_ADAPTER_URI = process.env.MONGO_URI || "mongodb://localhost:27017"
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || ""
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || ""
 const AWS_REGION = process.env.AWS_REGION || ""
-const SNS_TOPIC = process.env.SNS_TOPIC || ""
+const SOCKET_SNS_TOPIC = process.env.SOCKET_SNS_TOPIC || ""
 const SQS_PREFIX_QUEUE = process.env.SQS_PREFIX_QUEUE || ""
 const ADAPTER_TYPE = process.env.ADAPTER_TYPE || ""
 const PERSISTENCE_SNS_TOPIC_ARN = process.env.PERSISTENCE_SNS_TOPIC_ARN || ""
@@ -27,7 +27,7 @@ function showEnv() {
     console.log("AWS_ACCESS_KEY_ID:", AWS_ACCESS_KEY_ID);
     console.log("AWS_REGION:", AWS_REGION);
     console.log("SQS_PREFIX_QUEUE:", SQS_PREFIX_QUEUE);
-    console.log("SNS_TOPIC:", SNS_TOPIC);
+    console.log("SOCKET_SNS_TOPIC:", SOCKET_SNS_TOPIC);
     console.log("ADAPTER_TYPE:", ADAPTER_TYPE);
     console.log("PERSISTENCE_SNS_TOPIC_ARN:", PERSISTENCE_SNS_TOPIC_ARN);
 
@@ -41,7 +41,7 @@ async function getAdapter(cfg: Partial<ServerOptions>): Promise<Partial<ServerOp
             break;
         case "sqs":
             cfg.adapter = newSqsSnsAdapter({
-                topicName: SNS_TOPIC,
+                topicName: SOCKET_SNS_TOPIC,
                 queuePrefix: SQS_PREFIX_QUEUE,
             })
             break;

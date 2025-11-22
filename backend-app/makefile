@@ -8,13 +8,13 @@ create:
 		EksClusterName='${EKS_CLUSTER_NAME}' \
 		EksMaxNodes='${EKS_MAX_NODES}' \
 		EksDesiredNodes='${EKS_DESIRE_NODES}' \
-		SnsTopic='${SNS_TOPIC}' \
+		SnsTopic='${SOCKET_SNS_TOPIC}' \
 		DbPassword='${POSTGRES_PASSWORD}' \
 		DbUsername='${POSTGRES_USER}' \
 		VpcCidr='${VPC_CIDR}' \
 		DynamoTableName='${DYNAMO_TABLE}' \
 		SnsPersistenceTopic='${SNS_PERSISTENCE_TOPIC}' \
-		SqsPersistenceName='${SQS_PERSISTENCE_NAME}' \
+		SqsPersistenceName='${SQS_PERSISTENCE_QUEUE}' \
 		KeyName='${KEY_NAME}' \
 		PrivateSubnetCidr1='${PRIVATE_SUBNET_CIDR1}' \
 		PrivateSubnetCidr2='${PRIVATE_SUBNET_CIDR2}' \
