@@ -26,9 +26,14 @@ use-aws-kubernetes:
 destroy:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME}
 
-tunnel:
+tunnel-postgres:
 	ssh -i ${KEY_NAME}.pem \
-		-L ${TARGET_PORT}:${TARGET_IP}:${TARGET_PORT} \
+		-L 1${POSTGRES_PORT}:${POSTGRES_HOST}:${POSTGRES_PORT} \
+		ec2-user@${BASTION_IP}
+
+tunnel-redis:
+	ssh -i ${KEY_NAME}.pem \
+		-L 1${REDIS_PORT}:${REDIS_HOST}:${REDIS_PORT} \
 		ec2-user@${BASTION_IP}
 
 token:

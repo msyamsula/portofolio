@@ -39,6 +39,6 @@ CREATE TABLE messages (
 	create_time timestamp DEFAULT current_timestamp NOT NULL,
 	update_time timestamp NOT NULL DEFAULT current_timestamp
 );
-create index messages_conversation_create_time on read_messages (conversation_id, create_time);
+create index messages_conversation_create_time on messages (conversation_id, create_time);
 create index messages_pk on messages (id);
 
