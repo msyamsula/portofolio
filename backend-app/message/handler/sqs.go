@@ -35,10 +35,6 @@ type sqsConsumer struct {
 	svc service.Service
 }
 
-var (
-	eventSend = "SEND"
-)
-
 func (s *sqsConsumer) Consume() {
 	for {
 		// Receive messages (long polling)
