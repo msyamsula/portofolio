@@ -1,4 +1,4 @@
-module github.com/msyamsula/portofolio/telemetryv2
+module github.com/msyamsula/portofolio/telemetry
 
 go 1.24.4
 

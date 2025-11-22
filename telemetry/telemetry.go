@@ -1,4 +1,4 @@
-package telemetryv2
+package telemetry
 
 import (
 	"context"
