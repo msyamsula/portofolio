@@ -16,6 +16,8 @@ create:
 		SnsPersistenceTopic='${SNS_PERSISTENCE_TOPIC}' \
 		SqsPersistenceName='${SQS_PERSISTENCE_NAME}' \
 		KeyName='${KEY_NAME}' \
+		PrivateSubnetCidr1='${PRIVATE_SUBNET_CIDR1}' \
+		PrivateSubnetCidr2='${PRIVATE_SUBNET_CIDR2}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
 destroy:

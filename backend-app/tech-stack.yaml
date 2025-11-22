@@ -2,6 +2,20 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Kubernetes Cluster"
 
 Parameters:
+  PrivateSubnetCidr1:
+    Type: String
+
+  PrivateSubnetCidr2:
+    Type: String
+
+  TheSubnetId:
+    Type: String
+    Default: subnet-0eb111d17198bcafb
+
+  TheVpcId:
+    Type: String
+    Default: vpc-08780a8b5fb9266e8
+
   KeyName:
     Type: String
 
@@ -317,6 +331,7 @@ Resources:
         - Key: Owner
           Value: CloudFormation
 
+  # Websocket Adapter
   SocketTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -328,6 +343,7 @@ Resources:
       #   - Protocol: email # optional
       #     Endpoint: example@example.com # optional
 
+  # Topic and Queue for persistence data management of message
   PersistenceTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -373,6 +389,7 @@ Resources:
       Endpoint: !GetAtt MyQueue.Arn
       RawMessageDelivery: true
 
+  # Bastion
   BastionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -400,5 +417,94 @@ Resources:
           yum install -y amazon-ssm-agent
           systemctl enable amazon-ssm-agent
           systemctl start amazon-ssm-agent
+
+  # Private Subnet 
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGatewayEIP.AllocationId
+      SubnetId: !Ref TheSubnetId
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TheVpcId
+      CidrBlock: !Ref PrivateSubnetCidr1
+      MapPublicIpOnLaunch: false
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TheVpcId
+      CidrBlock: !Ref PrivateSubnetCidr2
+      MapPublicIpOnLaunch: false
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref TheVpcId
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      GatewayId: !Ref NATGateway
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetRouteAssoc1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetRouteAssoc2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # Redis ElasticCache
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Private subnets for Redis
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Redis
+      VpcId: vpc-08780a8b5fb9266e8
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: !Ref VpcCidr  # Change to restrict access
+
+  RedisReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties:
+      ReplicationGroupDescription: Redis replication group
+      Engine: redis
+      EngineVersion: "7.0"
+      CacheNodeType: "cache.t3.micro"
+      AutomaticFailoverEnabled: true
+      MultiAZEnabled: true
+      NumNodeGroups: 1
+      ReplicasPerNodeGroup: 2
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      AtRestEncryptionEnabled: true
+      TransitEncryptionEnabled: true
+
+  
 
 
