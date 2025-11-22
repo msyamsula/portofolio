@@ -1,0 +1,90 @@
+---
+# cluster IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: message-clusterip
+  labels:
+    app: message
+    type: clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: message
+    type: pod
+  ports:
+    - protocol: TCP
+      port: 10000 # service port
+      targetPort: 10000 # container port
+      name: message-clusterip
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-deployment
+  labels:
+    app: message
+    type: deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: message
+      type: pod
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: message
+        type: pod
+        version: stable
+    spec:
+      containers:
+      - name: message
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/message:cabf0e8-18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10000
+        envFrom:
+          - configMapRef:
+              name: message-env
+        command: ["./main"]
+
+
+---
+# canary Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-canary-deployment
+  labels:
+    app: message-canary
+    type: deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: message
+      type: pod
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: message
+        type: pod
+        version: canary
+    spec:
+      containers:
+      - name: message-canary
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/message:cabf0e8-18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10000
+        envFrom:
+          - configMapRef:
+              name: message-env
+        command: ["./main"]
+
+
