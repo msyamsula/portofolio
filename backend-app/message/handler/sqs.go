@@ -6,10 +6,27 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/msyamsula/portofolio/backend-app/message/persistence"
 	"github.com/msyamsula/portofolio/backend-app/message/service"
 )
+
+func newSqsConsumer(c SqsConfig) *sqsConsumer {
+	ctx := context.Background()
+
+	// Load AWS config (uses env vars, shared creds, IAM role, etc.)
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	return &sqsConsumer{
+		client: sqs.NewFromConfig(cfg),
+		url:    c.QueueUrl,
+		svc:    c.Svc,
+	}
+}
 
 type sqsConsumer struct {
 	client *sqs.Client
@@ -17,6 +34,10 @@ type sqsConsumer struct {
 
 	svc service.Service
 }
+
+var (
+	eventSend = "SEND"
+)
 
 func (s *sqsConsumer) Consume() {
 	for {
@@ -40,20 +61,18 @@ func (s *sqsConsumer) Consume() {
 		}
 
 		for _, msg := range resp.Messages {
-			fmt.Println("Received:", *msg.Body)
-
-			// TODO: process message here
-			// processMessage(msg.Body)
-			// s.svc.InsertUnreadMessage()
 
 			m := persistence.Message{}
 			err = m.UnmarshalJSON([]byte(*msg.Body))
 			if err != nil {
 				fmt.Println(err)
 			}
-			// fmt.Println(aws.String(*msg.Body))
-			fmt.Println(string(*msg.Body))
 			fmt.Println(m)
+
+			err = s.process(m)
+			if err != nil {
+				continue // do not delete and keep it in queue for further processing
+			}
 
 			// Delete after successful processing
 			_, err := s.client.DeleteMessage(ctx, &sqs.DeleteMessageInput{
@@ -67,6 +86,11 @@ func (s *sqsConsumer) Consume() {
 	}
 }
 
-func main() {
+func (s *sqsConsumer) process(m persistence.Message) error {
+	if m.Event == eventSend {
+		_, err := s.svc.InsertMessage(context.Background(), m)
+		return err
+	}
 
+	return nil
 }

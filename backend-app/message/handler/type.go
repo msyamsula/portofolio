@@ -5,7 +5,7 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/message/service"
 )
 
-type Config struct {
+type HttpConfig struct {
 	Svc service.Service
 }
 
@@ -15,6 +15,10 @@ type conversationResponse struct {
 }
 
 type SqsConfig struct {
-	Config
 	QueueUrl string
+	HttpConfig
+}
+
+type Config struct {
+	SqsConfig
 }
