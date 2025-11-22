@@ -15,9 +15,16 @@ create:
 		DynamoTableName='${DYNAMO_TABLE}' \
 		SnsPersistenceTopic='${SNS_PERSISTENCE_TOPIC}' \
 		SqsPersistenceName='${SQS_PERSISTENCE_NAME}' \
+		KeyName='${KEY_NAME}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
 destroy:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME}
+
+tunnel:
+	ssh -i ${KEY_NAME}.pem \
+		-L ${TARGET_PORT}:${TARGET_IP}:${TARGET_PORT} \
+		ec2-user@${BASTION_IP}
+
 
 

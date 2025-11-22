@@ -2,6 +2,9 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Kubernetes Cluster"
 
 Parameters:
+  KeyName:
+    Type: String
+
   EksMaxNodes:
     Type: Number
     Default: 5
@@ -369,5 +372,33 @@ Resources:
       Protocol: sqs
       Endpoint: !GetAtt MyQueue.Arn
       RawMessageDelivery: true
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for Bastion Host"
+      VpcId: vpc-08780a8b5fb9266e8
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref VpcCidr
+
+  BastionInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      SubnetId: subnet-0eb111d17198bcafb
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      ImageId: ami-093a7f5fbae13ff67   # Amazon Linux 2 (update based on region)
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y amazon-ssm-agent
+          systemctl enable amazon-ssm-agent
+          systemctl start amazon-ssm-agent
 
 
