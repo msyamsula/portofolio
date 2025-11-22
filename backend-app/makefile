@@ -26,5 +26,7 @@ tunnel:
 		-L ${TARGET_PORT}:${TARGET_IP}:${TARGET_PORT} \
 		ec2-user@${BASTION_IP}
 
+token:
+	aws sts get-caller-identity
 
 
