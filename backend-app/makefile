@@ -20,6 +20,9 @@ create:
 		PrivateSubnetCidr2='${PRIVATE_SUBNET_CIDR2}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
+use-aws-kubernetes:
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+
 destroy:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME}
 
