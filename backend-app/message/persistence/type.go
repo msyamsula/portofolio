@@ -66,6 +66,5 @@ func (m *Message) UnmarshalJSON(b []byte) error {
 }
 
 var (
-	TableReadMessage   = "read_messages"
-	TableUnreadMessage = "unread_messsages"
+	TableMessage = "messages"
 )

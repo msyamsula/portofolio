@@ -38,7 +38,7 @@ func (s *service) InsertUnreadMessage(c context.Context, msg persistence.Message
 		}
 	}()
 
-	msg, err = s.persistence.InsertMessage(ctx, tx, msg, persistence.TableUnreadMessage)
+	msg, err = s.persistence.InsertMessage(ctx, tx, msg, persistence.TableMessage)
 	if err != nil {
 		return persistence.Message{}, err
 	}
@@ -64,19 +64,11 @@ func (s *service) GetConversation(c context.Context, conversationId string) ([]p
 		}
 	}()
 
-	readConversations := []persistence.Message{}
-	readConversations, err = s.persistence.GetMessage(c, tx, conversationId, persistence.TableReadMessage)
+	conversations := []persistence.Message{}
+	conversations, err = s.persistence.GetMessage(c, tx, conversationId, persistence.TableMessage)
 	if err != nil {
 		return []persistence.Message{}, err
 	}
-
-	unreadConversations := []persistence.Message{}
-	readConversations, err = s.persistence.GetMessage(c, tx, conversationId, persistence.TableUnreadMessage)
-	if err != nil {
-		return []persistence.Message{}, err
-	}
-
-	conversations := append(readConversations, unreadConversations...)
 
 	err = tx.Commit()
 	if err != nil {
@@ -84,39 +76,4 @@ func (s *service) GetConversation(c context.Context, conversationId string) ([]p
 	}
 
 	return conversations, nil
-}
-
-func (s *service) ReadMessage(c context.Context, conversationId string) error {
-	var err error
-
-	// open tx and defer
-	tx := s.persistence.MustBeginTx(c, &sql.TxOptions{
-		Isolation: 0,
-		ReadOnly:  false,
-	})
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// delete unread messages
-	var unreadMessages []persistence.Message
-	unreadMessages, err = s.persistence.DeleteBulkMessage(c, tx, conversationId, persistence.TableUnreadMessage)
-	if err != nil {
-		return err
-	}
-
-	// insert into read message
-	s.persistence.InsertBulkMessage(c, tx, unreadMessages, persistence.TableReadMessage)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

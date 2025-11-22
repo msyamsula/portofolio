@@ -50,7 +50,7 @@ func (s *postgres) InsertBulkMessage(c context.Context, tx *sqlx.Tx, msg []Messa
 	var err error
 	for _, m := range msg {
 		var stmt *sqlx.NamedStmt
-		query := fmt.Sprintf(queryInsertMessage, TableReadMessage)
+		query := fmt.Sprintf(queryInsertMessage, TableMessage)
 		stmt, err = tx.PrepareNamedContext(ctx, query)
 		if err != nil {
 			return err
