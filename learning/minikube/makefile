@@ -3,7 +3,7 @@ include .env
 
 # start the cluster
 start-kubernetes:
-	kind create cluster --config kind-config.yaml --name my-cluster
+	kind create cluster --config kind-config.yaml --name ${CLUSTER}
 
 stop-kubernetes:
 	kind delete cluster --name my-cluster
