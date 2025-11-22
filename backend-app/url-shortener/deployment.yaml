@@ -33,14 +33,51 @@ spec:
     matchLabels:
       app: url-shortener
       type: pod
+      version: stable
   template:
     metadata:
       labels:
         app: url-shortener
         type: pod
+        version: stable
     spec:
       containers:
       - name: url-shortener
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:cabf0e8-18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10000
+        envFrom:
+          - configMapRef:
+              name: url-shortener-env
+        command: ["./main"]
+
+
+---
+# Canary Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: url-shortener-canary-deployment
+  labels:
+    app: url-shortener-canary
+    type: deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: url-shortener
+      type: pod
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: url-shortener
+        type: pod
+        version: canary
+    spec:
+      containers:
+      - name: url-shortener-canary
         image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:cabf0e8-18
         imagePullPolicy: IfNotPresent
         ports:

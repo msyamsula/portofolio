@@ -32,9 +32,8 @@ var (
 	pgHost     = os.Getenv("POSTGRES_HOST")
 	pgPort     = os.Getenv("POSTGRES_PORT")
 
-	redisHost     = os.Getenv("REDIS_HOST")
-	redisPort     = os.Getenv("REDIS_PORT")
-	redisPassword = os.Getenv("REDIS_PASSWORD")
+	redisHost = os.Getenv("REDIS_HOST")
+	redisPort = os.Getenv("REDIS_PORT")
 
 	jaegerHost = os.Getenv("JAEGER_HOST")
 
@@ -60,7 +59,6 @@ func init() {
 		fmt.Println("POSTGRES_PORT:", pgPort)
 		fmt.Println("REDIS_HOST:", redisHost)
 		fmt.Println("REDIS_PORT:", redisPort)
-		fmt.Println("REDIS_PASSWORD:", redisPassword)
 		fmt.Println("JAEGER_HOST:", jaegerHost)
 		fmt.Println("CALLBACK_URI:", callbackUri)
 		fmt.Println("PORT:", port)
@@ -97,7 +95,8 @@ func createLogFile() *os.File {
 func route(r *mux.Router) *mux.Router {
 
 	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
+	shutdown := telemetry.InitializeTelemetryTracing(appName, jaegerHost)
+	defer shutdown()
 
 	// var h handler.Handler
 	h := handler.New(handler.Config{
