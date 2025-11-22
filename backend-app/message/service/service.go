@@ -12,7 +12,7 @@ type service struct {
 	persistence persistence.Persistence
 }
 
-func (s *service) InsertUnreadMessage(c context.Context, msg persistence.Message) (persistence.Message, error) {
+func (s *service) InsertMessage(c context.Context, msg persistence.Message) (persistence.Message, error) {
 	ctx, span := otel.Tracer("").Start(c, "service.InsertUnreadMessage")
 	defer span.End()
 

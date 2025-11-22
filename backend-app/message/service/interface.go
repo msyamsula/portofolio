@@ -7,7 +7,7 @@ import (
 )
 
 type Service interface {
-	InsertUnreadMessage(c context.Context, msg persistence.Message) (persistence.Message, error)
+	InsertMessage(c context.Context, msg persistence.Message) (persistence.Message, error)
 	GetConversation(c context.Context, conversationId string) ([]persistence.Message, error)
 }
 
