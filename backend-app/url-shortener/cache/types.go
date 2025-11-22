@@ -9,8 +9,7 @@ type DynamoConfig struct {
 }
 
 type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-	Ttl      time.Duration
+	Host string
+	Port string
+	Ttl  time.Duration
 }

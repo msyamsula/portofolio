@@ -109,10 +109,10 @@ func route(r *mux.Router) *mux.Router {
 				Host:     pgHost,
 				Port:     pgPort,
 			}),
-			Cache: cache.NewDynamo(cache.DynamoConfig{
-				Ttl:       5 * time.Minute,
-				Region:    awsRegion,
-				TableName: dynamoTable,
+			Cache: cache.NewRedis(cache.RedisConfig{
+				Host: redisHost,
+				Port: redisPort,
+				Ttl:  5 * time.Minute,
 			}),
 			CharacterPool: characterPool,
 			Size:          10,
