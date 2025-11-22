@@ -12,6 +12,13 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/message/service"
 )
 
+type sqsConsumer struct {
+	client *sqs.Client
+	url    string
+
+	svc service.Service
+}
+
 func newSqsConsumer(c SqsConfig) *sqsConsumer {
 	ctx := context.Background()
 
@@ -26,13 +33,6 @@ func newSqsConsumer(c SqsConfig) *sqsConsumer {
 		url:    c.QueueUrl,
 		svc:    c.Svc,
 	}
-}
-
-type sqsConsumer struct {
-	client *sqs.Client
-	url    string
-
-	svc service.Service
 }
 
 func (s *sqsConsumer) Consume() {
