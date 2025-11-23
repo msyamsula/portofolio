@@ -11,7 +11,6 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/services"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type handler struct {
@@ -107,6 +106,4 @@ func (h *handler) Redirect(w http.ResponseWriter, req *http.Request) {
 
 	// redirect to the longUrl
 	http.Redirect(w, req, longUrl, http.StatusPermanentRedirect)
-	tp := otel.GetTracerProvider().(*trace.TracerProvider)
-	tp.ForceFlush(ctx)
 }
