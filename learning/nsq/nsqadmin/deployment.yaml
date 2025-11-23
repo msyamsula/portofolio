@@ -129,4 +129,4 @@ spec:
 #   HASHER_CHARACTER_POOL: qQwWeErRtTyYuUiIoOpPaAsSdDfFgGhHjJkKlLzZxXcCvVbBnNmM123456
 #   HASHER_HOST: https://api.syamsul.online
 #   PORT: "5000"
-#   JAEGER_HOST: "jaeger-clusterip:4317"
+#   TRACER_COLLECTOR_ENDPOINT: "jaeger-clusterip:4317"
