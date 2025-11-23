@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -103,6 +104,12 @@ func route(r *mux.Router) *mux.Router {
 				Password: pgPassword,
 				Host:     pgHost,
 				Port:     pgPort,
+				Attributes: []attribute.KeyValue{
+					{
+						Key:   "app",
+						Value: attribute.StringValue(appName),
+					},
+				},
 			}),
 			Cache: cache.NewRedis(cache.RedisConfig{
 				Host: redisHost,

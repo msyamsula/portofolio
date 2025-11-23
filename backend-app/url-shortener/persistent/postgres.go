@@ -3,6 +3,7 @@ package persistent
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel"
@@ -42,6 +43,7 @@ func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, er
 		"long_url": longUrl,
 	})
 	if err != nil {
+		log.Println("postgres", err.Error())
 		return "", err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/XSAM/otelsql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -24,13 +25,16 @@ func NewPostgres(config PostgresConfig) Repository {
 		// disable for dev
 		sslmode = "disable"
 	}
+
 	connectionString := fmt.Sprintf("user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
 		config.Username, config.Name, sslmode, config.Password, config.Host, config.Port,
 	)
-	db, err := sqlx.Connect("postgres", connectionString)
+	tempdb, err := otelsql.Open("postgres", connectionString)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	db := sqlx.NewDb(tempdb, "postgres")
+
 	// connection pool
 	db.SetMaxIdleConns(3)
 	db.SetMaxOpenConns(10)

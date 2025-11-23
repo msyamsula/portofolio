@@ -9,6 +9,8 @@ import (
 
 	configPkg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+
 	redisPkg "github.com/redis/go-redis/v9"
 )
 
@@ -34,12 +36,14 @@ func NewRedis(cfg RedisConfig) Repository {
 		DialTimeout:    2 * time.Second,
 		PoolTimeout:    1 * time.Second,
 		MaxActiveConns: 7,
-		MinIdleConns:   3,
-		MaxIdleConns:   3,
+		MinIdleConns:   5,
+		MaxIdleConns:   20,
 		ReadTimeout:    0,
 		WriteTimeout:   0,
 		MaxRetries:     5,
 	})
+	client.Ping(context.Background())
+	redisotel.InstrumentTracing(client)
 	return &redis{
 		db:  client,
 		ttl: cfg.Ttl,
