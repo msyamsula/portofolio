@@ -131,7 +131,7 @@ func main() {
 	r = route(r)
 
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
-	tracedHandler := otelhttp.NewHandler(r, "")
+	tracedHandler := otelhttp.NewHandler(r, "HTTP SERVER")
 
 	// initialize instrumentation
 	shutdown := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
