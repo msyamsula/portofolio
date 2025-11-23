@@ -104,6 +104,8 @@ func (h *handler) Redirect(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	span.End() // end span before redirect
+
 	// redirect to the longUrl
 	http.Redirect(w, req, longUrl, http.StatusPermanentRedirect)
 }
