@@ -33,14 +33,51 @@ spec:
     matchLabels:
       app: graph
       type: pod
+      version: stable
   template:
     metadata:
       labels:
         app: graph
         type: pod
+        version: stable
     spec:
       containers:
       - name: graph
+        image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:92482e9-2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10000
+        envFrom:
+          - configMapRef:
+              name: graph-env
+        command: ["./main"]
+
+
+---
+# Canary Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-canary-deployment
+  labels:
+    app: graph-canary
+    type: deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: graph
+      type: pod
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: graph
+        type: pod
+        version: canary
+    spec:
+      containers:
+      - name: graph-canary
         image: 717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:92482e9-2
         imagePullPolicy: IfNotPresent
         ports:
