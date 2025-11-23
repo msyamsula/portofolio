@@ -18,7 +18,6 @@ type Config struct {
 
 type Service interface {
 	Short(context.Context, string) (string, error)
-	SetLongUrl(context.Context, string, string) error
 	GetLongUrl(context.Context, string) (string, error)
 }
 

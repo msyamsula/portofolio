@@ -32,7 +32,7 @@ var (
 	pgHost     = os.Getenv("POSTGRES_HOST")
 	pgPort     = os.Getenv("POSTGRES_PORT")
 
-	jaegerHost = os.Getenv("JAEGER_HOST")
+	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
 	port = os.Getenv("PORT")
 
@@ -47,7 +47,7 @@ func init() {
 		fmt.Println("POSTGRES_DB:", pgDbName)
 		fmt.Println("POSTGRES_HOST:", pgHost)
 		fmt.Println("POSTGRES_PORT:", pgPort)
-		fmt.Println("JAEGER_HOST:", jaegerHost)
+		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", jaegerHost)
 		fmt.Println("PORT:", port)
 		fmt.Println("SQS_PERSISTENCE_QUEUE_URL:", sqsQueueUrl)
 	}

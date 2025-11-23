@@ -9,6 +9,8 @@ import (
 
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/cache"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/persistent"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type urlShortener struct {
@@ -20,29 +22,28 @@ type urlShortener struct {
 	callbackUri   string
 }
 
-func (s *urlShortener) SetLongUrl(ctx context.Context, shortUrl, longUrl string) error {
-	err := s.persistence.SaveShortUrl(ctx, shortUrl, longUrl)
-	if err != nil {
-		return err
-	}
+func (s *urlShortener) Short(c context.Context, longUrl string) (string, error) {
+	var err error
+	ctx, span := otel.Tracer("service").Start(c, "Short")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
 
-	// set to redis
-	if s.cache != nil {
-		s.cache.Set(ctx, shortUrl, longUrl)
-	}
-	return nil
-}
-
-func (s *urlShortener) Short(ctx context.Context, longUrl string) (string, error) {
+		span.End()
+	}()
 
 	if s.cache != nil {
-		if shortUrl, err := s.cache.Get(ctx, longUrl); err == nil {
+		var shortUrl string
+		if shortUrl, err = s.cache.Get(ctx, longUrl); err == nil {
 			// cache hit
 			return fmt.Sprintf("%s/%s", s.callbackUri, shortUrl), nil
 		}
 	}
 
-	shortUrl, err := s.persistence.GetShortUrl(ctx, longUrl)
+	var shortUrl string
+	shortUrl, err = s.persistence.GetShortUrl(ctx, longUrl)
 	if err == nil {
 		// exist in database
 		if s.cache != nil {
@@ -54,7 +55,10 @@ func (s *urlShortener) Short(ctx context.Context, longUrl string) (string, error
 	}
 
 	// need to be shorten, create one
-	shortUrl = s.createShort()
+	shortUrl, err = s.createShort(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	// save to db
 	err = s.persistence.SaveShortUrl(ctx, shortUrl, longUrl)
@@ -71,27 +75,54 @@ func (s *urlShortener) Short(ctx context.Context, longUrl string) (string, error
 	return fmt.Sprintf("%s/%s", s.callbackUri, shortUrl), nil
 }
 
-func (s *urlShortener) createShort() string {
+func (s *urlShortener) createShort(c context.Context) (string, error) {
+	var err error
+	_, span := otel.Tracer("service").Start(c, "createShort")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
+
 	var short strings.Builder
 	for i := 0; i < s.size; i++ {
-		bidx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(s.characterPool))))
+		var bidx *big.Int
+		bidx, err = rand.Int(rand.Reader, big.NewInt(int64(len(s.characterPool))))
+		if err != nil {
+			return "", err
+		}
 		idx := int(bidx.Int64())
 		short.WriteByte(s.characterPool[int(idx)])
 	}
 
-	return short.String()
+	return short.String(), nil
 }
 
-func (s *urlShortener) GetLongUrl(ctx context.Context, shortUrl string) (string, error) {
+func (s *urlShortener) GetLongUrl(c context.Context, shortUrl string) (string, error) {
+	ctx, span := otel.Tracer("service").Start(c, "getlongurl")
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
+
+	var longUrl string
 	if s.cache != nil {
-		if longUrl, err := s.cache.Get(ctx, shortUrl); err == nil {
+		if longUrl, err = s.cache.Get(ctx, shortUrl); err == nil {
 			// cache hit
 			return longUrl, nil
 		}
 	}
 
 	// check to db
-	longUrl, err := s.persistence.GetLongUrl(ctx, shortUrl)
+	longUrl, err = s.persistence.GetLongUrl(ctx, shortUrl)
 	if err != nil {
 		return "", err
 	}

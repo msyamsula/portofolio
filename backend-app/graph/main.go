@@ -20,7 +20,7 @@ import (
 
 var (
 	appName    = "graph"
-	jaegerHost = os.Getenv("JAEGER_HOST")
+	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 	port       = os.Getenv("PORT")
 )
 

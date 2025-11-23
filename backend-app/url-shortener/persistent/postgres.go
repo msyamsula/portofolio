@@ -6,6 +6,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type postgres struct {
@@ -14,15 +16,21 @@ type postgres struct {
 
 func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, error) {
 	// persistence
-	ctx, span := otel.Tracer("").Start(c, "db.transactions")
-	defer span.End()
-
+	var err error
+	ctx, span := otel.Tracer("persistence").Start(c, "postgres GetShortUrl")
 	tx := repo.db.MustBeginTx(ctx, &sql.TxOptions{
 		Isolation: 0,
 		ReadOnly:  true,
 	})
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			tx.Rollback()
+		}
+		span.End()
+	}()
 
-	var err error
 	var stmt *sqlx.NamedStmt
 	stmt, err = tx.PrepareNamedContext(ctx, queryGetShortUrl)
 	if err != nil {
@@ -30,30 +38,38 @@ func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, er
 	}
 
 	dest := ""
-	dbCtx, dbSpan := otel.Tracer("").Start(ctx, "db.getExecution")
-	defer dbSpan.End()
-	err = stmt.GetContext(dbCtx, &dest, map[string]interface{}{
+	err = stmt.GetContext(ctx, &dest, map[string]interface{}{
 		"long_url": longUrl,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	return dest, nil
+	err = tx.Commit()
+	return dest, err
 
 }
 
 func (repo *postgres) GetLongUrl(c context.Context, shortUrl string) (string, error) {
 	// persistence
-	ctx, span := otel.Tracer("").Start(c, "db.transactions")
-	defer span.End()
-
+	var err error
+	ctx, span := otel.Tracer("persistence").Start(c, "GetLongUrl")
 	tx := repo.db.MustBeginTx(ctx, &sql.TxOptions{
 		Isolation: 0,
 		ReadOnly:  true,
 	})
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetAttributes(attribute.KeyValue{
+				Key:   "status",
+				Value: attribute.StringValue("rollback"),
+			})
+			tx.Rollback()
+		}
+		span.End()
+	}()
 
-	var err error
 	var stmt *sqlx.NamedStmt
 	stmt, err = tx.PrepareNamedContext(ctx, queryGetLongUrl)
 	if err != nil {
@@ -61,39 +77,42 @@ func (repo *postgres) GetLongUrl(c context.Context, shortUrl string) (string, er
 	}
 
 	dest := ""
-	dbCtx, dbSpan := otel.Tracer("").Start(ctx, "db.getExecution")
-	defer dbSpan.End()
-	err = stmt.GetContext(dbCtx, &dest, map[string]interface{}{
+	err = stmt.GetContext(ctx, &dest, map[string]interface{}{
 		"short_url": shortUrl,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	return dest, nil
+	err = tx.Commit()
+	return dest, err
 
 }
 
 func (repo *postgres) SaveShortUrl(c context.Context, shortUrl, longUrl string) error {
 	var err error
-	ctx, span := otel.Tracer("").Start(c, "db.transaction")
-	defer span.End()
-
+	ctx, span := otel.Tracer("persistence").Start(c, "postgres SaveShortUrl")
 	tx := repo.db.MustBeginTx(ctx, &sql.TxOptions{
 		Isolation: 0,
 		ReadOnly:  false,
 	})
+
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			tx.Rollback()
+		}
+		span.End()
+	}()
 
 	var stmt *sqlx.NamedStmt
 	stmt, err = tx.PrepareNamedContext(ctx, querySetShortUrl)
 	if err != nil {
 		return err
 	}
-	// trace the execution
-	dbCtx, dbSpan := otel.Tracer("").Start(ctx, "db.execution")
-	defer dbSpan.End()
 
-	_, err = stmt.ExecContext(dbCtx, map[string]interface{}{
+	_, err = stmt.ExecContext(ctx, map[string]interface{}{
 		"short_url": shortUrl,
 		"long_url":  longUrl,
 	})
@@ -101,15 +120,6 @@ func (repo *postgres) SaveShortUrl(c context.Context, shortUrl, longUrl string) 
 		return err
 	}
 
-	_, commitSpan := otel.Tracer("").Start(ctx, "db.commit")
-	defer commitSpan.End()
 	err = tx.Commit()
-	if err != nil {
-		_, rollbackSpan := otel.Tracer("").Start(ctx, "db.rollback")
-		defer rollbackSpan.End()
-		tx.Rollback()
-		return err
-	}
-
-	return nil
+	return err
 }

@@ -31,7 +31,7 @@ var (
 	pgHost     = os.Getenv("POSTGRES_HOST")
 	pgPort     = os.Getenv("POSTGRES_PORT")
 
-	jaegerHost = os.Getenv("JAEGER_HOST")
+	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
 	port = os.Getenv("PORT")
 )
@@ -44,7 +44,7 @@ func init() {
 		log.Printf("POSTGRES_DB: %s", pgDbName)
 		log.Printf("POSTGRES_HOST: %s", pgHost)
 		log.Printf("POSTGRES_PORT: %s", pgPort)
-		log.Printf("JAEGER_HOST: %s", jaegerHost)
+		log.Printf("TRACER_COLLECTOR_ENDPOINT: %s", jaegerHost)
 		log.Printf("PORT: %s", port)
 	}
 }

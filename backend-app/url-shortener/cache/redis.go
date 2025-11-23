@@ -2,10 +2,12 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	redisPkg "github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type redis struct {
@@ -13,20 +15,38 @@ type redis struct {
 	ttl time.Duration
 }
 
-func (r *redis) Get(ctx context.Context, key string) (string, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "redisPkg.getCache")
-	defer span.End()
+func (r *redis) Get(c context.Context, key string) (string, error) {
+	var err error
+	ctx, span := otel.Tracer("cache").Start(c, "Redis Get")
+	defer func() {
+		fmt.Println(err, "err")
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
 
 	cmd := r.db.Get(ctx, key)
 
-	return cmd.Result()
+	var value string
+	value, err = cmd.Result()
+	return value, err
 }
 
-func (r *redis) Set(ctx context.Context, key string, value string) error {
-	ctx, redisSpan := otel.Tracer("").Start(ctx, "redis.setCache")
-	defer redisSpan.End()
+func (r *redis) Set(c context.Context, key string, value string) error {
+	var err error
+	ctx, span := otel.Tracer("redis").Start(c, "Redis Set")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
 
 	cmd := r.db.Set(ctx, key, value, r.ttl)
-	_, err := cmd.Result()
+	_, err = cmd.Result()
 	return err
 }

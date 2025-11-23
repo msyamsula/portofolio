@@ -35,7 +35,7 @@ var (
 	redisHost = os.Getenv("REDIS_HOST")
 	redisPort = os.Getenv("REDIS_PORT")
 
-	jaegerHost = os.Getenv("JAEGER_HOST")
+	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
 	characterPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqrstuvwxyz"
 
@@ -59,7 +59,7 @@ func init() {
 		fmt.Println("POSTGRES_PORT:", pgPort)
 		fmt.Println("REDIS_HOST:", redisHost)
 		fmt.Println("REDIS_PORT:", redisPort)
-		fmt.Println("JAEGER_HOST:", jaegerHost)
+		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
 		fmt.Println("CALLBACK_URI:", callbackUri)
 		fmt.Println("PORT:", port)
 		fmt.Println("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
@@ -93,10 +93,6 @@ func createLogFile() *os.File {
 }
 
 func route(r *mux.Router) *mux.Router {
-
-	// initialize instrumentation
-	shutdown := telemetry.InitializeTelemetryTracing(appName, jaegerHost)
-	defer shutdown()
 
 	// var h handler.Handler
 	h := handler.New(handler.Config{
@@ -136,6 +132,10 @@ func main() {
 
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	tracedHandler := otelhttp.NewHandler(r, "")
+
+	// initialize instrumentation
+	shutdown := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer shutdown()
 
 	// cors option
 	cors := cors.New(cors.Options{

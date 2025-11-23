@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/services"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type handler struct {
@@ -19,13 +22,36 @@ type handlerResponse struct {
 	ShortUrl string `json:"short_url,omitempty"`
 }
 
+func parseUri(c context.Context, uri string) error {
+	var err error
+	_, span := otel.Tracer("handler").Start(c, "parse request uri")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
+
+	_, err = url.ParseRequestURI(uri)
+	return err
+}
+
 func (h *handler) Short(w http.ResponseWriter, req *http.Request) {
-	ctx, span := otel.Tracer("").Start(req.Context(), "handler.HashUrl")
-	defer span.End()
+	var err error
+	ctx, span := otel.Tracer("handler").Start(req.Context(), "Short")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
 
 	query := req.URL.Query()
 	longUrl := query.Get("long_url")
-	var err error
 	var shortUrl string
 	var resp handlerResponse
 
@@ -39,7 +65,7 @@ func (h *handler) Short(w http.ResponseWriter, req *http.Request) {
 		json.NewEncoder(w).Encode(&resp)
 	}()
 
-	if _, err = url.ParseRequestURI(longUrl); err != nil {
+	if err = parseUri(ctx, longUrl); err != nil {
 		return
 	}
 
@@ -51,17 +77,28 @@ func (h *handler) Short(w http.ResponseWriter, req *http.Request) {
 
 func (h *handler) Redirect(w http.ResponseWriter, req *http.Request) {
 	ctx, span := otel.Tracer("").Start(req.Context(), "handler.RedirectShortUrl")
-	defer span.End()
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
 
 	// url path to this block is in this format = /api/url/redirect/{key}
 	paths := mux.Vars(req)
-	if _, ok := paths["shortUrl"]; !ok {
-		http.Error(w, "no short url given", http.StatusBadRequest)
+	var shortUrl string
+	var ok bool
+	if shortUrl, ok = paths["shortUrl"]; !ok {
+		err = errors.New("bad short url")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	shortUrl := paths["shortUrl"] // get shortUrl
 
-	longUrl, err := h.svc.GetLongUrl(ctx, shortUrl)
+	var longUrl string
+	longUrl, err = h.svc.GetLongUrl(ctx, shortUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
