@@ -39,4 +39,7 @@ tunnel-redis:
 token:
 	aws sts get-caller-identity
 
+jaeger:
+	docker-compose -f jaeger.yaml up -d
+
 
