@@ -2,27 +2,52 @@ SHELL := /bin/bash
 include .env
 
 # start the cluster
-start-kubernetes:
+start:
 	kind create cluster --config kind-config.yaml --name ${CLUSTER}
+	docker network connect test ${CLUSTER}-control-plane
+	docker network connect test ${CLUSTER}-worker
 
-stop-kubernetes:
-	kind delete cluster --name my-cluster
+stop:
+	kind delete cluster --name ${CLUSTER}
 
 # context management, if you have multiple kubernetes
-list-kubernetes:
+list:
 	kubectl config get-contexts
 
-switch-kubernetes:
+use:
 	kubectl config use-context ${CONTEXT}
 
-see-kubernetes:
+peek:
 	kubectl config current-context
 
-rename-kubernetes:
+rename:
 	kubectl config rename-context ${CONTEXT} ${NEW_CONTEXT}
 
-remove-kubernetes:
+remove:
 	kubectl config delete-context ${CONTEXT}
+
+forward:
+	kubectl port-forward svc/${APP}-clusterip ${PORT}:${PORT}
+
+# deploy app
+run:
+	kubectl create configmap ${APP}-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -f deployment.yaml
+
+deploy:
+	kubectl set image deployment/${APP}-deployment ${APP}=docker.io/library/${APP}:testing
+
+delete:
+	kubectl delete -f deployment.yaml
+
+load:
+	kind load docker-image ${APP}:testing --name ${CLUSTER}
+
+jaeger:
+	kubectl apply -f jaeger-all-in-one.yaml
+
+restart:
+	kubectl rollout restart deploy
 
 
 
