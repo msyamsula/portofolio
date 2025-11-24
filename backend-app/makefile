@@ -1,6 +1,11 @@
 SHELL := /bin/bash
 include .env
 
+repo:
+	aws cloudformation deploy --template-file ecr-repo.yaml \
+		--stack-name repo \
+		--capabilities CAPABILITY_NAMED_IAM
+
 create:
 	aws cloudformation deploy --template-file tech-stack.yaml \
 	--stack-name ${STACK_NAME} \
@@ -40,6 +45,9 @@ token:
 	aws sts get-caller-identity
 
 jaeger:
-	docker-compose -f jaeger.yaml up -d
+	docker-compose -f docker-compose-jaeger.yaml up -d
+
+jaeger-down:
+	docker-compose -f docker-compose-jaeger.yaml down
 
 
