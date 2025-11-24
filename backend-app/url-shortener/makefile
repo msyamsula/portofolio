@@ -13,7 +13,7 @@ run:
 	--env-file .env \
 	url-shortener
 
-use-kube-context:
+kube:
 	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
 
 runkube:
