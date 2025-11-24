@@ -32,7 +32,7 @@ var (
 	pgHost     = os.Getenv("POSTGRES_HOST")
 	pgPort     = os.Getenv("POSTGRES_PORT")
 
-	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
+	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
 	port = os.Getenv("PORT")
 
@@ -47,7 +47,7 @@ func init() {
 		fmt.Println("POSTGRES_DB:", pgDbName)
 		fmt.Println("POSTGRES_HOST:", pgHost)
 		fmt.Println("POSTGRES_PORT:", pgPort)
-		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", jaegerHost)
+		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
 		fmt.Println("PORT:", port)
 		fmt.Println("SQS_PERSISTENCE_QUEUE_URL:", sqsQueueUrl)
 	}
@@ -77,9 +77,6 @@ func createLogFile() *os.File {
 }
 
 func route(r *mux.Router, h handler.Handler) *mux.Router {
-
-	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
 
 	// url
 	r.HandleFunc("/conversations", h.GetConversation).Methods(http.MethodGet)
@@ -115,7 +112,11 @@ func main() {
 	})
 	r = route(r, h) // assign http route to handler
 
-	tracedHandler := otelhttp.NewHandler(r, "") // traced the handler
+	// initialize instrumentation
+	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer flush()
+
+	tracedHandler := otelhttp.NewHandler(r, "message http server") // traced the handler
 
 	// cors option
 	cors := cors.New(cors.Options{

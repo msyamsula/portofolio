@@ -31,7 +31,7 @@ var (
 	pgHost     = os.Getenv("POSTGRES_HOST")
 	pgPort     = os.Getenv("POSTGRES_PORT")
 
-	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
+	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
 	port = os.Getenv("PORT")
 )
@@ -44,7 +44,7 @@ func init() {
 		log.Printf("POSTGRES_DB: %s", pgDbName)
 		log.Printf("POSTGRES_HOST: %s", pgHost)
 		log.Printf("POSTGRES_PORT: %s", pgPort)
-		log.Printf("TRACER_COLLECTOR_ENDPOINT: %s", jaegerHost)
+		log.Printf("TRACER_COLLECTOR_ENDPOINT: %s", tracerCollectorEndpoint)
 		log.Printf("PORT: %s", port)
 	}
 }
@@ -74,9 +74,6 @@ func createLogFile() *os.File {
 
 func route(r *mux.Router) *mux.Router {
 
-	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
-
 	// var h handler.Handler
 	h := handler.New(handler.Config{
 		Svc: service.New(service.ServiceConfig{
@@ -105,8 +102,12 @@ func main() {
 	r := mux.NewRouter()
 	r = route(r)
 
+	// initialize instrumentation
+	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer flush()
+
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
-	tracedHandler := otelhttp.NewHandler(r, "")
+	tracedHandler := otelhttp.NewHandler(r, "friend http server")
 
 	// cors option
 	cors := cors.New(cors.Options{

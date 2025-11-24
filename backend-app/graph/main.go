@@ -19,15 +19,14 @@ import (
 )
 
 var (
-	appName    = "graph"
-	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
-	port       = os.Getenv("PORT")
+	appName                 = "graph"
+	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
+	port                    = os.Getenv("PORT")
 )
 
 func Route(r *mux.Router) *mux.Router {
 
 	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
 	h := handler.NewHandler(handler.Config{
 		Service: service.New(),
 	})
@@ -44,7 +43,11 @@ func main() {
 	r := mux.NewRouter()
 	r = Route(r)
 
-	tracedHandler := otelhttp.NewHandler(r, "")
+	// initialize telemetry
+	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer flush()
+
+	tracedHandler := otelhttp.NewHandler(r, "graph http server")
 
 	// cors option
 	cors := cors.New(cors.Options{
