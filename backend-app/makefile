@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 include .env
 
+## stack and repo creation
 repo:
 	aws cloudformation deploy --template-file ecr-repo.yaml \
 		--stack-name repo \
@@ -25,12 +26,18 @@ create:
 		PrivateSubnetCidr2='${PRIVATE_SUBNET_CIDR2}' \
 	--capabilities CAPABILITY_NAMED_IAM
 
-use-aws-kubernetes:
-	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
-
 destroy:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME}
 
+## identity and kubernetes connect
+kube:
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+
+token:
+	aws sts get-caller-identity
+
+
+## bastion tunneling
 tunnel-postgres:
 	ssh -i ${KEY_NAME}.pem \
 		-L 1${POSTGRES_PORT}:${POSTGRES_HOST}:${POSTGRES_PORT} \
@@ -41,5 +48,17 @@ tunnel-redis:
 		-L 1${REDIS_PORT}:${REDIS_HOST}:${REDIS_PORT} \
 		ec2-user@${BASTION_IP}
 
-token:
-	aws sts get-caller-identity
+
+## istio
+istio-install:
+	istioctl install -f install.yaml -y
+
+istio-label:
+	kubectl label namespace default istio-injection=enabled
+
+istio-check:
+	kubectl get pods -n istio-system
+	kubectl get namespace --show-labels
+
+istio-uninstall:
+	istioctl uninstall --purge -y

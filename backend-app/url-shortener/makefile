@@ -16,8 +16,10 @@ run:
 kube:
 	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
 
-runkube:
+setup-env:
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+
+runkube:
 	kubectl apply -f deployment.yaml
 
 deploy-canary:
@@ -25,4 +27,7 @@ deploy-canary:
 
 deploy:
 	kubectl set image deployment/url-shortener-deployment url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
+
+restart:
+	kubectl rollout restart deployment url-shortener-deployment
 
