@@ -8,7 +8,7 @@ create:
 		EksClusterName='${EKS_CLUSTER_NAME}' \
 		EksMaxNodes='${EKS_MAX_NODES}' \
 		EksDesiredNodes='${EKS_DESIRE_NODES}' \
-		SnsTopic='${SOCKET_SNS_TOPIC}' \
+		SnsTopic='socket-io' \
 		DbPassword='${POSTGRES_PASSWORD}' \
 		DbUsername='${POSTGRES_USER}' \
 		VpcCidr='${VPC_CIDR}' \
