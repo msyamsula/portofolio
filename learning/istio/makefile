@@ -13,8 +13,8 @@ see-label:
 restart:
 	kubectl rollout restart deployment
 
-verify-sidecar:
-	kubectl exec -it url-shortener-deployment-6759bbd787-mpsp5 -c istio-proxy -- curl localhost:15000/config_dump
+verify:
+	kubectl exec -it url-shortener-deployment-5cb7dc8d49-q775g -c istio-proxy -- curl localhost:15000/config_dump
 
 unlabel:
 	kubectl label namespace default istio-injection-

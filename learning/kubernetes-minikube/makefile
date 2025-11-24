@@ -44,12 +44,33 @@ load:
 	kind load docker-image ${APP}:${VERSION} --name ${CLUSTER}
 
 jaeger:
-	kubectl apply -f jaeger-all-in-one.yaml
+	kubectl apply -f jaeger.yaml
 
 restart:
 	kubectl rollout restart deploy
 
 
+forward-ingress:
+	kubectl port-forward svc/istio-ingressgateway 10000:80 -n istio-system
+
+
+## loud balancer provider in kind
+## in cloud provider you do not have to do this
+## this install, run, and allow is just for mimicking cloud behavior in local
+install-lb-cloud-provider:
+	brew install cloud-provider-kind
+
+run-lb-provider:
+	sudo cloud-provider-kind
+
+
+# By default, Kubernetes expects workloads will not run on control plane nodes and 
+# labels them with node.kubernetes.io/exclude-from-external-load-balancers, 
+# which stops load balancers from accessing them.
+# If you are running workloads on control plane nodes, as is the default kind configuration, 
+# you will need to remove this label to access them using a LoadBalancer:
+allow-lb-control-plane:
+	kubectl label node ${CLUSTER}-control-plane node.kubernetes.io/exclude-from-external-load-balancers-
 
 
 
