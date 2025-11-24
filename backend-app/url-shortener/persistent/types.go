@@ -10,6 +10,7 @@ type PostgresConfig struct {
 	Password string
 	Host     string
 	Port     string
+	Env      string
 
 	Attributes []attribute.KeyValue
 }

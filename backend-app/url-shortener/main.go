@@ -110,11 +110,13 @@ func route(r *mux.Router) *mux.Router {
 						Value: attribute.StringValue(appName),
 					},
 				},
+				Env: env,
 			}),
 			Cache: cache.NewRedis(cache.RedisConfig{
 				Host: redisHost,
 				Port: redisPort,
 				Ttl:  5 * time.Minute,
+				Env:  env,
 			}),
 			CharacterPool: characterPool,
 			Size:          10,

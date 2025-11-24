@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/XSAM/otelsql"
@@ -21,7 +20,7 @@ type Repository interface {
 func NewPostgres(config PostgresConfig) Repository {
 	// postgre
 	sslmode := "require"
-	if os.Getenv("ENVIRONMENT") != "production" {
+	if config.Env != "production" {
 		// disable for dev
 		sslmode = "disable"
 	}
