@@ -1,19 +1,47 @@
-version: "3.9"
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: obs
 
-services:
-  jaeger:
-    image: jaegertracing/all-in-one:1.48
-    container_name: jaeger
-    ports:
-      - "16686:16686" # Jaeger UI
-      - "9411:9411" # Zipkin compatible collector
-    environment:
-      JAEGER_COLLECTOR_ZIPKIN_HTTP_PORT: 9411
-      JAEGER_COLLECTOR_ZIPKIN_ENABLED: "true"
-    networks:
-      - test
-    command: ["--collector.zipkin.host-port=9411"] # explicitly enable Zipkin collector
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-deployment
+  namespace: obs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          image: jaegertracing/all-in-one:1.45
+          ports:
+            - containerPort: 16686
+            - containerPort: 9411
+          args:
+            - "--collector.zipkin.host-port=9411"
 
-networks:
-  test:
-    external: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-clusterip
+  namespace: obs
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: ui
+      port: 16686
+      targetPort: 16686
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+  type: ClusterIP

@@ -1,0 +1,34 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: istio-control-plane
+  namespace: istio-system
+spec:
+  profile: default  # production-ready base profile
+  meshConfig:
+    accessLogFile: /dev/stdout
+    enableTracing: true
+    defaultConfig:
+      tracing:
+        zipkin:
+          address: jaeger-clusterip.obs:9411 # replace with your Jaeger endpoint
+        sampling: 100.0  # percentage of traces to sample; adjust as needed
+  components:
+    pilot:
+      enabled: true
+      k8s:
+        replicaCount: 2  # high availability for control plane
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          replicaCount: 2
+          service:
+            type: LoadBalancer ## how to communicate with ingress. you can use load balancer
+    egressGateways:
+      - name: istio-egressgateway
+        enabled: false
+  values:
+    global:
+      proxy:
+        autoInject: enabled

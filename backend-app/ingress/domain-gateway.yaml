@@ -1,0 +1,49 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: app-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.syamsul.online"
+
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: app-vs
+spec:
+  hosts:
+  - "api.syamsul.online"
+  - "jaeger.syamsul.online"
+  gateways:
+  - app-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "api.syamsul.online"
+    route:
+    - destination:
+        host: url-shortener-clusterip.default.svc.cluster.local
+        port:
+          number: 10000
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "jaeger.syamsul.online"
+    route:
+    - destination:
+        host: jaeger-clusterip.obs.svc.cluster.local
+        port:
+          number: 16686

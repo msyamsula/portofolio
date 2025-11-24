@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Route53 Hosted Zone and Alias record for Istio Ingress ELB
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: "Domain name for the hosted zone (e.g., example.com)"
+  SubDomainGeneral:
+    Type: String
+  SubDomainUrl:
+    Type: String
+  SubDomainJaeger:
+    Type: String
+  LoadBalancerDNSName:
+    Type: String
+    Description: "DNS name of the ELB (e.g., a517e49feec0d4740b126acd5e043248-1753864202.ap-southeast-1.elb.amazonaws.com)"
+  LoadBalancerCanonicalHostedZoneId:
+    Type: String
+    Description: "Canonical Hosted Zone ID of the Load Balancer (run `aws elbv2 describe-load-balancers`)"
+
+Resources:
+  AppHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref DomainName
+      HostedZoneConfig:
+        Comment: "Hosted zone for Istio app"
+
+  AppAliasRecord1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref AppHostedZone
+      Name: !Ref SubDomainGeneral
+      Type: A
+      AliasTarget:
+        DNSName: !Ref LoadBalancerDNSName
+        HostedZoneId: !Ref LoadBalancerCanonicalHostedZoneId
+
+  AppAliasRecord2:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref AppHostedZone
+      Name: !Ref SubDomainUrl
+      Type: A
+      AliasTarget:
+        DNSName: !Ref LoadBalancerDNSName
+        HostedZoneId: !Ref LoadBalancerCanonicalHostedZoneId
+
+  AppAliasRecord3:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref AppHostedZone
+      Name: !Ref SubDomainJaeger
+      Type: A
+      AliasTarget:
+        DNSName: !Ref LoadBalancerDNSName
+        HostedZoneId: !Ref LoadBalancerCanonicalHostedZoneId
