@@ -5,4 +5,7 @@ jaeger:
 jaeger-down:
 	docker-compose -f docker-compose-jaeger.yaml down
 
+runkube:
+	kubectl apply -f jaeger.yaml
+
 
