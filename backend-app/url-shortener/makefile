@@ -13,8 +13,10 @@ run:
 	--env-file .env \
 	url-shortener
 
-runkube:
+use-kube-context:
 	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+
+runkube:
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
 

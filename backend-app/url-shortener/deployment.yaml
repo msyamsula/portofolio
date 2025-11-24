@@ -28,7 +28,7 @@ metadata:
     app: url-shortener
     type: deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: url-shortener
@@ -63,7 +63,7 @@ metadata:
     app: url-shortener-canary
     type: deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: url-shortener
