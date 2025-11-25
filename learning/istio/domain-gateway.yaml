@@ -3,75 +3,66 @@ kind: Gateway
 metadata:
   name: app-gateway
 spec:
-  # The selector matches the ingress gateway pod labels.
-  # If you installed Istio using Helm following the standard documentation, this would be "istio=ingress"
   selector:
-    istio: ingressgateway # use istio default controller
+    istio: ingressgateway
   servers:
   - port:
-      number: 8080
+      number: 80
       name: http
       protocol: HTTP
     hosts:
-    - "*.testing.com"
-
+    - "syamsul.online"
+    - "jaeger.syamsul.online"
+    - "prometheus.syamsul.online"
+    - "url.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: url-shortener-vs
+  name: app-vs
 spec:
   hosts:
-  - "api.testing.com"
+  - "syamsul.online"
+  - "jaeger.syamsul.online"
+  - "prometheus.syamsul.online"
+  - "url.syamsul.online"
   gateways:
-  - url-shortener-gateway
+  - app-gateway
   http:
   - match:
     - uri:
         prefix: /
+      headers:
+        host:
+          exact: "url.syamsul.online"
     route:
     - destination:
         host: url-shortener-clusterip
         port:
-          number: 16686
-
----
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: jaeger-vs
-spec:
-  hosts:
-  - "jaeger.testing.com"
-  gateways:
-  - jaeger-gateway
-  http:
+          number: 10000
   - match:
     - uri:
         prefix: /
+      headers:
+        host:
+          exact: "jaeger.syamsul.online"
     route:
     - destination:
         host: jaeger-clusterip
         port:
           number: 16686
-
----
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: graph-vs
-spec:
-  hosts:
-  - "graph.testing.com"
-  gateways:
-  - graph-gateway
-  http:
   - match:
     - uri:
         prefix: /
+      headers:
+        host:
+          exact: "prometheus.syamsul.online"
     route:
     - destination:
-        host: graph-clusterip
+        host: prometheus
         port:
-          number: 16686
+          number: 9090
+
+
+# curl -v -H "Host: url.syamsul.online" http://a8bf107b1662b41fe8b69a4363827310-1058936761.ap-southeast-1.elb.amazonaws.com
