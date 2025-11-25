@@ -19,7 +19,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: caller-clusterip
+  name: caller
   labels:
     app: caller
     type: clusterip
@@ -32,7 +32,7 @@ spec:
     - protocol: TCP
       port: 8000 # service port
       targetPort: 8000 # container port
-      name: caller-clusterip
+      name: caller
 
 ---
 #Deployment

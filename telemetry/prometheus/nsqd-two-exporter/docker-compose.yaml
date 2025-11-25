@@ -1,8 +1,8 @@
 services:
 
   nsqd-two-exporter:
-    container_name: nsqd-two-exporter-clusterip
-    hostname: nsqd-two-exporter-clusterip
+    container_name: nsqd-two-exporter
+    hostname: nsqd-two-exporter
     image: lovoo/nsq_exporter
     env_file:
       - ".env"

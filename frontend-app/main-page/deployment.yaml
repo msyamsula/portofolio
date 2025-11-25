@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: main-page-clusterip
+  name: main-page
   labels:
     app: main-page
     type: clusterip
@@ -16,7 +16,7 @@ spec:
     - protocol: TCP
       port: 80 # service port
       targetPort: 80 # container port
-      name: main-page-clusterip
+      name: main-page
 
 ---
 #Deployment

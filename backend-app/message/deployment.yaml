@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: message-clusterip
+  name: message
   labels:
     app: message
     type: clusterip
@@ -16,7 +16,7 @@ spec:
     - protocol: TCP
       port: 10000 # service port
       targetPort: 10000 # container port
-      name: message-clusterip
+      name: message
 
 ---
 #Deployment

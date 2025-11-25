@@ -36,7 +36,7 @@ spec:
           exact: "url.syamsul.online"
     route:
     - destination:
-        host: url-shortener-clusterip
+        host: url-shortener
         port:
           number: 10000
   - match:
@@ -47,7 +47,7 @@ spec:
           exact: "jaeger.syamsul.online"
     route:
     - destination:
-        host: jaeger-clusterip.obs.svc.cluster.local
+        host: jaeger
         port:
           number: 16686
   - match:
@@ -58,7 +58,7 @@ spec:
           exact: "prometheus.syamsul.online"
     route:
     - destination:
-        host: prometheus-clusterip.obs.svc.cluster.local
+        host: prometheus
         port:
           number: 9090
 

@@ -27,7 +27,7 @@ remove:
 	kubectl config delete-context ${CONTEXT}
 
 forward:
-	kubectl port-forward svc/${APP}-clusterip ${PORT}:${PORT} -n ${NAMESPACE}
+	kubectl port-forward svc/${APP} ${PORT}:${PORT} -n ${NAMESPACE}
 
 
 # istio

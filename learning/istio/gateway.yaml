@@ -32,7 +32,7 @@ spec:
         prefix: /
     route:
     - destination:
-        host: jaeger-clusterip
+        host: jaeger
         port:
           number: 16686
           
@@ -41,7 +41,7 @@ spec:
         prefix: /
     route:
     - destination:
-        host: url-shortener-clusterip
+        host: url-shortener
         port:
           number: 10000
 
@@ -50,7 +50,7 @@ spec:
         prefix: /
     route:
     - destination:
-        host: prometheus-clusterip
+        host: prometheus
         port:
           number: 10000
   

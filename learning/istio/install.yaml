@@ -11,7 +11,7 @@ spec:
     defaultConfig:
       tracing:
         zipkin:
-          address: jaeger-clusterip.obs:9411 # replace with your Jaeger endpoint
+          address: jaeger:9411 # replace with your Jaeger endpoint
         sampling: 100.0  # percentage of traces to sample; adjust as needed
   components:
     pilot:

@@ -1,8 +1,8 @@
 services:
     
-  postgres-exporter-clusterip:
-    container_name: postgres-exporter-clusterip
-    hostname: postgres-exporter-clusterip
+  postgres-exporter:
+    container_name: postgres-exporter
+    hostname: postgres-exporter
     image: quay.io/prometheuscommunity/postgres-exporter
     networks:
       - my-network

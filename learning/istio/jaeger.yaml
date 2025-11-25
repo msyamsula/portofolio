@@ -28,7 +28,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jaeger-clusterip
+  name: jaeger
   namespace: default
 spec:
   selector:

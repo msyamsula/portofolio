@@ -42,7 +42,7 @@ spec:
         - containerPort: 4151
       command:
         - /nsqd
-        - --lookupd-tcp-address=nsqlookupd-clusterip:4160
+        - --lookupd-tcp-address=nsqlookupd:4160
       # env:
       #   - name: POSTGRES_USER
       #     value: admin
@@ -98,7 +98,7 @@ spec:
         - containerPort: 4151
       command:
         - /nsqd
-        - --lookupd-tcp-address=nsqlookupd-clusterip:4160
+        - --lookupd-tcp-address=nsqlookupd:4160
 
 # ---
 # #Deployment
@@ -121,8 +121,8 @@ spec:
 #         app: nsqd
 #         type: pod
 #     spec:
-#       hostname: nsqd-clusterip
-#       subdomain: nsqd-clusterip
+#       hostname: nsqd
+#       subdomain: nsqd
 #       containers:
 #       - name: nsqd
 #         image: nsqio/nsq
@@ -131,7 +131,7 @@ spec:
 #         - containerPort: 4151
 #         command:
 #         - /nsqd
-#         - --lookupd-tcp-address=nsqlookupd-clusterip:4160
+#         - --lookupd-tcp-address=nsqlookupd:4160
         
 
 
@@ -195,14 +195,14 @@ spec:
 #   POSTGRES_USERNAME: admin
 #   POSTGRES_PASSWORD: admin
 #   POSTGRES_DB: postgres
-#   POSTGRES_HOST: postgres-clusterip
+#   POSTGRES_HOST: postgres
 #   POSTGRES_PORT: "5432"
 #   REDIS_PASSWORD: admin
-#   REDIS_HOST: redis-clusterip
+#   REDIS_HOST: redis
 #   REDIS_PORT: "6379"
 #   REDIS_TTL: "300000" #in millisecond
 #   HASHER_LENGTH: "10"
 #   HASHER_CHARACTER_POOL: qQwWeErRtTyYuUiIoOpPaAsSdDfFgGhHjJkKlLzZxXcCvVbBnNmM123456
 #   HASHER_HOST: https://api.syamsul.online
 #   PORT: "5000"
-#   TRACER_COLLECTOR_ENDPOINT: "jaeger-clusterip:4317"
+#   TRACER_COLLECTOR_ENDPOINT: "jaeger:4317"

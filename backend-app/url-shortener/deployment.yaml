@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: url-shortener-clusterip
+  name: url-shortener
   labels:
     app: url-shortener
     type: clusterip
@@ -16,14 +16,14 @@ spec:
     - protocol: TCP
       port: 10000 # service port
       targetPort: 10000 # container port
-      name: url-shortener-clusterip
+      name: url-shortener
 
 ---
 #Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: url-shortener-deployment
+  name: url-shortener
   labels:
     app: url-shortener
     type: deployment
@@ -58,7 +58,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: url-shortener-canary-deployment
+  name: url-shortener-canary
   labels:
     app: url-shortener-canary
     type: deployment

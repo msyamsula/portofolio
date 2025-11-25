@@ -1,8 +1,8 @@
 services:
     
-  main-page-clusterip:
-    container_name: main-page-clusterip
-    hostname: main-page-clusterip
+  main-page:
+    container_name: main-page
+    hostname: main-page
     image: main-page
     ports:
       - "8003:80" # can be closed for security

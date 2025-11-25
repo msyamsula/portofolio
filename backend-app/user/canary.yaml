@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: user-canary-clusterip
+  name: user-canary
   labels:
     app: user-canary
     type: clusterip
@@ -16,7 +16,7 @@ spec:
     - protocol: TCP
       port: 10000 # service port
       targetPort: 10000 # container port
-      name: user-canary-clusterip
+      name: user-canary
 
 ---
 #Deployment

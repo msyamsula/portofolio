@@ -38,7 +38,7 @@ spec:
           exact: "url.syamsul.online"
     route:
     - destination:
-        host: url-shortener-clusterip
+        host: url-shortener
         port:
           number: 10000
   - match:
@@ -49,7 +49,7 @@ spec:
           exact: "jaeger.syamsul.online"
     route:
     - destination:
-        host: jaeger-clusterip
+        host: jaeger
         port:
           number: 16686
   - match:

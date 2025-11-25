@@ -32,7 +32,7 @@ spec:
         prefix: /
     route:
     - destination:
-        host: url-shortener-clusterip
+        host: url-shortener
         port:
           number: 10000
           

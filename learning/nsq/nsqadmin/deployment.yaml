@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nsqadmin-clusterip
+  name: nsqadmin
   labels:
     app: nsqadmin
     type: clusterip
@@ -16,7 +16,7 @@ spec:
     - protocol: TCP
       port: 4171 # service port
       targetPort: 4171 # container port
-      name: nsqadmin-clusterip
+      name: nsqadmin
 ---
 #Deployment
 apiVersion: apps/v1
@@ -45,7 +45,7 @@ spec:
         - containerPort: 4171
         command:
         - /nsqadmin
-        - --lookupd-http-address=nsqlookupd-clusterip:4161
+        - --lookupd-http-address=nsqlookupd:4161
         - --base-path=/nsqadmin
         # env:
         #   - name: POSTGRES_USER
@@ -119,14 +119,14 @@ spec:
 #   POSTGRES_USERNAME: admin
 #   POSTGRES_PASSWORD: admin
 #   POSTGRES_DB: postgres
-#   POSTGRES_HOST: postgres-clusterip
+#   POSTGRES_HOST: postgres
 #   POSTGRES_PORT: "5432"
 #   REDIS_PASSWORD: admin
-#   REDIS_HOST: redis-clusterip
+#   REDIS_HOST: redis
 #   REDIS_PORT: "6379"
 #   REDIS_TTL: "300000" #in millisecond
 #   HASHER_LENGTH: "10"
 #   HASHER_CHARACTER_POOL: qQwWeErRtTyYuUiIoOpPaAsSdDfFgGhHjJkKlLzZxXcCvVbBnNmM123456
 #   HASHER_HOST: https://api.syamsul.online
 #   PORT: "5000"
-#   TRACER_COLLECTOR_ENDPOINT: "jaeger-clusterip:4317"
+#   TRACER_COLLECTOR_ENDPOINT: "jaeger:4317"
