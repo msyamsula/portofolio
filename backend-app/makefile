@@ -7,6 +7,9 @@ repo:
 		--stack-name repo \
 		--capabilities CAPABILITY_NAMED_IAM
 
+destroy-repo:
+	aws cloudformation delete-stack --stack-name repo
+
 create:
 	aws cloudformation deploy --template-file tech-stack.yaml \
 	--stack-name ${STACK_NAME} \
