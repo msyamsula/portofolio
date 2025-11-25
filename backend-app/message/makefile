@@ -19,8 +19,8 @@ runkube:
 	kubectl apply -f deployment.yaml
 
 deploy-canary:
-	kubectl set image deployment/message-canary-deployment message-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/message:${VERSION}
+	kubectl set image deployment/message-canary message-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/message:${VERSION}
 
 deploy:
-	kubectl set image deployment/message-deployment message=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/message:${VERSION}
+	kubectl set image deployment/message message=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/message:${VERSION}
 

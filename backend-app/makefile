@@ -66,6 +66,3 @@ istio-check:
 istio-uninstall:
 	istioctl uninstall --purge -y
 
-## observability namespace
-obs-namespace:
-	kubectl create namespace obs

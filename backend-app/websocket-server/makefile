@@ -30,4 +30,4 @@ runkube:
 	kubectl apply -f deployment.yaml
 
 deploy:
-	kubectl set image deployment/websocket-deployment websocket=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/websocket:${VERSION}
+	kubectl set image deployment/websocket websocket=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/websocket:${VERSION}

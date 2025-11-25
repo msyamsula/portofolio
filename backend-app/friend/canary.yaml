@@ -23,7 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: friend-canary-deployment
+  name: friend-canary
   labels:
     app: friend-canary
     type: deployment

@@ -23,7 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chat-ui-deployment
+  name: chat-ui
   labels:
     app: chat-ui
     type: deployment

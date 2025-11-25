@@ -23,7 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: websocket-deployment
+  name: websocket
   labels:
     app: websocket
     type: deployment

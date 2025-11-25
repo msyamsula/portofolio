@@ -23,7 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: main-page-deployment
+  name: main-page
   labels:
     app: main-page
     type: deployment

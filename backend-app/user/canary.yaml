@@ -23,7 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-canary-deployment
+  name: user-canary
   labels:
     app: user-canary
     type: deployment

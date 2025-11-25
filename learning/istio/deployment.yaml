@@ -23,7 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: url-shortener-deployment
+  name: url-shortener
   labels:
     app: url-shortener
     type: deployment

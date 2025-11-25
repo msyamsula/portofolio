@@ -25,15 +25,15 @@ minikube:
 	kubectl apply -f deployment.yaml
 
 deploy-canary:
-	kubectl set image deployment/graph-canary-deployment graph-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
+	kubectl set image deployment/graph-canary graph-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
 
 deploy:
-	kubectl set image deployment/graph-deployment graph=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
+	kubectl set image deployment/graph graph=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
 
 
 ## minikube, local kubernetes deployment
 deploy-minikube:
-	kubectl set image deployment/graph-deployment graph=graph:${VERSION}
+	kubectl set image deployment/graph graph=graph:${VERSION}
 
 load-image:
 	kind load docker-image graph:latest --name my-cluster

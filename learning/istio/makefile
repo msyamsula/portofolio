@@ -47,7 +47,7 @@ restart:
 	kubectl rollout restart deployment
 
 verify:
-	kubectl exec -it url-shortener-deployment-5cb7dc8d49-q775g -c istio-proxy -- curl localhost:15000/config_dump
+	kubectl exec -it url-shortener-5cb7dc8d49-q775g -c istio-proxy -- curl localhost:15000/config_dump
 
 unlabel:
 	kubectl label namespace default istio-injection-
@@ -63,7 +63,7 @@ run:
 	kubectl apply -f deployment.yaml
 
 deploy:
-	kubectl set image deployment/${APP}-deployment ${APP}=docker.io/library/${APP}:${VERSION}
+	kubectl set image deployment/${APP} ${APP}=docker.io/library/${APP}:${VERSION}
 
 delete:
 	kubectl delete -f deployment.yaml

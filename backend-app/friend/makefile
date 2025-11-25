@@ -21,7 +21,7 @@ runkube:
 	kubectl apply -f canary.yaml
 
 deploy-canary:
-	kubectl set image deployment/friend-canary-deployment friend-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/friend:${VERSION}
+	kubectl set image deployment/friend-canary friend-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/friend:${VERSION}
 
 deploy:
-	kubectl set image deployment/friend-deployment friend=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/friend:${VERSION}
+	kubectl set image deployment/friend friend=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/friend:${VERSION}

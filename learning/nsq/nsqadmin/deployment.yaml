@@ -22,7 +22,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nsqadmin-deployment
+  name: nsqadmin
   labels:
     app: nsqadmin
     type: deployment

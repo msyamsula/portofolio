@@ -23,11 +23,11 @@ runkube:
 	kubectl apply -f deployment.yaml
 
 deploy-canary:
-	kubectl set image deployment/url-shortener-canary-deployment url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
+	kubectl set image deployment/url-shortener-canary url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
 
 deploy:
-	kubectl set image deployment/url-shortener-deployment url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
+	kubectl set image deployment/url-shortener url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
 
 restart:
-	kubectl rollout restart deployment url-shortener-deployment
+	kubectl rollout restart deployment url-shortener
 
