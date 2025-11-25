@@ -20,7 +20,8 @@ metadata:
   name: app-vs
 spec:
   hosts:
-  - "api.syamsul.online"
+  # - "*.syamsul.online"
+  - "url.syamsul.online"
   - "jaeger.syamsul.online"
   gateways:
   - app-gateway
@@ -30,10 +31,10 @@ spec:
         prefix: /
       headers:
         host:
-          exact: "api.syamsul.online"
+          exact: "url.syamsul.online"
     route:
     - destination:
-        host: url-shortener-clusterip.default.svc.cluster.local
+        host: url-shortener-clusterip
         port:
           number: 10000
   - match:
@@ -47,3 +48,6 @@ spec:
         host: jaeger-clusterip.obs.svc.cluster.local
         port:
           number: 16686
+
+
+# curl -v -H "Host: url.syamsul.online" http://a8bf107b1662b41fe8b69a4363827310-1058936761.ap-southeast-1.elb.amazonaws.com

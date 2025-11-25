@@ -32,7 +32,7 @@ spec:
         prefix: /
     route:
     - destination:
-        host: jaeger-clusterip.obs.svc.cluster.local
+        host: url-shortener-clusterip
         port:
-          number: 16686
+          number: 10000
           

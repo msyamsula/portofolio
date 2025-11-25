@@ -12,3 +12,7 @@ domain-hosting:
 		LoadBalancerDNSName=${LoadBalancerDNSName} \
 		LoadBalancerCanonicalHostedZoneId=${LoadBalancerCanonicalHostedZoneId} \
 	--capabilities CAPABILITY_NAMED_IAM
+
+
+destroy-domain-hosting:
+	aws cloudformation delete-stack --stack-name hosting
