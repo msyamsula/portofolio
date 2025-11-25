@@ -1,9 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: obs
+
 ---
 # cluster IP
 apiVersion: v1
 kind: Service
 metadata:
   name: prometheus-clusterip
+  namespace: obs
   labels:
     app: prometheus
     type: clusterip
@@ -24,6 +30,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-deployment
+  namespace: obs
   labels:
     app: prometheus
     type: deployment
@@ -48,14 +55,14 @@ spec:
             - /bin/prometheus
             - --config.file=/config.yaml
             - --storage.tsdb.retention.time=7d
-            - --web.external-url=/prometheus
+            # - --web.external-url=/prometheus
           volumeMounts:
-            - name: prometheus-configmap
+            - name: prometheus-config
               mountPath: /config.yaml
               subPath: config.yaml
               readOnly: true
       volumes:
-        - name: prometheus-configmap
+        - name: prometheus-config
           configMap:
-            name: prometheus-configmap
+            name: prometheus-config
 

@@ -54,7 +54,7 @@ tunnel-redis:
 
 ## istio
 istio-install:
-	istioctl install -f install.yaml -y
+	istioctl install -f istio.yaml -y
 
 istio-label:
 	kubectl label namespace default istio-injection=enabled
@@ -65,3 +65,7 @@ istio-check:
 
 istio-uninstall:
 	istioctl uninstall --purge -y
+
+## observability namespace
+obs-namespace:
+	kubectl create namespace obs

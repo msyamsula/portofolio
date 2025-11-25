@@ -11,7 +11,10 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "*.syamsul.online"
+    - "syamsul.online"
+    - "jaeger.syamsul.online"
+    - "prometheus.syamsul.online"
+    - "url.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
@@ -20,9 +23,8 @@ metadata:
   name: app-vs
 spec:
   hosts:
-  # - "*.syamsul.online"
-  - "url.syamsul.online"
-  - "jaeger.syamsul.online"
+  - "syamsul.online"
+  - "*.syamsul.online"
   gateways:
   - app-gateway
   http:
@@ -48,6 +50,17 @@ spec:
         host: jaeger-clusterip.obs.svc.cluster.local
         port:
           number: 16686
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "prometheus.syamsul.online"
+    route:
+    - destination:
+        host: prometheus-clusterip.obs.svc.cluster.local
+        port:
+          number: 9090
 
 
 # curl -v -H "Host: url.syamsul.online" http://a8bf107b1662b41fe8b69a4363827310-1058936761.ap-southeast-1.elb.amazonaws.com
