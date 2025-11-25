@@ -125,6 +125,7 @@ func route(r *mux.Router) *mux.Router {
 	})
 
 	// url
+	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	r.HandleFunc("/short", h.Short).Methods(http.MethodGet)
 	r.HandleFunc("/{shortUrl}", h.Redirect).Methods(http.MethodGet)
 	return r
@@ -139,7 +140,6 @@ func main() {
 	r := mux.NewRouter()
 	r = route(r)
 
-	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	tracedHandler := otelhttp.NewHandler(r, "http server")
 
 	// initialize instrumentation
