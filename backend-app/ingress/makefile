@@ -11,6 +11,7 @@ deploy-hosting:
 		SubDomainJaeger=${SubDomainJaeger} \
 		SubDomainPrometheus=${SubDomainPrometheus} \
 		SubDomainKiali=${SubDomainKiali} \
+		SubDomainGraph=${SubDomainGraph} \
 		LoadBalancerDNSName=${LoadBalancerDNSName} \
 		LoadBalancerCanonicalHostedZoneId=${LoadBalancerCanonicalHostedZoneId} \
 	--capabilities CAPABILITY_NAMED_IAM

@@ -16,6 +16,7 @@ spec:
     - "prometheus.syamsul.online"
     - "url.syamsul.online"
     - "kiali.syamsul.online"
+    - "graph.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
@@ -29,6 +30,7 @@ spec:
   - "prometheus.syamsul.online"
   - "url.syamsul.online"
   - "kiali.syamsul.online"
+  - "graph.syamsul.online"
   gateways:
   - app-gateway
   http:
@@ -89,4 +91,15 @@ spec:
         host: kiali
         port:
           number: 20001
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "graph.syamsul.online"
+    route:
+    - destination:
+        host: graph
+        port:
+          number: 10000
 

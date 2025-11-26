@@ -14,14 +14,13 @@ run:
 	--env-file .env \
 	graph
 
-runkube:
-	aws eks --region ap-southeast-1 update-kubeconfig --name ${EKS_CLUSTER_NAME}
+setup-env:
 	kubectl create configmap graph-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+
+runkube:
 	kubectl apply -f deployment.yaml
-	kubectl apply -f canary.yaml
 
 minikube:
-	kubectl create configmap graph-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deployment.yaml
 
 deploy-canary:
@@ -29,6 +28,10 @@ deploy-canary:
 
 deploy:
 	kubectl set image deployment/graph graph=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/graph:${VERSION}
+
+restart:
+	kubectl rollout restart deployment/graph
+	kubectl rollout restart deployment/graph-canary
 
 
 ## minikube, local kubernetes deployment

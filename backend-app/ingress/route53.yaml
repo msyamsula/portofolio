@@ -15,6 +15,8 @@ Parameters:
     Type: String
   SubDomainKiali:
     Type: String
+  SubDomainGraph:
+    Type: String
   LoadBalancerDNSName:
     Type: String
     Description: "DNS name of the ELB (e.g., a517e49feec0d4740b126acd5e043248-1753864202.ap-southeast-1.elb.amazonaws.com)"
@@ -75,6 +77,16 @@ Resources:
     Properties:
       HostedZoneId: !Ref AppHostedZone
       Name: !Ref SubDomainKiali
+      Type: A
+      AliasTarget:
+        DNSName: !Ref LoadBalancerDNSName
+        HostedZoneId: !Ref LoadBalancerCanonicalHostedZoneId
+  
+  AppAliasRecord6:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref AppHostedZone
+      Name: !Ref SubDomainGraph
       Type: A
       AliasTarget:
         DNSName: !Ref LoadBalancerDNSName
