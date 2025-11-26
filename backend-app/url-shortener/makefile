@@ -30,4 +30,5 @@ deploy:
 
 restart:
 	kubectl rollout restart deployment url-shortener
+	kubectl rollout restart deployment url-shortener-canary
 
