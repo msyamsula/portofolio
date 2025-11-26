@@ -65,6 +65,19 @@ spec:
         host: prometheus
         port:
           number: 9090
+  - match: # rewriting root to /kiali
+    - uri:
+        exact: /
+      headers:
+        host:
+          exact: "kiali.syamsul.online"
+    rewrite:
+      uri: "/kiali"
+    route:
+    - destination:
+        host: kiali
+        port:
+          number: 20001
   - match:
     - uri:
         prefix: /
@@ -77,5 +90,3 @@ spec:
         port:
           number: 20001
 
-
-# curl -v -H "Host: url.syamsul.online" http://a8bf107b1662b41fe8b69a4363827310-1058936761.ap-southeast-1.elb.amazonaws.com
