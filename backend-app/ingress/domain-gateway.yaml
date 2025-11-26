@@ -15,6 +15,7 @@ spec:
     - "jaeger.syamsul.online"
     - "prometheus.syamsul.online"
     - "url.syamsul.online"
+    - "kiali.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
@@ -24,7 +25,10 @@ metadata:
 spec:
   hosts:
   - "syamsul.online"
-  - "*.syamsul.online"
+  - "jaeger.syamsul.online"
+  - "prometheus.syamsul.online"
+  - "url.syamsul.online"
+  - "kiali.syamsul.online"
   gateways:
   - app-gateway
   http:
@@ -61,6 +65,17 @@ spec:
         host: prometheus
         port:
           number: 9090
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "kiali.syamsul.online"
+    route:
+    - destination:
+        host: kiali
+        port:
+          number: 20001
 
 
 # curl -v -H "Host: url.syamsul.online" http://a8bf107b1662b41fe8b69a4363827310-1058936761.ap-southeast-1.elb.amazonaws.com

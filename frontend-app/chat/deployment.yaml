@@ -121,7 +121,7 @@ spec:
 #     type: pod
 #   ports:
 #     - protocol: TCP
-#       port: 5000 #container port
-#       targetPort: 5000 #service port
-#       nodePort: 30002 #open port
+#       port: 5000
+#       targetPort: 5000
+#       nodePort: 30002
 #       name: chat-ui-nodeport
