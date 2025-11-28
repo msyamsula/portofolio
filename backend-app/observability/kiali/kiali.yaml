@@ -121,6 +121,13 @@ data:
     external_services:
       prometheus:
         url: http://prometheus:9090
+      grafana:
+        enabled: true
+        internal_url: http://grafana:3000 
+        auth:
+          type: basic
+          username: admin
+          password: admin
       istio:
         root_namespace: istio-system
       tracing:
