@@ -115,9 +115,6 @@ prometheus-restart:
 kiali:
 	kubectl apply -f kiali.yaml 
 
-delete-kiali:
-	kubectl apply -f kiali.yaml 
-
 kiali-ui:
 	istioctl dashboard kiali 
 

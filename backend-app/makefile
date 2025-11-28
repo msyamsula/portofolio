@@ -51,6 +51,11 @@ tunnel-redis:
 		-L 1${REDIS_PORT}:${REDIS_HOST}:${REDIS_PORT} \
 		ec2-user@${BASTION_IP}
 
+tunnel-neptune:
+	ssh -i ${KEY_NAME}.pem \
+		-L 1${NEPTUNE_PORT}:${NEPTUNE_HOST}:${NEPTUNE_PORT} \
+		ec2-user@${BASTION_IP}
+
 
 ## istio
 istio-install:
