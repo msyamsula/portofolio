@@ -29,12 +29,20 @@ spec:
   http:
   - match:
     - uri:
-        prefix: /
+        prefix: /kiali
     route:
     - destination:
         host: kiali
         port:
           number: 20001
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: url-shortener
+        port:
+          number: 10000
           
   
     
