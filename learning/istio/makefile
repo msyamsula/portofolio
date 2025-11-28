@@ -10,6 +10,17 @@ start:
 stop:
 	kind delete cluster --name ${CLUSTER}
 
+# namespace
+obs:
+	kubectl config set-context --current --namespace=obs
+
+istio-system:
+	kubectl config set-context --current --namespace=istio-system
+
+default:
+	kubectl config set-context --current --namespace=default
+
+
 # context management, if you have multiple kubernetes
 list:
 	kubectl config get-contexts
@@ -40,6 +51,9 @@ check:
 label:
 	kubectl label namespace default istio-injection=enabled
 
+label-obs:
+	kubectl label namespace obs istio-injection=enabled
+
 see-label:
 	kubectl get namespace --show-labels
 
@@ -51,6 +65,9 @@ verify:
 
 unlabel:
 	kubectl label namespace default istio-injection-
+
+unlabel-obs:
+	kubectl label namespace obs istio-injection-
 
 uninstall:
 	istioctl uninstall --purge -y
