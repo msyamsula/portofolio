@@ -17,6 +17,7 @@ spec:
     - "url.syamsul.online"
     - "kiali.syamsul.online"
     - "graph.syamsul.online"
+    - "grafana.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
@@ -31,6 +32,7 @@ spec:
   - "url.syamsul.online"
   - "kiali.syamsul.online"
   - "graph.syamsul.online"
+  - "grafana.syamsul.online"
   gateways:
   - app-gateway
   http:
@@ -102,4 +104,15 @@ spec:
         host: graph
         port:
           number: 10000
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "grafana.syamsul.online"
+    route:
+    - destination:
+        host: grafana
+        port:
+          number: 3000
 
