@@ -15,7 +15,7 @@ list:
 	kubectl config get-contexts
 
 use:
-	kubectl config use-context ${CONTEXT}
+	kubectl config use-context kind-${CLUSTER}
 
 peek:
 	kubectl config current-context
@@ -58,8 +58,10 @@ uninstall:
 
 
 # deploy app
-run:
+setup-env:
 	kubectl create configmap ${APP}-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+
+run:
 	kubectl apply -f deployment.yaml
 
 deploy:
@@ -120,6 +122,13 @@ kiali-ui:
 
 delete-kiali:
 	kubectl delete -f kiali.yaml 
+
+# grafana
+grafana:
+	kubectl apply -f grafana.yaml
+
+destroy-grafana:
+	kubectl delete -f grafana.yaml
 
 
 # hit

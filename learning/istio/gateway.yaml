@@ -20,39 +20,22 @@ spec:
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: url-shortener-vs
+  name: local-vs
 spec:
   hosts:
   - "*"
   gateways:
-  - url-shortener-gateway
+  - app-gateway
   http:
   - match:
     - uri:
         prefix: /
     route:
     - destination:
-        host: jaeger
+        host: kiali
         port:
-          number: 16686
+          number: 20001
           
-  - match:
-    - uri:
-        prefix: /
-    route:
-    - destination:
-        host: url-shortener
-        port:
-          number: 10000
-
-  - match:
-    - uri:
-        prefix: /
-    route:
-    - destination:
-        host: prometheus
-        port:
-          number: 10000
   
     
 
