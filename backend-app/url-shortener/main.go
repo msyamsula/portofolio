@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/cache"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/handler"
+	"github.com/msyamsula/portofolio/backend-app/url-shortener/logger"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/persistent"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/services"
 	"github.com/msyamsula/portofolio/telemetry"
@@ -50,47 +50,24 @@ var (
 	dynamoTable = os.Getenv("DYNAMO_TABLE")
 )
 
-func init() {
+func printEnv() {
 	if env != "production" {
-		fmt.Println("ENVIRONMENT:", env)
-		fmt.Println("POSTGRES_PASSWORD:", pgPassword)
-		fmt.Println("POSTGRES_USER:", pgUsername)
-		fmt.Println("POSTGRES_DB:", pgDbName)
-		fmt.Println("POSTGRES_HOST:", pgHost)
-		fmt.Println("POSTGRES_PORT:", pgPort)
-		fmt.Println("REDIS_HOST:", redisHost)
-		fmt.Println("REDIS_PORT:", redisPort)
-		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
-		fmt.Println("CALLBACK_URI:", callbackUri)
-		fmt.Println("PORT:", port)
-		fmt.Println("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
-		fmt.Println("AWS_SECRET_ACCESS_KEY:", awsSecretAccessKey)
-		fmt.Println("AWS_REGION:", awsRegion)
-		fmt.Println("DYNAMO_TABLE:", dynamoTable)
+		logger.Logger.Info("ENVIRONMENT:", env)
+		logger.Logger.Info("POSTGRES_PASSWORD:", pgPassword)
+		logger.Logger.Info("POSTGRES_USER:", pgUsername)
+		logger.Logger.Info("POSTGRES_DB:", pgDbName)
+		logger.Logger.Info("POSTGRES_HOST:", pgHost)
+		logger.Logger.Info("POSTGRES_PORT:", pgPort)
+		logger.Logger.Info("REDIS_HOST:", redisHost)
+		logger.Logger.Info("REDIS_PORT:", redisPort)
+		logger.Logger.Info("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
+		logger.Logger.Info("CALLBACK_URI:", callbackUri)
+		logger.Logger.Info("PORT:", port)
+		logger.Logger.Info("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
+		logger.Logger.Info("AWS_SECRET_ACCESS_KEY:", awsSecretAccessKey)
+		logger.Logger.Info("AWS_REGION:", awsRegion)
+		logger.Logger.Info("DYNAMO_TABLE:", dynamoTable)
 	}
-}
-
-func createLogFile() *os.File {
-	// Include file name and line number in log output
-	log.SetFlags(log.LstdFlags | log.Llongfile)
-
-	// Open (or create) a log file
-	if env != "production" {
-		log.Println("local")
-		f, err := os.OpenFile(fmt.Sprintf("%s_log", appName), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err != nil {
-			log.Printf("failed to open log file: %v\n", err)
-			return nil
-		}
-
-		multiOuput := io.MultiWriter(os.Stdout, f)
-		log.SetOutput(multiOuput)
-
-		return f
-	}
-
-	return nil
-
 }
 
 func route(r *mux.Router) *mux.Router {
@@ -133,8 +110,8 @@ func route(r *mux.Router) *mux.Router {
 
 func main() {
 
-	f := createLogFile()
-	defer f.Close()
+	printEnv()
+	logger.InitLogger()
 
 	// create server routes
 	r := mux.NewRouter()
@@ -161,7 +138,7 @@ func main() {
 		Handler: finalHandler,
 	}
 
-	log.Println("server starting...")
+	logger.Logger.Info("server starting")
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server failed: %v", err)
@@ -178,8 +155,8 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("server forced to shutdown: %v", err)
+		logger.Logger.Panicf("server forced to shutdown: %v", err)
 	}
 
-	log.Println("Server stopped gracefully")
+	logger.Logger.Info("Server stopped gracefully")
 }

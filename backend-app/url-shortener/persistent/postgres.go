@@ -43,7 +43,7 @@ func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, er
 		"long_url": longUrl,
 	})
 	if err != nil {
-		log.Println("postgres", err.Error())
+		log.Printf("postgres: %s", err.Error())
 		return "", err
 	}
 

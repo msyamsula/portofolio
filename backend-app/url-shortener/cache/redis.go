@@ -2,9 +2,9 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/msyamsula/portofolio/backend-app/url-shortener/logger"
 	redisPkg "github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -19,8 +19,8 @@ func (r *redis) Get(c context.Context, key string) (string, error) {
 	var err error
 	ctx, span := otel.Tracer("cache").Start(c, "Redis Get")
 	defer func() {
-		fmt.Println(err, "err")
 		if err != nil {
+			logger.Logger.Info(err.Error())
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 		}
