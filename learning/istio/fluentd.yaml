@@ -1,0 +1,198 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd
+  namespace: obs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentd
+  namespace: obs
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fluentd
+  namespace: obs
+roleRef:
+  kind: ClusterRole
+  name: fluentd
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: fluentd
+    namespace: obs
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: obs
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-logging
+      version: v1
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+    spec:
+      serviceAccount: fluentd
+      serviceAccountName: fluentd
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: fluentd
+          image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: FLUENT_ELASTICSEARCH_HOST
+              value: "elastic"
+            - name: FLUENT_ELASTICSEARCH_PORT
+              value: "9200"
+            - name: FLUENT_ELASTICSEARCH_SCHEME
+              value: "https"
+            # Option to configure elasticsearch plugin with self signed certs
+            # ================================================================
+            - name: FLUENT_ELASTICSEARCH_SSL_VERIFY
+              value: "false"
+            # Option to configure elasticsearch plugin with tls
+            # ================================================================
+            # - name: FLUENT_ELASTICSEARCH_SSL_VERSION
+            #   value: "TLSv1_2"
+            # X-Pack Authentication
+            # =====================
+            - name: FLUENT_ELASTICSEARCH_USER
+              value: "elastic"
+            - name: FLUENT_ELASTICSEARCH_PASSWORD
+              value: "Jam3bbB+Uj5OcoqQkXi8"
+            # - name: FLUENT_ELASTICSEARCH_CA_FILE
+            #   value: "/fluentd/certs/http_ca.crt"
+          # resources:
+          #   limits:
+          #     memory: 200Mi
+          #   requests:
+          #     cpu: 100m
+          #     memory: 200Mi
+          volumeMounts:
+            - name: fluentd-config
+              mountPath: /fluentd/etc/
+            # - name: varlog
+            #   mountPath: /var/log
+            # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
+            # - name: dockercontainerlogdirectory
+            #   mountPath: /var/lib/docker/containers
+            #   readOnly: true
+            # When actual pod logs in /var/log/pods, the following lines should be used.
+            - name: dockercontainerlogdirectory
+              mountPath: /var/log/pods
+              readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: fluentd-config
+          configMap:
+            name: fluentd-config
+        # - name: varlog
+        #   hostPath:
+        #     path: /var/log
+        # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
+        # - name: dockercontainerlogdirectory
+        #   hostPath:
+        #     path: /var/lib/docker/containers
+        # When actual pod logs in /var/log/pods, the following lines should be used.
+        - name: dockercontainerlogdirectory
+          hostPath:
+            path: /var/log/pods
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: obs
+data:
+  fluent.conf: |
+    # ======= Input: Tail Kubernetes Pod Logs =======
+    <source>
+      @type tail
+      path /var/log/pods/default*/*/*.log
+      pos_file /var/log/fluentd.pos
+      tag kube.*
+      read_from_head true
+
+      <parse>
+        @type cri
+      </parse>
+    </source>
+
+    <filter kube.**>
+      @type kubernetes_metadata
+    </filter>
+
+
+    <filter kube.**>
+      @type parser
+      key_name message       # the field containing the raw log line
+      format json            # parse it as JSON
+      reserve_data true      # keep original fields (optional)
+    </filter>
+
+    # ======= Reformat log =======
+    <filter kube.**>
+      @type record_transformer
+      enable_ruby true
+      renew_record true
+
+      <record>
+        message ${record["msg"]}
+        app ${record["kubernetes"]["container_name"]}
+        namespace ${record["kubernetes"]["namespace_name"]}
+        pod ${record["kubernetes"]["pod_name"]}
+        host ${record["kubernetes"]["host"]}
+        time ${record["time"]}
+        location ${record.fetch("file", "")}
+        func ${record.fetch("func", "")}
+        level ${record["level"]}
+      </record>
+    </filter>
+
+    # ======= Output: stdout (or replace with elasticsearch) =======
+    <match **>
+      # @type stdout
+      @type elasticsearch
+      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'https'}"
+      user "#{ENV['FLUENT_ELASTICSEARCH_USER']}"
+      password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
+      ssl_verify false
+      logstash_format true
+      include_tag_key true
+      type_name _doc
+      flush_interval 5s
+    </match>

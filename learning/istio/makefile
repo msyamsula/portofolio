@@ -6,6 +6,8 @@ start:
 	kind create cluster --config kind-config.yaml --name ${CLUSTER}
 	docker network connect test ${CLUSTER}-control-plane
 	docker network connect test ${CLUSTER}-worker
+	docker network connect test ${CLUSTER}-worker2
+	docker network connect test ${CLUSTER}-worker3
 
 stop:
 	kind delete cluster --name ${CLUSTER}
@@ -19,6 +21,9 @@ istio-system:
 
 default:
 	kubectl config set-context --current --namespace=default
+
+elastic:
+	kubectl config set-context --current --namespace=elastic-system
 
 
 # context management, if you have multiple kubernetes
@@ -76,26 +81,29 @@ uninstall:
 
 # deploy app
 setup-env:
-	kubectl create configmap ${APP}-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+	kubectl create configmap ${APP}-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n default
 
 run:
-	kubectl apply -f deployment.yaml
+	kubectl apply -f deployment.yaml -n default
 
 deploy:
-	kubectl set image deployment/${APP} ${APP}=docker.io/library/${APP}:${VERSION}
+	kubectl set image deployment/${APP} ${APP}=docker.io/library/${APP}:${VERSION} -n default
 
 delete:
-	kubectl delete -f deployment.yaml
+	kubectl delete -f deployment.yaml -n default
 
 load:
 	kind load docker-image ${APP}:${VERSION} --name ${CLUSTER}
+
+load-elastic:
+	kind load docker-image docker.elastic.co/elasticsearch/elasticsearch:9.2.1 --name ${CLUSTER}
 
 restart-app:
 	kubectl rollout restart deploy
 
 
 ingress:
-	kubectl apply -f domain-gateway.yaml
+	kubectl apply -f domain-gateway.yaml -n default
 
 
 ## loud balancer provider in kind
@@ -119,33 +127,59 @@ allow-lb-control-plane:
 
 ## observability namespace
 jaeger:
-	kubectl apply -f jaeger.yaml
+	kubectl apply -f jaeger.yaml -n obs
 
 delete-jaeger:
-	kubectl delete -f jaeger.yaml
+	kubectl delete -f jaeger.yaml -n obs
 
 prometheus:
-	kubectl apply -f prom.yaml 
+	kubectl apply -f prom.yaml -n obs
 
 prometheus-restart:
-	kubectl rollout restart deployment prometheus 
+	kubectl rollout restart deployment prometheus -n obs
 
 # kiali
 kiali:
-	kubectl apply -f kiali.yaml 
+	kubectl apply -f kiali.yaml -n obs
 
 kiali-ui:
-	istioctl dashboard kiali 
+	istioctl dashboard kiali -n obs
 
 delete-kiali:
-	kubectl delete -f kiali.yaml 
+	kubectl delete -f kiali.yaml -n obs 
 
 # grafana
 grafana:
-	kubectl apply -f grafana.yaml
+	kubectl apply -f grafana.yaml -n obs
 
 destroy-grafana:
-	kubectl delete -f grafana.yaml
+	kubectl delete -f grafana.yaml -n obs
+
+# elastic search
+elastic-start:
+	docker run --name elastic --net test -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+
+elastic-password:
+	docker exec -it ${ELASTIC_HOST} /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
+
+elastic-token:
+	docker exec -it ${ELASTIC_HOST} /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+
+elastic-cert:
+	docker cp ${ELASTIC_HOST}:/usr/share/elasticsearch/config/certs/http_ca.crt .
+
+elastic-test:
+	curl --cacert http_ca.crt -u elastic:${ELASTIC_PASSWORD} https://localhost:9200
+
+elastic-save-cert:
+	kubectl create secret generic es-cert --from-file=http_ca.crt=http_ca.crt -n obs
+
+# fluentd
+fluentd:
+	kubectl apply -f fluentd.yaml -n obs
+
+fluentd-delete:
+	kubectl delete -f fluentd.yaml -n obs
 
 
 # hit
