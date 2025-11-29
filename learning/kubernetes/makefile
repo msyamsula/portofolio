@@ -174,6 +174,10 @@ elastic-test:
 elastic-save-cert:
 	kubectl create secret generic es-cert --from-file=http_ca.crt=http_ca.crt -n obs
 
+# kibana
+kibana-start:
+	docker run --name kibana --net test -p 5601:5601 docker.elastic.co/kibana/kibana:9.2.1
+
 # fluentd
 fluentd:
 	kubectl apply -f fluentd.yaml -n obs
