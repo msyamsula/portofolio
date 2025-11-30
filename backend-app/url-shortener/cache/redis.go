@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/msyamsula/portofolio/backend-app/url-shortener/logger"
+	"github.com/msyamsula/portofolio/backend-app/observability/logger"
 	redisPkg "github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"

@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/msyamsula/portofolio/backend-app/observability/logger"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/cache"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/handler"
-	"github.com/msyamsula/portofolio/backend-app/url-shortener/logger"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/persistent"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/services"
 	"github.com/msyamsula/portofolio/telemetry"
