@@ -1,8 +1,9 @@
-module github.com/msyamsula/portofolio/telemetry
+module github.com/msyamsula/portofolio/backend-app/observability
 
-go 1.24.4
+go 1.25.0
 
 require (
+	github.com/sirupsen/logrus v1.9.3
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/zipkin v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0

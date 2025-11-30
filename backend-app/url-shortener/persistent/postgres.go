@@ -3,16 +3,51 @@ package persistent
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"time"
 
+	"github.com/XSAM/otelsql"
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+
+	_ "github.com/lib/pq"
 )
 
 type postgres struct {
 	db *sqlx.DB
+}
+
+func NewPostgres(config PostgresConfig) Repository {
+	// postgre
+	sslmode := "require"
+	if config.Env != "production" {
+		// disable for dev
+		sslmode = "disable"
+	}
+
+	connectionString := fmt.Sprintf("user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
+		config.Username, config.Name, sslmode, config.Password, config.Host, config.Port,
+	)
+	tempdb, err := otelsql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	db := sqlx.NewDb(tempdb, "postgres")
+
+	// connection pool
+	db.SetMaxIdleConns(3)
+	db.SetMaxOpenConns(10)
+	db.SetConnMaxIdleTime(5 * time.Second)
+	db.SetConnMaxLifetime(-1)
+	// return db
+	pg := &postgres{
+		db: db,
+	}
+
+	return pg
 }
 
 func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, error) {
