@@ -8,47 +8,17 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	configPkg "github.com/aws/aws-sdk-go-v2/config"
+
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 )
 
 type dynamo struct {
-	ttl       time.Duration
 	tablename string
 	region    string
 
 	conn *dynamodb.Client
-}
-
-/*
-you need to have this in your env runtime
-
-	export AWS_ACCESS_KEY_ID="your-access-key"
-	export AWS_SECRET_ACCESS_KEY="your-secret-key"
-	export AWS_SESSION_TOKEN="optional-temporary-token"
-*/
-func NewDynamo(config DynamoConfig) *dynamo {
-	// Load default AWS config (from ~/.aws/credentials, env variables, or IAM role)
-	cfg, err := configPkg.LoadDefaultConfig(context.TODO(),
-		configPkg.WithRegion(config.Region), // change to your region
-
-	)
-	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
-	}
-
-	// Create DynamoDB client
-	svc := dynamodb.NewFromConfig(cfg)
-
-	log.Println("connected to dynamo db")
-
-	return &dynamo{
-		ttl:       config.Ttl,
-		tablename: config.TableName,
-		region:    config.Region,
-		conn:      svc,
-	}
 }
 
 func (r *dynamo) Get(ctx context.Context, key string) (string, error) {
@@ -86,17 +56,23 @@ func (r *dynamo) Get(ctx context.Context, key string) (string, error) {
 	return string(stringAttr.Value), nil
 }
 
-func (r *dynamo) Set(ctx context.Context, key, value string) error {
+func (r *dynamo) Set(ctx context.Context, key, value string, ttl time.Duration) error {
 
-	ttl := time.Now().Unix() + int64(r.ttl.Seconds()) // ttl is in unix for dynamodb
+	exp := time.Now().Unix() + int64(ttl.Seconds()) // ttl is in unix for dynamodb
 	item := map[string]types.AttributeValue{
 		"identifier": &types.AttributeValueMemberS{Value: key},
 		"value":      &types.AttributeValueMemberS{Value: value},
-		"ttl":        &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", ttl)}, // optional TTL
+		"ttl":        &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", exp)}, // optional TTL
 	}
 	_, err := r.conn.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: &r.tablename,
 		Item:      item,
 	})
 	return err
+}
+
+func (r *dynamo) Del(ctx context.Context, key string) error {
+
+	logger.Logger.Fatal("dynamo Del is not implemented")
+	return nil
 }

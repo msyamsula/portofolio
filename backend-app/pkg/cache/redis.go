@@ -2,35 +2,67 @@ package cache
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
+	"time"
 
 	"github.com/msyamsula/portofolio/backend-app/observability/logger"
-	"github.com/redis/go-redis/extra/redisotel/v9"
 	redisPkg "github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type redis struct {
 	db *redisPkg.Client
 }
 
-func NewRedis(cfg RedisConfig, options *redisPkg.Options) *redisPkg.Client {
-	var tlsConfig *tls.Config
-	if cfg.Env == "production" {
-		tlsConfig = &tls.Config{
-			InsecureSkipVerify: true,
+func (r *redis) Get(c context.Context, key string) (string, error) {
+	var err error
+	ctx, span := otel.Tracer("cache").Start(c, "Redis Get")
+	defer func() {
+		if err != nil {
+			logger.Logger.Info(err.Error())
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
-	}
+		span.End()
+	}()
 
-	options.Addr = fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
-	options.TLSConfig = tlsConfig
+	cmd := r.db.Get(ctx, key)
 
-	client := redisPkg.NewClient(options)
-	ping := client.Ping(context.Background())
-	_, err := ping.Result()
-	if err != nil {
-		logger.Logger.Fatalf("ping %s failed, %v", options.Addr, err.Error())
-	}
-	redisotel.InstrumentTracing(client)
-	return client
+	var value string
+	value, err = cmd.Result()
+	return value, err
+}
+
+func (r *redis) Set(c context.Context, key string, value string, ttl time.Duration) error {
+	var err error
+	ctx, span := otel.Tracer("redis").Start(c, "Redis Set")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
+
+	cmd := r.db.Set(ctx, key, value, ttl)
+	_, err = cmd.Result()
+	return err
+}
+
+func (r *redis) Del(c context.Context, key string) error {
+	var err error
+	ctx, span := otel.Tracer("redis").Start(c, "redis del")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}()
+
+	cmd := r.db.Del(ctx, key)
+	_, err = cmd.Result()
+	return err
 }
