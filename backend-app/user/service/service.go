@@ -4,10 +4,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/msyamsula/portofolio/backend-app/pkg/cache"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
 	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 	"go.opentelemetry.io/otel"
@@ -21,7 +21,7 @@ type service struct {
 	userLoginTtl time.Duration
 }
 
-func (s *service) GetAppTokenForGoogleUser(c context.Context, cookies, state, code string) (string, error) {
+func (s *service) GetAppTokenForGoogleUser(c context.Context, state, code string) (string, error) {
 	ctx, span := otel.Tracer("").Start(c, "service.SetUser")
 	defer span.End()
 
@@ -32,22 +32,13 @@ func (s *service) GetAppTokenForGoogleUser(c context.Context, cookies, state, co
 		}
 	}()
 
-	var savedState string
-	savedState, err = s.sessionManagement.Get(ctx, cookies)
-	if err != nil {
-		return "", err
-	}
-
-	if savedState != state {
-		return "", errors.New("mismatch state")
-	}
-
 	// allowed exchange
 	var userData externaloauth.UserData
-	userData, err = s.external.GetUserDataGoogle(ctx, cookies, state, code)
+	userData, err = s.external.GetUserDataGoogle(ctx, state, code)
 	if err != nil {
 		return "", err
 	}
+	logger.Logger.Info(userData)
 
 	// create token with expiry time
 	var appToken string
@@ -66,7 +57,7 @@ func (s *service) GetAppTokenForGoogleUser(c context.Context, cookies, state, co
 	return appToken, nil
 }
 
-func (s *service) GetRedirectUrlGoogle(c context.Context, browserCookies string) (string, error) {
+func (s *service) GetRedirectUrlGoogle(c context.Context, state string) (string, error) {
 	ctx, span := otel.Tracer("").Start(c, "service.GetUser")
 	defer span.End()
 
@@ -78,7 +69,7 @@ func (s *service) GetRedirectUrlGoogle(c context.Context, browserCookies string)
 	}()
 
 	var url string
-	url, err = s.external.GetRedirectUrlGoogle(ctx, browserCookies)
+	url, err = s.external.GetRedirectUrlGoogle(ctx, state)
 	if err != nil {
 		return "", err
 	}

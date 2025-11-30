@@ -5,28 +5,18 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"golang.org/x/oauth2"
 )
 
 type authService struct {
-	randomizer        randomizer.Randomizer // randomizer use
 	oauthConfigGoogle *oauth2.Config
 }
 
-func (g *authService) GetRedirectUrlGoogle(ctx context.Context, browserCookies string) (string, error) {
-
-	var err error
-	var state string
-	state, err = g.randomizer.String()
-	if err != nil {
-		return "", err
-	}
-
+func (g *authService) GetRedirectUrlGoogle(ctx context.Context, state string) (string, error) {
 	return g.oauthConfigGoogle.AuthCodeURL(state), nil
 }
 
-func (g *authService) GetUserDataGoogle(ctx context.Context, browserCookies, state, code string) (UserData, error) {
+func (g *authService) GetUserDataGoogle(ctx context.Context, state, code string) (UserData, error) {
 
 	// allowed login
 	var token *oauth2.Token

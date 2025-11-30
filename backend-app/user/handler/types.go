@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
 )
 
@@ -15,5 +16,6 @@ type TokenResponse struct {
 }
 
 type Config struct {
-	Svc service.Service
+	Svc        service.Service
+	Randomizer randomizer.Randomizer
 }

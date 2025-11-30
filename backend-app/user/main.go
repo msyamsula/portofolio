@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/pkg/cache"
 	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
+	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/msyamsula/portofolio/backend-app/user/handler"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
@@ -31,13 +32,7 @@ var (
 	appName = "user"
 	env     = os.Getenv("ENVIRONMENT")
 
-	pgPassword = os.Getenv("POSTGRES_PASSWORD")
-	pgUsername = os.Getenv("POSTGRES_USER")
-	pgDbName   = os.Getenv("POSTGRES_DB")
-	pgHost     = os.Getenv("POSTGRES_HOST")
-	pgPort     = os.Getenv("POSTGRES_PORT")
-
-	jaegerHost = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
+	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
 	port = os.Getenv("PORT")
 
@@ -61,22 +56,23 @@ var (
 func init() {
 	if env != "production" {
 		fmt.Println("ENVIRONMENT:", env)
-		fmt.Println("POSTGRES_USER:", pgUsername)
-		fmt.Println("POSTGRES_DB:", pgDbName)
-		fmt.Println("POSTGRES_HOST:", pgHost)
-		fmt.Println("POSTGRES_PORT:", pgPort)
-		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", jaegerHost)
+		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
 		fmt.Println("PORT:", port)
+		fmt.Println("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
+		fmt.Println("AWS_SECRET_ACCESS_KEY:", awsSecretAccessKey)
 		fmt.Println("AWS_REGION:", awsRegion)
 		fmt.Println("USER_LOGIN_TTL:", userLoginTtl)
 		fmt.Println("JWT_TOKEN_TTL:", jwtTokenTtl)
+		fmt.Println("GOOGLE_CLIENT_ID:", googleClientId)
+		fmt.Println("GOOGLE_CLIENT_SECRET:", googleClientSecret)
+		fmt.Println("GOOGLE_REDIRECT_URL:", googleRedirectUrl)
+		fmt.Println("APP_TOKEN_SECRET:", appTokenSecret)
+		fmt.Println("REDIS_HOST:", redisHost)
+		fmt.Println("REDIS_PORT:", redisPort)
 	}
 }
 
 func route(r *mux.Router) *mux.Router {
-
-	// initialize instrumentation
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
 
 	// var h handler.Handler
 	var err error
@@ -94,55 +90,51 @@ func route(r *mux.Router) *mux.Router {
 
 	h := handler.New(handler.Config{
 		Svc: service.NewService(service.ServiceConfig{
-			External: externaloauth.NewAuthService(
-				externaloauth.AuthConfig{
-					GoogleOauthConfig: &oauth2.Config{
-						ClientID:     googleClientId,
-						ClientSecret: googleClientSecret,
-						RedirectURL:  googleRedirectUrl,
-						Endpoint:     google.Endpoint,
-						Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
-					},
+			External: externaloauth.NewAuthService(externaloauth.AuthConfig{
+				GoogleOauthConfig: &oauth2.Config{
+					ClientID:     googleClientId,
+					RedirectURL:  googleRedirectUrl,
+					ClientSecret: googleClientSecret,
+					Endpoint:     google.Endpoint,
+					Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
 				},
-			),
-			Internal: internaltoken.NewInternalToken(
-				internaltoken.InternalTokenConfig{
-					AppTokenSecret: appTokenSecret,
-					AppTokenTtl:    time.Duration(tokenTtl * int64(time.Hour)),
-				},
-			),
-			SessionManagement: cache.NewRedis(
-				cache.RedisConfig{
-					Host: redisHost,
-					Port: redisPort,
-					Env:  env,
-				},
-				&redis.Options{
-					// retries and connection pool
-					MaxRetries:     20,
-					DialTimeout:    10 * time.Second,
-					ReadTimeout:    1 * time.Second,
-					WriteTimeout:   1 * time.Second,
-					PoolTimeout:    20 * time.Second,
-					MinIdleConns:   5,
-					MaxIdleConns:   10,
-					MaxActiveConns: 10,
-				},
-			),
+			}),
+			Internal: internaltoken.NewInternalToken(internaltoken.InternalTokenConfig{
+				AppTokenSecret: appTokenSecret,
+				AppTokenTtl:    time.Duration(tokenTtl * int64(time.Minute)),
+			}),
+			SessionManagement: cache.NewRedis(cache.RedisConfig{
+				Host: redisHost,
+				Port: redisPort,
+				Env:  env,
+			}, &redis.Options{
+				MaxRetries:      10,
+				MinRetryBackoff: 5,
+				MaxRetryBackoff: 10,
+				ReadTimeout:     1 * time.Second,
+				WriteTimeout:    1 * time.Second,
+				MinIdleConns:    3,
+				MaxIdleConns:    5,
+				MaxActiveConns:  10,
+			}),
 			UserLoginTtl: time.Duration(userTtl * int64(time.Hour)),
+		}),
+		Randomizer: randomizer.NewStringRandomizer(randomizer.StringRandomizerConfig{
+			Size:          20,
+			CharacterPool: "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 		}),
 	})
 
 	// url
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	r.HandleFunc("/login", h.GoogleRedirectUrl).Methods(http.MethodGet)
-	r.HandleFunc("/callback", h.GetAppTokenForGoogle).Methods(http.MethodGet)
+	r.HandleFunc("/google/callback", h.GetAppTokenForGoogle).Methods(http.MethodGet)
 	return r
 }
 
 func main() {
 
-	telemetry.InitializeTelemetryTracing(appName, jaegerHost)
+	telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
 	logger.InitLogger()
 
 	// create server routes
