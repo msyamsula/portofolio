@@ -11,7 +11,6 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/msyamsula/portofolio/backend-app/observability v0.0.0-20251130015448-7857a3952bc4
-	github.com/msyamsula/portofolio/telemetry v0.0.0-20251129185816-e539d4330f0f
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/extra/redisotel/v9 v9.17.1
 	github.com/redis/go-redis/v9 v9.17.1
