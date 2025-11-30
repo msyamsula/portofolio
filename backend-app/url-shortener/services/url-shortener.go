@@ -55,7 +55,7 @@ func (s *urlShortener) Short(c context.Context, longUrl string) (string, error) 
 	}
 
 	// need to be shorten, create one
-	shortUrl, err = s.createShort(ctx)
+	shortUrl, err = s.CreateShort(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +75,7 @@ func (s *urlShortener) Short(c context.Context, longUrl string) (string, error) 
 	return fmt.Sprintf("%s/%s", s.callbackUri, shortUrl), nil
 }
 
-func (s *urlShortener) createShort(c context.Context) (string, error) {
+func (s *urlShortener) CreateShort(c context.Context) (string, error) {
 	var err error
 	_, span := otel.Tracer("service").Start(c, "createShort")
 	defer func() {
