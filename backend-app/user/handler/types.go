@@ -1,11 +1,19 @@
 package handler
 
 import (
-	"github.com/msyamsula/portofolio/backend-app/user/persistent"
+	"github.com/msyamsula/portofolio/backend-app/user/service"
 )
 
-type Response struct {
-	Message string          `json:"message,omitempty"`
-	Error   string          `json:"error,omitempty"`
-	Data    persistent.User `json:"data,omitempty"`
+type Header struct {
+	Message string `json:"message,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
+type TokenResponse struct {
+	Header
+	Token string `json:"token"`
+}
+
+type Config struct {
+	Svc service.Service
 }

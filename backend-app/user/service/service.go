@@ -4,20 +4,24 @@ package service
 
 import (
 	"context"
+	"errors"
+	"time"
 
-	"github.com/msyamsula/portofolio/backend-app/user/persistent"
+	"github.com/msyamsula/portofolio/backend-app/pkg/cache"
+	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
+	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 	"go.opentelemetry.io/otel"
 )
 
 type service struct {
-	persistence persistent.Repository
+	external          externaloauth.AuthService
+	internal          internaltoken.InternalToken
+	sessionManagement cache.Cache
+
+	userLoginTtl time.Duration
 }
 
-type ServiceConfig struct {
-	Persistence persistent.Repository
-}
-
-func (s *service) SetUser(c context.Context, user persistent.User) (persistent.User, error) {
+func (s *service) GetAppTokenForGoogleUser(c context.Context, cookies, state, code string) (string, error) {
 	ctx, span := otel.Tracer("").Start(c, "service.SetUser")
 	defer span.End()
 
@@ -28,15 +32,41 @@ func (s *service) SetUser(c context.Context, user persistent.User) (persistent.U
 		}
 	}()
 
-	user, err = s.persistence.InsertUser(ctx, user)
+	var savedState string
+	savedState, err = s.sessionManagement.Get(ctx, cookies)
 	if err != nil {
-		return user, err
+		return "", err
 	}
 
-	return user, nil
+	if savedState != state {
+		return "", errors.New("mismatch state")
+	}
+
+	// allowed exchange
+	var userData externaloauth.UserData
+	userData, err = s.external.GetUserDataGoogle(ctx, cookies, state, code)
+	if err != nil {
+		return "", err
+	}
+
+	// create token with expiry time
+	var appToken string
+	appToken, err = s.internal.CreateToken(userData.ID, userData.Email, userData.Name)
+	if err != nil {
+		return "", err
+	}
+
+	// save token to session
+	// will be deleted when logout or 3 hours
+	err = s.sessionManagement.Set(ctx, appToken, "true", s.userLoginTtl)
+	if err != nil {
+		return "", err
+	}
+
+	return appToken, nil
 }
 
-func (s *service) GetUser(c context.Context, username string) (persistent.User, error) {
+func (s *service) GetRedirectUrlGoogle(c context.Context, browserCookies string) (string, error) {
 	ctx, span := otel.Tracer("").Start(c, "service.GetUser")
 	defer span.End()
 
@@ -47,13 +77,11 @@ func (s *service) GetUser(c context.Context, username string) (persistent.User, 
 		}
 	}()
 
-	var result persistent.User
-
-	// cache miss
-	result, err = s.persistence.GetUser(ctx, username)
+	var url string
+	url, err = s.external.GetRedirectUrlGoogle(ctx, browserCookies)
 	if err != nil {
-		return result, err
+		return "", err
 	}
 
-	return result, nil
+	return url, nil
 }

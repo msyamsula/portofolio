@@ -2,17 +2,16 @@ package service
 
 import (
 	"context"
-
-	"github.com/msyamsula/portofolio/backend-app/user/persistent"
 )
 
 type Service interface {
-	SetUser(c context.Context, user persistent.User) (persistent.User, error)
-	GetUser(c context.Context, username string) (persistent.User, error)
+	GetRedirectUrlGoogle(c context.Context, browserCookies string) (string, error)
+	GetAppTokenForGoogleUser(c context.Context, cookies, state, code string) (string, error)
 }
 
-func New(cfg ServiceConfig) Service {
+func NewService(cfg ServiceConfig) Service {
 	return &service{
-		persistence: cfg.Persistence,
+		external: cfg.External,
+		internal: cfg.Internal,
 	}
 }

@@ -2,10 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
-	"github.com/msyamsula/portofolio/backend-app/user/persistent"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
 	"go.opentelemetry.io/otel"
 )
@@ -14,63 +12,34 @@ type handler struct {
 	svc service.Service
 }
 
-func (h *handler) InsertUser(w http.ResponseWriter, req *http.Request) {
+func (h *handler) GoogleRedirectUrl(w http.ResponseWriter, req *http.Request) {
 	ctx, span := otel.Tracer("").Start(req.Context(), "handler.setUser")
 	defer span.End()
 
-	response := Response{
-		Message: "",
-		Error:   "",
-		Data:    persistent.User{},
-	}
 	var err error
-	var statusCode int
 	defer func() {
-		w.WriteHeader(statusCode)
 		if err != nil {
 			// error response
-			response.Message = "failed"
-			response.Error = err.Error()
 			span.RecordError(err)
-
-			resp, _ := json.Marshal(response)
-			w.Write([]byte(resp))
-		} else {
-			// success
-			response.Message = "success"
-			resp, _ := json.Marshal(response)
-			w.Write(resp)
 		}
 	}()
 
-	type body struct {
-		Username string `json:"username"`
-		Online   bool   `json:"online"`
-	}
-	reqBody := body{}
-	bBody, _ := io.ReadAll(req.Body)
-	json.Unmarshal(bBody, &reqBody)
-
-	response.Data.Username = reqBody.Username
-	response.Data.Online = reqBody.Online
-	response.Data, err = h.svc.SetUser(ctx, response.Data)
+	var browserCookie *http.Cookie
+	browserCookie, err = req.Cookie("session_id")
+	var url string
+	url, err = h.svc.GetRedirectUrlGoogle(ctx, browserCookie.Value)
 	if err != nil {
-		statusCode = http.StatusInternalServerError
 		return
 	}
 
-	statusCode = http.StatusOK
+	http.Redirect(w, req, url, http.StatusTemporaryRedirect)
 }
 
-func (h *handler) GetUser(w http.ResponseWriter, req *http.Request) {
+func (h *handler) GetAppTokenForGoogle(w http.ResponseWriter, req *http.Request) {
 	ctx, span := otel.Tracer("").Start(req.Context(), "handler.getUser")
 	defer span.End()
 
-	response := Response{
-		Message: "success",
-		Error:   "",
-		Data:    persistent.User{},
-	}
+	var response TokenResponse
 	var err error
 	var statusCode int
 	defer func() {
@@ -80,25 +49,23 @@ func (h *handler) GetUser(w http.ResponseWriter, req *http.Request) {
 			response.Message = "failed"
 			span.RecordError(err)
 			response.Error = err.Error()
-			resp, _ := json.Marshal(response)
-			w.Write([]byte(resp))
 		} else {
 			// success
 			response.Message = "success"
-			resp, _ := json.Marshal(response)
-			w.Write(resp)
 		}
+
+		json.NewEncoder(w).Encode(response)
 	}()
 
 	query := req.URL.Query()
-	username := query.Get("username")
-	response.Data.Username = username
+	state := query.Get("state")
+	code := query.Get("code")
 
-	response.Data, err = h.svc.GetUser(ctx, response.Data.Username)
+	var browserCookie *http.Cookie
+	browserCookie, err = req.Cookie("session_id")
 	if err != nil {
-		statusCode = http.StatusInternalServerError
 		return
 	}
 
-	statusCode = http.StatusOK
+	response.Token, err = h.svc.GetAppTokenForGoogleUser(ctx, browserCookie.Raw, state, code)
 }
