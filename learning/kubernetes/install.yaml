@@ -7,6 +7,7 @@ spec:
   profile: default  # production-ready base profile
   meshConfig:
     accessLogFile: /dev/stdout
+    accessLogEncoding: JSON
     enableTracing: true
     defaultConfig:
       tracing:

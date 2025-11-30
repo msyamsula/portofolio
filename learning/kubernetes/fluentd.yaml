@@ -143,12 +143,32 @@ data:
       path /var/log/pods/default*/*/*.log
       pos_file /var/log/fluentd.pos
       tag kube.*
-      read_from_head true
+      read_from_head false
 
       <parse>
         @type cri
       </parse>
     </source>
+
+    <source>
+      @type tail
+      path /var/log/pods/obs*/*/*.log
+      pos_file /var/log/fluentd-obs.pos
+      tag istio.*
+      read_from_head false
+
+      <parse>
+        @type cri
+      </parse>
+    </source>
+
+    <filter istio.**>
+      @type record_transformer
+      enable_ruby true
+      <record>
+        @timestamp ${record["start_time"]}
+      </record>
+    </filter>
 
     <filter kube.**>
       @type kubernetes_metadata
@@ -174,7 +194,7 @@ data:
         namespace ${record["kubernetes"]["namespace_name"]}
         pod ${record["kubernetes"]["pod_name"]}
         host ${record["kubernetes"]["host"]}
-        time ${record["time"]}
+        @timestamp ${record["time"]}
         location ${record.fetch("file", "")}
         func ${record.fetch("func", "")}
         level ${record["level"]}
@@ -192,6 +212,7 @@ data:
       password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
       ssl_verify false
       logstash_format true
+      logstash_prefix app_cluster_log
       include_tag_key true
       type_name _doc
       flush_interval 5s
