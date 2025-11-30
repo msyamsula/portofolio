@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,6 +18,7 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/msyamsula/portofolio/backend-app/user/handler"
+	pb "github.com/msyamsula/portofolio/backend-app/user/proto"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
 	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
 	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
@@ -26,6 +28,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -72,8 +76,15 @@ func init() {
 	}
 }
 
-func route(r *mux.Router) *mux.Router {
+func route(r *mux.Router, h handler.Handler) *mux.Router {
+	// url
+	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
+	r.HandleFunc("/login", h.GoogleRedirectUrl).Methods(http.MethodGet)
+	r.HandleFunc("/google/callback", h.GetAppTokenForGoogle).Methods(http.MethodGet)
+	return r
+}
 
+func initHandler() *handler.CombineHandler {
 	// var h handler.Handler
 	var err error
 	var userTtl int64
@@ -88,6 +99,11 @@ func route(r *mux.Router) *mux.Router {
 		logger.Logger.Panic("invalid jwt token ttl")
 	}
 
+	internalToken := internaltoken.NewInternalToken(internaltoken.InternalTokenConfig{
+		AppTokenSecret: appTokenSecret,
+		AppTokenTtl:    time.Duration(tokenTtl * int64(time.Minute)),
+	})
+
 	h := handler.New(handler.Config{
 		Svc: service.NewService(service.ServiceConfig{
 			External: externaloauth.NewAuthService(externaloauth.AuthConfig{
@@ -99,10 +115,7 @@ func route(r *mux.Router) *mux.Router {
 					Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
 				},
 			}),
-			Internal: internaltoken.NewInternalToken(internaltoken.InternalTokenConfig{
-				AppTokenSecret: appTokenSecret,
-				AppTokenTtl:    time.Duration(tokenTtl * int64(time.Minute)),
-			}),
+			Internal: internalToken,
 			SessionManagement: cache.NewRedis(cache.RedisConfig{
 				Host: redisHost,
 				Port: redisPort,
@@ -123,13 +136,10 @@ func route(r *mux.Router) *mux.Router {
 			Size:          20,
 			CharacterPool: "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 		}),
+		InternalToken: internalToken,
 	})
 
-	// url
-	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
-	r.HandleFunc("/login", h.GoogleRedirectUrl).Methods(http.MethodGet)
-	r.HandleFunc("/google/callback", h.GetAppTokenForGoogle).Methods(http.MethodGet)
-	return r
+	return h
 }
 
 func main() {
@@ -137,9 +147,11 @@ func main() {
 	telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
 	logger.InitLogger()
 
+	h := initHandler()
+
 	// create server routes
 	r := mux.NewRouter()
-	r = route(r)
+	r = route(r, h)
 
 	tracedHandler := otelhttp.NewHandler(r, "")
 
@@ -162,6 +174,23 @@ func main() {
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Logger.Fatalf("server failed: %v", err)
+		}
+	}()
+
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+
+		s := grpc.NewServer()
+		pb.RegisterExampleServiceServer(s, h)
+
+		reflection.Register(s)
+
+		log.Println("gRPC server running on :50051")
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 

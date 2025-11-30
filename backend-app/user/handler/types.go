@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
+	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 )
 
 type Header struct {
@@ -16,6 +17,7 @@ type TokenResponse struct {
 }
 
 type Config struct {
-	Svc        service.Service
-	Randomizer randomizer.Randomizer
+	Svc           service.Service
+	Randomizer    randomizer.Randomizer
+	InternalToken internaltoken.InternalToken
 }

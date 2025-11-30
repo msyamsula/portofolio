@@ -15,8 +15,8 @@ var (
 )
 
 type httpHandler struct {
-	svc        service.Service
 	randomizer randomizer.Randomizer
+	svc        service.Service
 }
 
 func (h *httpHandler) GoogleRedirectUrl(w http.ResponseWriter, req *http.Request) {

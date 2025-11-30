@@ -15,12 +15,14 @@ type CombineHandler struct {
 	*grpcHandler
 }
 
-func New(cfg Config) Handler {
+func New(cfg Config) *CombineHandler {
 	return &CombineHandler{
 		httpHandler: &httpHandler{
-			svc:        cfg.Svc,
 			randomizer: cfg.Randomizer,
+			svc:        cfg.Svc,
 		},
-		grpcHandler: &grpcHandler{},
+		grpcHandler: &grpcHandler{
+			internalToken: cfg.InternalToken,
+		},
 	}
 }
