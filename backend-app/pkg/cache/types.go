@@ -11,6 +11,5 @@ type DynamoConfig struct {
 type RedisConfig struct {
 	Host string
 	Port string
-	Ttl  time.Duration
 	Env  string
 }
