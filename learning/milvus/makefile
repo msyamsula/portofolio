@@ -1,0 +1,8 @@
+download:
+	curl -sfL https://raw.githubusercontent.com/milvus-io/milvus/master/scripts/standalone_embed.sh -o standalone_embed.sh
+
+start:
+	bash standalone_embed.sh start
+
+stop:
+	bash standalone_embed.sh stop

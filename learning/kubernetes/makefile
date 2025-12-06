@@ -66,7 +66,7 @@ restart:
 	kubectl rollout restart deployment
 
 verify:
-	kubectl exec -it url-shortener-5cb7dc8d49-q775g -c istio-proxy -- curl localhost:15000/config_dump
+	kubectl exec -it user-74674c96-7pmsd -c istio-proxy -- curl localhost:15000/config_dump
 
 unlabel:
 	kubectl label namespace default istio-injection-
@@ -79,24 +79,38 @@ uninstall:
 
 
 
-# deploy app
-setup-env:
-	kubectl create configmap ${APP}-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n default
+# url-shortener
+url-shortener-setup-env:
+	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n default
 
-run:
-	kubectl apply -f deployment.yaml -n default
+url-shortener-run:
+	kubectl apply -f url-shortener.yaml -n default
 
-deploy:
-	kubectl set image deployment/${APP} ${APP}=docker.io/library/${APP}:${VERSION} -n default
+url-shortener-deploy:
+	kubectl set image deployment/url-shortener url-shortener=docker.io/library/url-shortener:${VERSION} -n default
 
-delete:
-	kubectl delete -f deployment.yaml -n default
+url-shortener-delete:
+	kubectl delete -f url-shortener.yaml -n default
 
-load:
-	kind load docker-image ${APP}:${VERSION} --name ${CLUSTER}
+url-shortener-load:
+	kind load docker-image url-shortener:${VERSION} --name ${CLUSTER}
 
-load-elastic:
-	kind load docker-image docker.elastic.co/elasticsearch/elasticsearch:9.2.1 --name ${CLUSTER}
+# user
+user-setup-env:
+	kubectl create configmap user-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n default
+
+user-run:
+	kubectl apply -f user.yaml -n default
+
+user-deploy:
+	kubectl set image deployment/user user=docker.io/library/user:${VERSION} -n default
+
+user-delete:
+	kubectl delete -f user.yaml -n default
+
+user-load:
+	kind load docker-image user:${VERSION} --name ${CLUSTER}
+
 
 restart-app:
 	kubectl rollout restart deploy
@@ -156,6 +170,9 @@ destroy-grafana:
 	kubectl delete -f grafana.yaml -n obs
 
 # elastic search
+load-elastic:
+	kind load docker-image docker.elastic.co/elasticsearch/elasticsearch:9.2.1 --name ${CLUSTER}
+
 elastic-start:
 	docker run --name elastic --net test -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:9.2.1
 

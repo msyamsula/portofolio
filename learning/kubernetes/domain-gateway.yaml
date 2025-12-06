@@ -17,6 +17,7 @@ spec:
       - "url.syamsul.online"
       - "grafana.syamsul.online"
       - "kiali.syamsul.online"
+      - "user.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
@@ -31,6 +32,7 @@ spec:
     - "url.syamsul.online"
     - "grafana.syamsul.online"
     - "kiali.syamsul.online"
+    - "user.syamsul.online"
   gateways:
   - app-gateway
   http:
@@ -89,6 +91,17 @@ spec:
         host: kiali.obs.svc.cluster.local
         port:
           number: 20001
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "user.syamsul.online"
+    route:
+    - destination:
+        host: user
+        port:
+          number: 10000
 
 
 # curl -v -H "Host: url.syamsul.online" http://a8bf107b1662b41fe8b69a4363827310-1058936761.ap-southeast-1.elb.amazonaws.com

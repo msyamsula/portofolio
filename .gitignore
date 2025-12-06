@@ -12,3 +12,4 @@ secret.*
 *.prod*
 dist*
 *_log
+volumes
