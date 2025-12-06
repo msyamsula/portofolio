@@ -38,7 +38,8 @@ var (
 
 	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
-	port = os.Getenv("PORT")
+	port     = os.Getenv("PORT")
+	grpcPort = os.Getenv("GRPC_PORT")
 
 	awsAccessKeyId     = os.Getenv("AWS_ACCESS_KEY_ID")
 	awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
@@ -73,6 +74,7 @@ func init() {
 		fmt.Println("APP_TOKEN_SECRET:", appTokenSecret)
 		fmt.Println("REDIS_HOST:", redisHost)
 		fmt.Println("REDIS_PORT:", redisPort)
+		fmt.Println("GRPC_PORT:", grpcPort)
 	}
 }
 
@@ -104,33 +106,37 @@ func initHandler() *handler.CombineHandler {
 		AppTokenTtl:    time.Duration(tokenTtl * int64(time.Minute)),
 	})
 
+	sessionManager := cache.NewRedis(cache.RedisConfig{
+		Host: redisHost,
+		Port: redisPort,
+		Env:  env,
+	}, &redis.Options{
+		MaxRetries:      10,
+		MinRetryBackoff: 5,
+		MaxRetryBackoff: 10,
+		ReadTimeout:     1 * time.Second,
+		WriteTimeout:    1 * time.Second,
+		MinIdleConns:    3,
+		MaxIdleConns:    5,
+		MaxActiveConns:  10,
+	})
+
+	externalOauth := externaloauth.NewAuthService(externaloauth.AuthConfig{
+		GoogleOauthConfig: &oauth2.Config{
+			ClientID:     googleClientId,
+			RedirectURL:  googleRedirectUrl,
+			ClientSecret: googleClientSecret,
+			Endpoint:     google.Endpoint,
+			Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
+		},
+	})
+
 	h := handler.New(handler.Config{
 		Svc: service.NewService(service.ServiceConfig{
-			External: externaloauth.NewAuthService(externaloauth.AuthConfig{
-				GoogleOauthConfig: &oauth2.Config{
-					ClientID:     googleClientId,
-					RedirectURL:  googleRedirectUrl,
-					ClientSecret: googleClientSecret,
-					Endpoint:     google.Endpoint,
-					Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
-				},
-			}),
-			Internal: internalToken,
-			SessionManagement: cache.NewRedis(cache.RedisConfig{
-				Host: redisHost,
-				Port: redisPort,
-				Env:  env,
-			}, &redis.Options{
-				MaxRetries:      10,
-				MinRetryBackoff: 5,
-				MaxRetryBackoff: 10,
-				ReadTimeout:     1 * time.Second,
-				WriteTimeout:    1 * time.Second,
-				MinIdleConns:    3,
-				MaxIdleConns:    5,
-				MaxActiveConns:  10,
-			}),
-			UserLoginTtl: time.Duration(userTtl * int64(time.Hour)),
+			External:          externalOauth,
+			Internal:          internalToken,
+			SessionManagement: sessionManager,
+			UserLoginTtl:      time.Duration(userTtl * int64(time.Hour)),
 		}),
 		Randomizer: randomizer.NewStringRandomizer(randomizer.StringRandomizerConfig{
 			Size:          20,
@@ -165,20 +171,24 @@ func main() {
 	finalHandler := cors.Handler(tracedHandler)
 
 	// server start
+	httpAddress := fmt.Sprintf("0.0.0.0:%s", port)
 	server := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%s", port),
+		Addr:    httpAddress,
 		Handler: finalHandler,
 	}
 
-	logger.Logger.Info("server starting...")
 	go func() {
+		logger.Logger.Infof("http server starting at %s...", port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Logger.Fatalf("server failed: %v", err)
 		}
 	}()
 
 	go func() {
-		lis, err := net.Listen("tcp", ":50051")
+
+		logger.Logger.Infof("gRPC server listening at %s", grpcPort)
+		grpcAddress := fmt.Sprintf(":%s", grpcPort)
+		lis, err := net.Listen("tcp", grpcAddress)
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -188,7 +198,6 @@ func main() {
 
 		reflection.Register(s)
 
-		log.Println("gRPC server running on :50051")
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}

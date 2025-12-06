@@ -8,7 +8,7 @@ build:
 	docker build --platform linux/arm64 -t user .
 
 rundocker:
-	docker run --rm -p ${PORT}:${PORT} \
+	docker run --rm -p ${PORT}:${PORT} -p ${GRPC_PORT}:${GRPC_PORT} \
 	--network test \
 	--env-file .env \
 	--name user \
