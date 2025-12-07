@@ -3,8 +3,10 @@ package externaloauth
 import (
 	"context"
 	"encoding/json"
-	"log"
 
+	"github.com/msyamsula/portofolio/backend-app/observability/logger"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/oauth2"
 )
 
@@ -13,23 +15,42 @@ type authService struct {
 }
 
 func (g *authService) GetRedirectUrlGoogle(ctx context.Context, state string) (string, error) {
+	var span trace.Span
+	_, span = otel.Tracer("").Start(ctx, "external-oauth.GetRedirectUrlGoogle")
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
+	}()
+
 	return g.oauthConfigGoogle.AuthCodeURL(state), nil
 }
 
 func (g *authService) GetUserDataGoogle(ctx context.Context, state, code string) (UserData, error) {
+	var span trace.Span
+	_, span = otel.Tracer("").Start(ctx, "external-oauth.GetUserDataGoogle")
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
+	}()
 
 	// allowed login
 	var token *oauth2.Token
-	var err error
 	token, err = g.oauthConfigGoogle.Exchange(ctx, code)
 	if err != nil {
+		logger.Logger.Error(err.Error())
 		return UserData{}, err
 	}
 
 	client := g.oauthConfigGoogle.Client(ctx, token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
-		log.Println("Failed getting user info:", err)
+		logger.Logger.Error(err.Error())
 		return UserData{}, err
 	}
 	defer resp.Body.Close()

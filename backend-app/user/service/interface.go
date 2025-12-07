@@ -14,6 +14,5 @@ func NewService(cfg ServiceConfig) Service {
 		external:          cfg.External,
 		internal:          cfg.Internal,
 		sessionManagement: cfg.SessionManagement,
-		userLoginTtl:      cfg.UserLoginTtl,
 	}
 }

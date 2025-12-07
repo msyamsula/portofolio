@@ -89,11 +89,6 @@ func route(r *mux.Router, h handler.Handler) *mux.Router {
 func initHandler() *handler.CombineHandler {
 	// var h handler.Handler
 	var err error
-	var userTtl int64
-	userTtl, err = strconv.ParseInt(userLoginTtl, 10, 64)
-	if err != nil {
-		logger.Logger.Panic("invalid user ttl")
-	}
 
 	var tokenTtl int64
 	tokenTtl, err = strconv.ParseInt(jwtTokenTtl, 10, 64)
@@ -136,7 +131,6 @@ func initHandler() *handler.CombineHandler {
 			External:          externalOauth,
 			Internal:          internalToken,
 			SessionManagement: sessionManager,
-			UserLoginTtl:      time.Duration(userTtl * int64(time.Hour)),
 		}),
 		Randomizer: randomizer.NewStringRandomizer(randomizer.StringRandomizerConfig{
 			Size:          20,
@@ -159,7 +153,7 @@ func main() {
 	r := mux.NewRouter()
 	r = route(r, h)
 
-	tracedHandler := otelhttp.NewHandler(r, "")
+	tracedHandler := otelhttp.NewHandler(r, fmt.Sprintf("%s-http-server", appName))
 
 	// cors option
 	cors := cors.New(cors.Options{

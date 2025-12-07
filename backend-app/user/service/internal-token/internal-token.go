@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type internalToken struct {
@@ -14,7 +17,17 @@ type internalToken struct {
 	appTokenTtl    time.Duration
 }
 
-func (s *internalToken) CreateToken(id, email, name string) (string, error) {
+func (s *internalToken) CreateToken(ctx context.Context, id, email, name string) (string, error) {
+	var span trace.Span
+	_, span = otel.Tracer("").Start(ctx, "internalToken.CreateToken")
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
+	}()
+
 	// Secret used for signing
 	secret := []byte(s.appTokenSecret)
 
@@ -29,6 +42,7 @@ func (s *internalToken) CreateToken(id, email, name string) (string, error) {
 	// Sign the token with the secret
 	tokenString, err := token.SignedString(secret)
 	if err != nil {
+		logger.Logger.Error(err.Error())
 		return "", err
 	}
 
@@ -36,6 +50,15 @@ func (s *internalToken) CreateToken(id, email, name string) (string, error) {
 }
 
 func (g *internalToken) ValidateToken(ctx context.Context, tokenString string) (UserData, error) {
+	var span trace.Span
+	_, span = otel.Tracer("").Start(ctx, "internalToken.ValidateToken")
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
+	}()
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (secret interface{}, err error) {
 		// Ensure the signing method is HMAC
@@ -46,12 +69,15 @@ func (g *internalToken) ValidateToken(ctx context.Context, tokenString string) (
 	})
 
 	if err != nil {
+		logger.Logger.Error(err.Error())
 		return UserData{}, errors.New("error parsing token")
 	}
 
 	// Check if token is valid
 	if !token.Valid {
-		return UserData{}, errors.New("invalid token")
+		err = errors.New("invalid token")
+		logger.Logger.Error(err.Error())
+		return UserData{}, err
 	}
 
 	// Extract claims
@@ -66,7 +92,9 @@ func (g *internalToken) ValidateToken(ctx context.Context, tokenString string) (
 			Name:  claims["name"].(string),
 		}, nil
 	} else {
-		return UserData{}, errors.New("Cannot extract claims")
+		err = errors.New("cannot extract claims")
+		logger.Logger.Error(err.Error())
+		return UserData{}, err
 	}
 
 }
