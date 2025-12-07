@@ -17,6 +17,10 @@ spec:
       port: 10000 # service port
       targetPort: 10000 # container port
       name: user
+    - protocol: TCP
+      port: 5001 # service port
+      targetPort: 5001 # container port
+      name: user-grpc
 
 ---
 #Deployment

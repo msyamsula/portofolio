@@ -46,6 +46,25 @@ forward:
 	kubectl port-forward svc/${APP} ${PORT}:${PORT} -n ${NAMESPACE}
 
 
+## loud balancer provider in kind
+## in cloud provider you do not have to do this
+## this install, run, and allow is just for mimicking cloud behavior in local
+install-lb-cloud-provider:
+	brew install cloud-provider-kind
+
+run-lb-provider:
+	sudo cloud-provider-kind
+
+
+# By default, Kubernetes expects workloads will not run on control plane nodes and 
+# labels them with node.kubernetes.io/exclude-from-external-load-balancers, 
+# which stops load balancers from accessing them.
+# If you are running workloads on control plane nodes, as is the default kind configuration, 
+# you will need to remove this label to access them using a LoadBalancer:
+allow-lb-control-plane:
+	kubectl label node ${CLUSTER}-control-plane node.kubernetes.io/exclude-from-external-load-balancers-
+
+
 # istio
 install:
 	istioctl install -f install.yaml -y
@@ -120,25 +139,6 @@ ingress:
 	kubectl apply -f domain-gateway.yaml -n default
 
 
-## loud balancer provider in kind
-## in cloud provider you do not have to do this
-## this install, run, and allow is just for mimicking cloud behavior in local
-install-lb-cloud-provider:
-	brew install cloud-provider-kind
-
-run-lb-provider:
-	sudo cloud-provider-kind
-
-
-# By default, Kubernetes expects workloads will not run on control plane nodes and 
-# labels them with node.kubernetes.io/exclude-from-external-load-balancers, 
-# which stops load balancers from accessing them.
-# If you are running workloads on control plane nodes, as is the default kind configuration, 
-# you will need to remove this label to access them using a LoadBalancer:
-allow-lb-control-plane:
-	kubectl label node ${CLUSTER}-control-plane node.kubernetes.io/exclude-from-external-load-balancers-
-
-
 ## observability namespace
 jaeger:
 	kubectl apply -f jaeger.yaml -n obs
@@ -174,7 +174,7 @@ load-elastic:
 	kind load docker-image docker.elastic.co/elasticsearch/elasticsearch:9.2.1 --name ${CLUSTER}
 
 elastic-start:
-	docker run --name elastic --net test -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+	docker run -itd --name elastic --net test -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:9.2.1
 
 elastic-password:
 	docker exec -it ${ELASTIC_HOST} /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
@@ -186,14 +186,14 @@ elastic-cert:
 	docker cp ${ELASTIC_HOST}:/usr/share/elasticsearch/config/certs/http_ca.crt .
 
 elastic-test:
-	curl --cacert http_ca.crt -u elastic:${ELASTIC_PASSWORD} https://localhost:9200
+	curl --cacert http_ca.crt -u elastic:${ELASTIC_PASSWORD} https://localhost:9200/_cat/indices?v
 
 elastic-save-cert:
 	kubectl create secret generic es-cert --from-file=http_ca.crt=http_ca.crt -n obs
 
 # kibana
 kibana-start:
-	docker run --name kibana --net test -p 5601:5601 docker.elastic.co/kibana/kibana:9.2.1
+	docker run -itd --name kibana --net test -p 5601:5601 docker.elastic.co/kibana/kibana:9.2.1
 
 # fluentd
 fluentd:
@@ -201,6 +201,9 @@ fluentd:
 
 fluentd-delete:
 	kubectl delete -f fluentd.yaml -n obs
+
+fluentd-setup-env:
+	kubectl create configmap fluentd-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n obs
 
 
 # hit

@@ -66,39 +66,14 @@ spec:
       containers:
         - name: fluentd
           image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+          envFrom:
+          - configMapRef:
+              name: fluentd-env
           env:
             - name: K8S_NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: FLUENT_ELASTICSEARCH_HOST
-              value: "elastic"
-            - name: FLUENT_ELASTICSEARCH_PORT
-              value: "9200"
-            - name: FLUENT_ELASTICSEARCH_SCHEME
-              value: "https"
-            # Option to configure elasticsearch plugin with self signed certs
-            # ================================================================
-            - name: FLUENT_ELASTICSEARCH_SSL_VERIFY
-              value: "false"
-            # Option to configure elasticsearch plugin with tls
-            # ================================================================
-            # - name: FLUENT_ELASTICSEARCH_SSL_VERSION
-            #   value: "TLSv1_2"
-            # X-Pack Authentication
-            # =====================
-            - name: FLUENT_ELASTICSEARCH_USER
-              value: "elastic"
-            - name: FLUENT_ELASTICSEARCH_PASSWORD
-              value: "Jam3bbB+Uj5OcoqQkXi8"
-            # - name: FLUENT_ELASTICSEARCH_CA_FILE
-            #   value: "/fluentd/certs/http_ca.crt"
-          # resources:
-          #   limits:
-          #     memory: 200Mi
-          #   requests:
-          #     cpu: 100m
-          #     memory: 200Mi
           volumeMounts:
             - name: fluentd-config
               mountPath: /fluentd/etc/
@@ -141,41 +116,22 @@ data:
     <source>
       @type tail
       path /var/log/pods/default*/*/*.log
+      exclude_path /var/log/pods/default*/istio-*/*.log
       pos_file /var/log/fluentd.pos
-      tag kube.*
-      read_from_head false
+      tag app.*
+      read_from_head true
 
       <parse>
         @type cri
       </parse>
     </source>
 
-    <source>
-      @type tail
-      path /var/log/pods/obs*/*/*.log
-      pos_file /var/log/fluentd-obs.pos
-      tag istio.*
-      read_from_head false
-
-      <parse>
-        @type cri
-      </parse>
-    </source>
-
-    <filter istio.**>
-      @type record_transformer
-      enable_ruby true
-      <record>
-        @timestamp ${record["start_time"]}
-      </record>
-    </filter>
-
-    <filter kube.**>
+    <filter app.**>
       @type kubernetes_metadata
     </filter>
 
 
-    <filter kube.**>
+    <filter app.**>
       @type parser
       key_name message       # the field containing the raw log line
       format json            # parse it as JSON
@@ -183,23 +139,46 @@ data:
     </filter>
 
     # ======= Reformat log =======
-    <filter kube.**>
+    <filter app.**>
       @type record_transformer
       enable_ruby true
       renew_record true
 
       <record>
-        message ${record["msg"]}
-        app ${record["kubernetes"]["container_name"]}
-        namespace ${record["kubernetes"]["namespace_name"]}
-        pod ${record["kubernetes"]["pod_name"]}
-        host ${record["kubernetes"]["host"]}
-        @timestamp ${record["time"]}
-        location ${record.fetch("file", "")}
-        func ${record.fetch("func", "")}
-        level ${record["level"]}
+        message     ${record.dig("msg") || ""}
+        app         ${record.dig("kubernetes", "container_name") || "unknown"}
+        namespace   ${record.dig("kubernetes", "namespace_name") || "unknown"}
+        pod         ${record.dig("kubernetes", "pod_name") || "unknown"}
+        host        ${record.dig("kubernetes", "host") || "unknown"}
+        @timestamp  ${record["time"]}
+        location    ${record.dig("file") || "unknown"}
+        func        ${record.dig("func") || "unknown"}
+        level       ${record.dig("level") || "unknown"}
       </record>
     </filter>
+
+
+    # ======= obs logs =======
+
+    # <source>
+    #   @type tail
+    #   path /var/log/pods/obs*/*/*.log
+    #   pos_file /var/log/fluentd-obs.pos
+    #   tag obs.*
+    #   read_from_head false
+
+    #   <parse>
+    #     @type apache2
+    #   </parse>
+    # </source>
+
+    # <filter obs.**>
+    #   @type record_transformer
+    #   enable_ruby true
+    #   <record>
+    #     @timestamp ${record["start_time"]}
+    #   </record>
+    # </filter>
 
     # ======= Output: stdout (or replace with elasticsearch) =======
     <match **>

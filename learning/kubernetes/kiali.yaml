@@ -132,12 +132,8 @@ data:
         root_namespace: istio-system
       tracing:
         enabled: false
-      tracing:
-        enabled: false
       custom_dashboards:
         enabled: true
-      istio:
-        root_namespace: istio-system
     identity:
       cert_file: ""
       private_key_file: ""
