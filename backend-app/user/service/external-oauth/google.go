@@ -6,6 +6,7 @@ import (
 
 	"github.com/msyamsula/portofolio/backend-app/observability/logger"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/oauth2"
 )
@@ -21,6 +22,7 @@ func (g *authService) GetRedirectUrlGoogle(ctx context.Context, state string) (s
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()
@@ -35,6 +37,7 @@ func (g *authService) GetUserDataGoogle(ctx context.Context, state, code string)
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()

@@ -8,6 +8,7 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 var (
@@ -27,6 +28,7 @@ func (h *httpHandler) GoogleRedirectUrl(w http.ResponseWriter, req *http.Request
 			// error response
 			logger.Logger.Error(err.Error())
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()
@@ -69,6 +71,7 @@ func (h *httpHandler) GetAppTokenForGoogle(w http.ResponseWriter, req *http.Requ
 			logger.Logger.Error(err.Error())
 			response.Message = "failed"
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			response.Error = err.Error()
 		} else {
 			// success

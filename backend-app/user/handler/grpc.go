@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
@@ -25,6 +26,7 @@ func (s *grpcHandler) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.H
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()

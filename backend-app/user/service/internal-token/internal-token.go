@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -24,6 +25,7 @@ func (s *internalToken) CreateToken(ctx context.Context, id, email, name string)
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()
@@ -56,6 +58,7 @@ func (g *internalToken) ValidateToken(ctx context.Context, tokenString string) (
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()

@@ -10,6 +10,7 @@ import (
 	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
 	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -27,6 +28,7 @@ func (s *service) GetAppTokenForGoogleUser(ctx context.Context, state, code stri
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()
@@ -58,6 +60,7 @@ func (s *service) GetRedirectUrlGoogle(ctx context.Context, state string) (strin
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()
