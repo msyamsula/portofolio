@@ -191,7 +191,7 @@ data:
       password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
       ssl_verify false
       logstash_format true
-      logstash_prefix app_cluster_log
+      logstash_prefix app-log
       include_tag_key true
       type_name _doc
       flush_interval 5s
