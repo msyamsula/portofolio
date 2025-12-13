@@ -1,4 +1,94 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-config
+  namespace: obs
+data:
+  config.yaml: |
+    service:
+      extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+      pipelines:
+        traces:
+          receivers: [zipkin]
+          processors: [batch]
+          exporters: [jaeger_storage_exporter]
+      telemetry:
+        resource:
+          service.name: jaeger
+          
+        logs:
+          level: debug
+        # TODO Initialize telemetry tracer once OTEL released new feature.
+        # https://github.com/open-telemetry/opentelemetry-collector/issues/10663
+
+    extensions:
+      healthcheckv2:
+        use_v2: true
+        http:
+
+      jaeger_query:
+        storage:
+          traces: some_storage
+          traces_archive: another_storage
+        http:
+          endpoint: 0.0.0.0:16686
+
+      jaeger_storage:
+        backends:
+          some_storage: 
+            elasticsearch:
+              server_urls:
+                - https://elastic:lku07PKno7AifHB*PKSV@elastic:9200
+              tls:
+                insecure: true
+              # custom_headers:
+              #   Host: "my-opensearch-domain.us-east-1.es.amazonaws.com"
+              #   X-Custom-Header: "custom-value"
+              indices:
+                index_prefix: "jaeger-span"
+                spans:
+                  date_layout: "2006-01-02"
+                  rollover_frequency: "day"
+                  shards: 5
+                  replicas: 1
+                services:
+                  date_layout: "2006-01-02"
+                  rollover_frequency: "day"
+                  shards: 5
+                  replicas: 1
+                dependencies:
+                  date_layout: "2006-01-02"
+                  rollover_frequency: "day"
+                  shards: 5
+                  replicas: 1
+                sampling:
+                  date_layout: "2006-01-02"
+                  rollover_frequency: "day"
+                  shards: 5
+                  replicas: 1
+          another_storage:
+            elasticsearch:
+              server_urls:
+                - https://elastic:lku07PKno7AifHB*PKSV@elastic:9200
+              tls:
+                insecure: true
+              indices:
+                index_prefix: "jaeger-archive"
+
+
+    receivers:
+      zipkin:
+        endpoint: "0.0.0.0:9411"
+
+    processors:
+      batch:
+
+    exporters:
+      jaeger_storage_exporter:
+        trace_storage: some_storage
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,14 +105,21 @@ spec:
         app: jaeger
         sidecar.istio.io/inject: "false"
     spec:
+      volumes:
+        - name: jaeger-config
+          configMap:
+            name: jaeger-config
       containers:
         - name: jaeger
-          image: jaegertracing/all-in-one:1.45
+          image: cr.jaegertracing.io/jaegertracing/jaeger:2.13.0
           ports:
             - containerPort: 16686
             - containerPort: 9411
+          volumeMounts:
+            - name: jaeger-config
+              mountPath: /jaeger
           args:
-            - "--collector.zipkin.host-port=9411"
+            - "--config=/jaeger/config.yaml"
 
 ---
 apiVersion: v1
