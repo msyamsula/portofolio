@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/msyamsula/portofolio/backend-app/observability/logger"
-	"github.com/msyamsula/portofolio/backend-app/observability/telemetry"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
+	"github.com/msyamsula/portofolio/backend-app/pkg/middleware"
+	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/cache"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/handler"
 	"github.com/msyamsula/portofolio/backend-app/url-shortener/persistent"
@@ -43,11 +44,7 @@ var (
 	callbackUri = os.Getenv("CALLBACK_URI")
 	port        = os.Getenv("PORT")
 
-	awsAccessKeyId     = os.Getenv("AWS_ACCESS_KEY_ID")
-	awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	awsRegion          = os.Getenv("AWS_REGION")
-
-	dynamoTable = os.Getenv("DYNAMO_TABLE")
+	userUrl = os.Getenv("USER_URL")
 )
 
 func printEnv() {
@@ -63,10 +60,7 @@ func printEnv() {
 		logger.Logger.Info("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
 		logger.Logger.Info("CALLBACK_URI:", callbackUri)
 		logger.Logger.Info("PORT:", port)
-		logger.Logger.Info("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
-		logger.Logger.Info("AWS_SECRET_ACCESS_KEY:", awsSecretAccessKey)
-		logger.Logger.Info("AWS_REGION:", awsRegion)
-		logger.Logger.Info("DYNAMO_TABLE:", dynamoTable)
+		logger.Logger.Info("USER_URL:", userUrl)
 	}
 }
 
@@ -115,6 +109,11 @@ func main() {
 
 	// create server routes
 	r := mux.NewRouter()
+
+	// middleware
+	mw := middleware.NewMiddleware(userUrl)
+	r.Use(mw.AuthMiddleware)
+
 	r = route(r)
 
 	tracedHandler := otelhttp.NewHandler(r, "http server")

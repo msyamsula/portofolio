@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 include .env
 
-rungo:
+local:
 	set -a; source .env; set +a; go run main.go
 
 build:

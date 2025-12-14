@@ -42,3 +42,4 @@ CREATE TABLE messages (
 create index messages_conversation_create_time on messages (conversation_id, create_time);
 create index messages_pk on messages (id);
 
+
