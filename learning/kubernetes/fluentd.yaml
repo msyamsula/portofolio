@@ -184,7 +184,7 @@ data:
     <match **>
       # @type stdout
       @type elasticsearch
-      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      host "#{ENV['ELASTICSEARCH_HOST']}"
       port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
       scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'https'}"
       user "#{ENV['ELASTICSEARCH_USER']}"

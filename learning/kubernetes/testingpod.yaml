@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug
+  namespace: obs
+spec:
+  containers:
+  - name: debug
+    image: curlimages/curl:latest
+    command: ["sleep", "3600"]

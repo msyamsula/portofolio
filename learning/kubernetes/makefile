@@ -173,7 +173,7 @@ elastic-cert:
 	docker cp ${ELASTIC_HOST}:/usr/share/elasticsearch/config/certs/http_ca.crt .
 
 elastic-test:
-	curl --cacert http_ca.crt -u elastic:${ELASTIC_PASSWORD} https://localhost:9200/_cat/indices?v
+	curl --cacert http_ca.crt -u elastic:${ELASTICSEARCH_PASSWORD} https://localhost:9200/_cat/indices?v
 
 elastic-save-cert:
 	kubectl create secret generic es-cert --from-file=http_ca.crt=http_ca.crt -n obs
