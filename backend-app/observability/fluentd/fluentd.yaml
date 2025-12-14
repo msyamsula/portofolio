@@ -1,0 +1,198 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd
+  namespace: obs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentd
+  namespace: obs
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fluentd
+  namespace: obs
+roleRef:
+  kind: ClusterRole
+  name: fluentd
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: fluentd
+    namespace: obs
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: obs
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-logging
+      version: v1
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+    spec:
+      serviceAccount: fluentd
+      serviceAccountName: fluentd
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: fluentd
+          image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+          envFrom:
+          - configMapRef:
+              name: fluentd-env
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: fluentd-config
+              mountPath: /fluentd/etc/
+            # - name: varlog
+            #   mountPath: /var/log
+            # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
+            # - name: dockercontainerlogdirectory
+            #   mountPath: /var/lib/docker/containers
+            #   readOnly: true
+            # When actual pod logs in /var/log/pods, the following lines should be used.
+            - name: dockercontainerlogdirectory
+              mountPath: /var/log/pods
+              readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: fluentd-config
+          configMap:
+            name: fluentd-config
+        # - name: varlog
+        #   hostPath:
+        #     path: /var/log
+        # When actual pod logs in /var/lib/docker/containers, the following lines should be used.
+        # - name: dockercontainerlogdirectory
+        #   hostPath:
+        #     path: /var/lib/docker/containers
+        # When actual pod logs in /var/log/pods, the following lines should be used.
+        - name: dockercontainerlogdirectory
+          hostPath:
+            path: /var/log/pods
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: obs
+data:
+  fluent.conf: |
+    # ======= Input: Tail Kubernetes Pod Logs =======
+    <source>
+      @type tail
+      path /var/log/pods/default*/*/*.log
+      exclude_path /var/log/pods/default*/istio-*/*.log
+      pos_file /var/log/fluentd.pos
+      tag app.*
+      read_from_head true
+
+      <parse>
+        @type cri
+      </parse>
+    </source>
+
+    <filter app.**>
+      @type kubernetes_metadata
+    </filter>
+
+
+    <filter app.**>
+      @type parser
+      key_name message       # the field containing the raw log line
+      format json            # parse it as JSON
+      reserve_data true      # keep original fields (optional)
+    </filter>
+
+    # ======= Reformat log =======
+    <filter app.**>
+      @type record_transformer
+      enable_ruby true
+      renew_record true
+
+      <record>
+        message     ${record.dig("msg") || ""}
+        app         ${record.dig("kubernetes", "container_name") || "unknown"}
+        namespace   ${record.dig("kubernetes", "namespace_name") || "unknown"}
+        pod         ${record.dig("kubernetes", "pod_name") || "unknown"}
+        host        ${record.dig("kubernetes", "host") || "unknown"}
+        @timestamp  ${record["time"]}
+        location    ${record.dig("file") || "unknown"}
+        func        ${record.dig("func") || "unknown"}
+        level       ${record.dig("level") || "unknown"}
+      </record>
+    </filter>
+
+
+    # ======= obs logs =======
+
+    # <source>
+    #   @type tail
+    #   path /var/log/pods/obs*/*/*.log
+    #   pos_file /var/log/fluentd-obs.pos
+    #   tag obs.*
+    #   read_from_head false
+
+    #   <parse>
+    #     @type apache2
+    #   </parse>
+    # </source>
+
+    # <filter obs.**>
+    #   @type record_transformer
+    #   enable_ruby true
+    #   <record>
+    #     @timestamp ${record["start_time"]}
+    #   </record>
+    # </filter>
+
+    # ======= Output: stdout (or replace with elasticsearch) =======
+    <match **>
+      # @type stdout
+      @type elasticsearch
+      host "#{ENV['ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'https'}"
+      user "#{ENV['ELASTICSEARCH_USER']}"
+      password "#{ENV['ELASTICSEARCH_PASSWORD']}"
+      ssl_verify false
+      logstash_format true
+      logstash_prefix app-log
+      include_tag_key true
+      type_name _doc
+      flush_interval 5s
+    </match>
