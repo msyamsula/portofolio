@@ -34,7 +34,7 @@ func InitializeTelemetryTracing(appName, tracerCollectorEndpoint string) func() 
 	// tracer provider
 	tracerProvider := sdktrace.NewTracerProvider(
 		// sdktrace.WithBatcher(exporter), // batch send to collector
-		sdktrace.WithSyncer(exporter), // always send to colletor, good for debugging not for production
+		sdktrace.WithBatcher(exporter), // always send to colletor, good for debugging not for production
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()), // again, not for production, use sampling deliberately
 		// sdktrace.WithSampler(sdktrace.TraceIDRatioBased(0.1)), // this is good choice for start, sampling 10% traffic in local sampler
