@@ -5,7 +5,7 @@ server.customResponseHeaders : { "Access-Control-Allow-Credentials" : "true" }
 # Disabling HTTPS on OpenSearch Dashboards
 server.ssl.enabled: false
   
-opensearch.hosts: ["http://opensearch:9200"] # Using the opensearch container name
+opensearch.hosts: ["https://opensearch:9200"] # Using the opensearch container name
   
 opensearch.ssl.verificationMode: none
 opensearch.username: admin
