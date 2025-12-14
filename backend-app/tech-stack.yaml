@@ -373,62 +373,62 @@ Resources:
       AtRestEncryptionEnabled: true
       TransitEncryptionEnabled: true
 
-  ### neptune
-  NeptuneSubnetGroup:
-    Type: AWS::Neptune::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: "Subnet group for Neptune cluster"
-      DBSubnetGroupName: !Sub "${AWS::StackName}-subnetgroup"
-      SubnetIds: 
-        - subnet-0eb111d17198bcafb
-        - subnet-09ab8991a3557fbea
-        - subnet-0ef76cf997890286e
+  # ### neptune
+  # NeptuneSubnetGroup:
+  #   Type: AWS::Neptune::DBSubnetGroup
+  #   Properties:
+  #     DBSubnetGroupDescription: "Subnet group for Neptune cluster"
+  #     DBSubnetGroupName: !Sub "${AWS::StackName}-subnetgroup"
+  #     SubnetIds: 
+  #       - subnet-0eb111d17198bcafb
+  #       - subnet-09ab8991a3557fbea
+  #       - subnet-0ef76cf997890286e
 
-  NeptuneSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: "Security group for Neptune cluster - allows incoming from AllowedCidr on port"
-      VpcId: vpc-08780a8b5fb9266e8
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 8182
-          ToPort: 8182
-          CidrIp: 172.31.0.0/16
-      Tags:
-        - Key: Name
-          Value: !Sub "${AWS::StackName}-neptune-sg"
+  # NeptuneSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: "Security group for Neptune cluster - allows incoming from AllowedCidr on port"
+  #     VpcId: vpc-08780a8b5fb9266e8
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 8182
+  #         ToPort: 8182
+  #         CidrIp: 172.31.0.0/16
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub "${AWS::StackName}-neptune-sg"
 
-  NeptuneDBCluster:
-    Type: AWS::Neptune::DBCluster
-    Properties:
-      DBClusterIdentifier: !Sub "${AWS::StackName}-cluster"
-      EngineVersion: 1.2.0.0
-      Port: 8182
-      DBSubnetGroupName: !Ref NeptuneSubnetGroup
-      VpcSecurityGroupIds:
-        - !Ref NeptuneSecurityGroup
-      BackupRetentionPeriod: 7
-      PreferredBackupWindow: "07:00-08:00"
-      DeletionProtection: false
-      EnableCloudwatchLogsExports: []
-      # If you want encryption at rest, add KmsKeyId property here and set StorageEncrypted: true
-      StorageEncrypted: false
+  # NeptuneDBCluster:
+  #   Type: AWS::Neptune::DBCluster
+  #   Properties:
+  #     DBClusterIdentifier: !Sub "${AWS::StackName}-cluster"
+  #     EngineVersion: 1.2.0.0
+  #     Port: 8182
+  #     DBSubnetGroupName: !Ref NeptuneSubnetGroup
+  #     VpcSecurityGroupIds:
+  #       - !Ref NeptuneSecurityGroup
+  #     BackupRetentionPeriod: 7
+  #     PreferredBackupWindow: "07:00-08:00"
+  #     DeletionProtection: false
+  #     EnableCloudwatchLogsExports: []
+  #     # If you want encryption at rest, add KmsKeyId property here and set StorageEncrypted: true
+  #     StorageEncrypted: false
 
-  NeptuneWriter:
-    Type: AWS::Neptune::DBInstance
-    Properties:
-      DBInstanceIdentifier: !Sub "${AWS::StackName}-writer"
-      DBInstanceClass: db.t3.medium
-      DBClusterIdentifier: !Ref NeptuneDBCluster
-      # PreferredAvailabilityZone: adjust if desired
-      # ApplyImmediately: true
+  # NeptuneWriter:
+  #   Type: AWS::Neptune::DBInstance
+  #   Properties:
+  #     DBInstanceIdentifier: !Sub "${AWS::StackName}-writer"
+  #     DBInstanceClass: db.t3.medium
+  #     DBClusterIdentifier: !Ref NeptuneDBCluster
+  #     # PreferredAvailabilityZone: adjust if desired
+  #     # ApplyImmediately: true
 
-  NeptuneReader:
-    Type: AWS::Neptune::DBInstance
-    Properties:
-      DBInstanceIdentifier: !Sub "${AWS::StackName}-reader"
-      DBInstanceClass: db.t3.medium
-      DBClusterIdentifier: !Ref NeptuneDBCluster
+  # NeptuneReader:
+  #   Type: AWS::Neptune::DBInstance
+  #   Properties:
+  #     DBInstanceIdentifier: !Sub "${AWS::StackName}-reader"
+  #     DBInstanceClass: db.t3.medium
+  #     DBClusterIdentifier: !Ref NeptuneDBCluster
   
 
 
