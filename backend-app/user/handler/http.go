@@ -125,6 +125,7 @@ func (h *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
 			span.SetStatus(codes.Error, err.Error())
 			logger.Logger.Error(err.Error())
 			resp.Error = err.Error()
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		span.End()
 		json.NewEncoder(w).Encode(&resp)
