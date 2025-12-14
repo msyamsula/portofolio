@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -34,7 +33,6 @@ func (mw *userMiddleware) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		fmt.Println("token", r.Header.Get("Authorization"))
 		req.Header.Set("Authorization", r.Header.Get("Authorization"))
 
 		resp, err := c.Do(req)
@@ -46,7 +44,6 @@ func (mw *userMiddleware) AuthMiddleware(next http.Handler) http.Handler {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			fmt.Println("token", r.Header.Get("Authorization"), "err", err)
 			logger.Logger.Errorf("unauthorized user, status code %d", resp.StatusCode)
 			http.Error(w, "unauthorized user", http.StatusUnauthorized)
 			return
