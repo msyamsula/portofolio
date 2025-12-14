@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/graph/handler"
 	"github.com/msyamsula/portofolio/backend-app/graph/service"
-	"github.com/msyamsula/portofolio/telemetry"
+	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )

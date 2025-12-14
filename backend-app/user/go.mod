@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gorilla/mux v1.8.1
-	github.com/msyamsula/portofolio/backend-app/observability v0.0.0-20251130063657-914752286aca
 	github.com/msyamsula/portofolio/backend-app/pkg v0.0.0-20251214082623-06f3a8ad6696
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/cors v1.11.1

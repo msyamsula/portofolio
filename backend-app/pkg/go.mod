@@ -6,7 +6,6 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.40.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.2
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.53.2
-	github.com/msyamsula/portofolio/backend-app/observability v0.0.0-20251130063657-914752286aca
 	github.com/redis/go-redis/extra/redisotel/v9 v9.17.1
 	github.com/redis/go-redis/v9 v9.17.1
 	github.com/sirupsen/logrus v1.9.3

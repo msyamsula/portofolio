@@ -15,7 +15,7 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/friend/handler"
 	repo "github.com/msyamsula/portofolio/backend-app/friend/persistent"
 	"github.com/msyamsula/portofolio/backend-app/friend/service"
-	"github.com/msyamsula/portofolio/telemetry"
+	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -95,16 +95,16 @@ func route(r *mux.Router) *mux.Router {
 
 func main() {
 
+	// initialize instrumentation
+	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer flush()
+
 	f := createLogFile()
 	defer f.Close()
 
 	// create server routes
 	r := mux.NewRouter()
 	r = route(r)
-
-	// initialize instrumentation
-	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
-	defer flush()
 
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	tracedHandler := otelhttp.NewHandler(r, "friend http server")

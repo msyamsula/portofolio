@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/msyamsula/portofolio/backend-app/observability/logger"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"

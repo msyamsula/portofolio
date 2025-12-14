@@ -16,7 +16,7 @@ import (
 	"github.com/msyamsula/portofolio/backend-app/message/handler"
 	"github.com/msyamsula/portofolio/backend-app/message/persistence"
 	"github.com/msyamsula/portofolio/backend-app/message/service"
-	"github.com/msyamsula/portofolio/telemetry"
+	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -87,6 +87,9 @@ func route(r *mux.Router, h handler.Handler) *mux.Router {
 }
 
 func main() {
+	// initialize instrumentation
+	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer flush()
 
 	f := createLogFile()
 	defer f.Close()
@@ -112,11 +115,7 @@ func main() {
 	})
 	r = route(r, h) // assign http route to handler
 
-	// initialize instrumentation
-	flush := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
-	defer flush()
-
-	tracedHandler := otelhttp.NewHandler(r, "message http server") // traced the handler
+	tracedHandler := otelhttp.NewHandler(r, fmt.Sprintf("%s-http-server", appName)) // traced the handler
 
 	// cors option
 	cors := cors.New(cors.Options{

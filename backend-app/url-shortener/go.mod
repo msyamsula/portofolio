@@ -10,7 +10,6 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/msyamsula/portofolio/backend-app/observability v0.0.0-20251130063657-914752286aca
 	github.com/msyamsula/portofolio/backend-app/pkg v0.0.0-20251214082623-06f3a8ad6696
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/extra/redisotel/v9 v9.17.1
@@ -18,6 +17,7 @@ require (
 	github.com/rs/cors v1.11.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	go.opentelemetry.io/otel v1.39.0
+	go.opentelemetry.io/otel/trace v1.39.0
 )
 
 require (
@@ -52,7 +52,6 @@ require (
 	go.opentelemetry.io/otel/exporters/zipkin v1.38.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.39.0 // indirect
-	go.opentelemetry.io/otel/trace v1.39.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
