@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -75,13 +74,7 @@ func route(r *mux.Router) *mux.Router {
 				Password: pgPassword,
 				Host:     pgHost,
 				Port:     pgPort,
-				Attributes: []attribute.KeyValue{
-					{
-						Key:   "app",
-						Value: attribute.StringValue(appName),
-					},
-				},
-				Env: env,
+				Env:      env,
 			}),
 			Cache: cache.NewRedis(cache.RedisConfig{
 				Host: redisHost,
@@ -95,14 +88,23 @@ func route(r *mux.Router) *mux.Router {
 		}),
 	})
 
+	// middleware
+	mw := middleware.NewMiddleware(userUrl)
+
 	// url
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
-	r.HandleFunc("/short", h.Short).Methods(http.MethodGet)
+	r.HandleFunc("/short", func(w http.ResponseWriter, r *http.Request) {
+		mw.AuthMiddleware(http.HandlerFunc(h.Short)).ServeHTTP(w, r)
+	}).Methods(http.MethodGet)
 	r.HandleFunc("/{shortUrl}", h.Redirect).Methods(http.MethodGet)
 	return r
 }
 
 func main() {
+
+	// initialize instrumentation
+	shutdown := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
+	defer shutdown()
 
 	printEnv()
 	logger.InitLogger()
@@ -110,17 +112,9 @@ func main() {
 	// create server routes
 	r := mux.NewRouter()
 
-	// middleware
-	mw := middleware.NewMiddleware(userUrl)
-	r.Use(mw.AuthMiddleware)
-
 	r = route(r)
 
-	tracedHandler := otelhttp.NewHandler(r, "http server")
-
-	// initialize instrumentation
-	shutdown := telemetry.InitializeTelemetryTracing(appName, tracerCollectorEndpoint)
-	defer shutdown()
+	tracedHandler := otelhttp.NewHandler(r, fmt.Sprintf("%s-http-server", appName))
 
 	// cors option
 	cors := cors.New(cors.Options{

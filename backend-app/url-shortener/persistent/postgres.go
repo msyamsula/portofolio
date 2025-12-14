@@ -9,9 +9,11 @@ import (
 
 	"github.com/XSAM/otelsql"
 	"github.com/jmoiron/sqlx"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	_ "github.com/lib/pq"
 )
@@ -53,13 +55,16 @@ func NewPostgres(config PostgresConfig) Repository {
 func (repo *postgres) GetShortUrl(c context.Context, longUrl string) (string, error) {
 	// persistence
 	var err error
-	ctx, span := otel.Tracer("persistence").Start(c, "postgres GetShortUrl")
+	var span trace.Span
+	var ctx context.Context
+	ctx, span = otel.Tracer("persistence").Start(c, "postgres GetShortUrl")
 	tx := repo.db.MustBeginTx(ctx, &sql.TxOptions{
 		Isolation: 0,
 		ReadOnly:  true,
 	})
 	defer func() {
 		if err != nil {
+			logger.Logger.Errorf("get short url error: %v", err.Error())
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 			tx.Rollback()
@@ -98,6 +103,7 @@ func (repo *postgres) GetLongUrl(c context.Context, shortUrl string) (string, er
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			span.SetAttributes(attribute.KeyValue{
 				Key:   "status",
 				Value: attribute.StringValue("rollback"),

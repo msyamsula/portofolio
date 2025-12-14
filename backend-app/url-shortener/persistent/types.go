@@ -1,9 +1,5 @@
 package persistent
 
-import (
-	"go.opentelemetry.io/otel/attribute"
-)
-
 type PostgresConfig struct {
 	Username string
 	Name     string
@@ -11,6 +7,4 @@ type PostgresConfig struct {
 	Host     string
 	Port     string
 	Env      string
-
-	Attributes []attribute.KeyValue
 }

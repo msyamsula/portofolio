@@ -112,7 +112,7 @@ func (h *httpHandler) GetAppTokenForGoogle(w http.ResponseWriter, req *http.Requ
 func (h *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
 	var span trace.Span
 	var ctx context.Context
-	ctx, span = otel.Tracer("").Start(ctx, "handler.ValidateToken")
+	ctx, span = otel.Tracer("").Start(req.Context(), "handler.ValidateToken")
 	var err error
 	type response struct {
 		Header

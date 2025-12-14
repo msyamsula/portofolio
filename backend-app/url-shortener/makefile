@@ -13,22 +13,31 @@ run:
 	--env-file .env \
 	url-shortener
 
-kube:
-	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
-
 setup-env:
 	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 
-runkube:
+kube:
 	kubectl apply -f deployment.yaml
 
-deploy-canary:
+deploy:
+	kubectl set image deployment/url-shortener url-shortener=docker.io/library/url-shortener:${VERSION} -n default
+	kubectl set image deployment/url-shortener-canary url-shortener-canary=docker.io/library/url-shortener:${VERSION} -n default
+
+delete:
+	kubectl delete -f deployment.yaml -n default
+
+load:
+	kind load docker-image url-shortener:${VERSION} --name ${CLUSTER}
+
+
+
+### aws env
+aws-kube:
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+
+aws-deploy-canary:
 	kubectl set image deployment/url-shortener-canary url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
 
-deploy:
+aws-deploy:
 	kubectl set image deployment/url-shortener url-shortener=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
-
-restart:
-	kubectl rollout restart deployment url-shortener
-	kubectl rollout restart deployment url-shortener-canary
 
