@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -14,7 +14,11 @@ import (
 func InitializeTelemetryTracing(appName, tracerCollectorEndpoint string) func() {
 	// Initialize OpenTelemetry SDK
 	ctx := context.Background()
-	exporter, err := zipkin.New(tracerCollectorEndpoint)
+	// Create OTLP gRPC exporter
+	exporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithEndpoint(tracerCollectorEndpoint), // Jaeger OTLP gRPC endpoint
+		otlptracegrpc.WithInsecure(),                        // if no TLS; use WithTLS for secure connection
+	)
 	if err != nil {
 		return func() {}
 	}
