@@ -1,11 +1,8 @@
 package service
 
-// mockgen -destination=test/mock_persistence.go -package=test . PersistenceLayer
-
 import (
 	"context"
 
-	"github.com/msyamsula/portofolio/backend-app/pkg/cache"
 	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
 	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
@@ -15,9 +12,8 @@ import (
 )
 
 type service struct {
-	external          externaloauth.AuthService
-	internal          internaltoken.InternalToken
-	sessionManagement cache.Cache
+	external externaloauth.AuthService
+	internal internaltoken.InternalToken
 }
 
 func (s *service) GetAppTokenForGoogleUser(ctx context.Context, state, code string) (string, error) {

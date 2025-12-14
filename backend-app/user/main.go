@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,23 +12,18 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/msyamsula/portofolio/backend-app/pkg/cache"
 	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/pkg/telemetry"
 	"github.com/msyamsula/portofolio/backend-app/user/handler"
-	pb "github.com/msyamsula/portofolio/backend-app/user/proto"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
 	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
 	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/redis/go-redis/v9"
 	"github.com/rs/cors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -38,12 +32,7 @@ var (
 
 	tracerCollectorEndpoint = os.Getenv("TRACER_COLLECTOR_ENDPOINT")
 
-	port     = os.Getenv("PORT")
-	grpcPort = os.Getenv("GRPC_PORT")
-
-	awsAccessKeyId     = os.Getenv("AWS_ACCESS_KEY_ID")
-	awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	awsRegion          = os.Getenv("AWS_REGION")
+	port = os.Getenv("PORT")
 
 	userLoginTtl = os.Getenv("USER_LOGIN_TTL")
 	jwtTokenTtl  = os.Getenv("JWT_TOKEN_TTL")
@@ -53,9 +42,6 @@ var (
 	googleRedirectUrl  = os.Getenv("GOOGLE_REDIRECT_URL")
 
 	appTokenSecret = os.Getenv("APP_TOKEN_SECRET")
-
-	redisHost = os.Getenv("REDIS_HOST")
-	redisPort = os.Getenv("REDIS_PORT")
 )
 
 func init() {
@@ -63,18 +49,13 @@ func init() {
 		fmt.Println("ENVIRONMENT:", env)
 		fmt.Println("TRACER_COLLECTOR_ENDPOINT:", tracerCollectorEndpoint)
 		fmt.Println("PORT:", port)
-		fmt.Println("AWS_ACCESS_KEY_ID:", awsAccessKeyId)
-		fmt.Println("AWS_SECRET_ACCESS_KEY:", awsSecretAccessKey)
-		fmt.Println("AWS_REGION:", awsRegion)
 		fmt.Println("USER_LOGIN_TTL:", userLoginTtl)
 		fmt.Println("JWT_TOKEN_TTL:", jwtTokenTtl)
 		fmt.Println("GOOGLE_CLIENT_ID:", googleClientId)
 		fmt.Println("GOOGLE_CLIENT_SECRET:", googleClientSecret)
 		fmt.Println("GOOGLE_REDIRECT_URL:", googleRedirectUrl)
 		fmt.Println("APP_TOKEN_SECRET:", appTokenSecret)
-		fmt.Println("REDIS_HOST:", redisHost)
-		fmt.Println("REDIS_PORT:", redisPort)
-		fmt.Println("GRPC_PORT:", grpcPort)
+
 	}
 }
 
@@ -86,7 +67,7 @@ func route(r *mux.Router, h handler.Handler) *mux.Router {
 	return r
 }
 
-func initHandler() *handler.CombineHandler {
+func initHandler() handler.Handler {
 	// var h handler.Handler
 	var err error
 
@@ -101,21 +82,6 @@ func initHandler() *handler.CombineHandler {
 		AppTokenTtl:    time.Duration(tokenTtl * int64(time.Minute)),
 	})
 
-	sessionManager := cache.NewRedis(cache.RedisConfig{
-		Host: redisHost,
-		Port: redisPort,
-		Env:  env,
-	}, &redis.Options{
-		MaxRetries:      10,
-		MinRetryBackoff: 5,
-		MaxRetryBackoff: 10,
-		ReadTimeout:     1 * time.Second,
-		WriteTimeout:    1 * time.Second,
-		MinIdleConns:    3,
-		MaxIdleConns:    5,
-		MaxActiveConns:  10,
-	})
-
 	externalOauth := externaloauth.NewAuthService(externaloauth.AuthConfig{
 		GoogleOauthConfig: &oauth2.Config{
 			ClientID:     googleClientId,
@@ -128,9 +94,8 @@ func initHandler() *handler.CombineHandler {
 
 	h := handler.New(handler.Config{
 		Svc: service.NewService(service.ServiceConfig{
-			External:          externalOauth,
-			Internal:          internalToken,
-			SessionManagement: sessionManager,
+			External: externalOauth,
+			Internal: internalToken,
 		}),
 		Randomizer: randomizer.NewStringRandomizer(randomizer.StringRandomizerConfig{
 			Size:          20,
@@ -175,25 +140,6 @@ func main() {
 		logger.Logger.Infof("http server starting at %s...", port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Logger.Fatalf("server failed: %v", err)
-		}
-	}()
-
-	go func() {
-
-		logger.Logger.Infof("gRPC server listening at %s", grpcPort)
-		grpcAddress := fmt.Sprintf(":%s", grpcPort)
-		lis, err := net.Listen("tcp", grpcAddress)
-		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
-		}
-
-		s := grpc.NewServer()
-		pb.RegisterExampleServiceServer(s, h)
-
-		reflection.Register(s)
-
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 

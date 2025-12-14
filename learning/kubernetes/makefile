@@ -114,22 +114,6 @@ url-shortener-delete:
 url-shortener-load:
 	kind load docker-image url-shortener:${VERSION} --name ${CLUSTER}
 
-# user
-user-setup-env:
-	kubectl create configmap user-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n default
-
-user-run:
-	kubectl apply -f user.yaml -n default
-
-user-deploy:
-	kubectl set image deployment/user user=docker.io/library/user:${VERSION} -n default
-
-user-delete:
-	kubectl delete -f user.yaml -n default
-
-user-load:
-	kind load docker-image user:${VERSION} --name ${CLUSTER}
-
 
 restart-app:
 	kubectl rollout restart deploy
@@ -140,6 +124,9 @@ ingress:
 
 
 ## observability namespace
+jaeger-setup-env:
+	kubectl create configmap jaeger-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n obs
+
 jaeger:
 	kubectl apply -f jaeger.yaml -n obs
 

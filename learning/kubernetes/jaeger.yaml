@@ -39,7 +39,7 @@ data:
           some_storage: 
             elasticsearch:
               server_urls:
-                - https://elastic:lku07PKno7AifHB*PKSV@elastic:9200
+                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@elastic:9200
               tls:
                 insecure: true
               # custom_headers:
@@ -70,7 +70,7 @@ data:
           another_storage:
             elasticsearch:
               server_urls:
-                - https://elastic:lku07PKno7AifHB*PKSV@elastic:9200
+                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@elastic:9200
               tls:
                 insecure: true
               indices:
@@ -118,6 +118,9 @@ spec:
           volumeMounts:
             - name: jaeger-config
               mountPath: /jaeger
+          envFrom:
+            - configMapRef:
+                name: jaeger-env
           args:
             - "--config=/jaeger/config.yaml"
 

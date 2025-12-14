@@ -187,8 +187,8 @@ data:
       host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
       port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
       scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'https'}"
-      user "#{ENV['FLUENT_ELASTICSEARCH_USER']}"
-      password "#{ENV['FLUENT_ELASTICSEARCH_PASSWORD']}"
+      user "#{ENV['ELASTICSEARCH_USER']}"
+      password "#{ENV['ELASTICSEARCH_PASSWORD']}"
       ssl_verify false
       logstash_format true
       logstash_prefix app-log

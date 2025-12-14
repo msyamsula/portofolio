@@ -11,8 +11,7 @@ type Service interface {
 
 func NewService(cfg ServiceConfig) Service {
 	return &service{
-		external:          cfg.External,
-		internal:          cfg.Internal,
-		sessionManagement: cfg.SessionManagement,
+		external: cfg.External,
+		internal: cfg.Internal,
 	}
 }

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/msyamsula/portofolio/backend-app/pkg/cache"
 	externaloauth "github.com/msyamsula/portofolio/backend-app/user/service/external-oauth"
 	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 )
@@ -13,7 +12,6 @@ type UserData struct {
 }
 
 type ServiceConfig struct {
-	External          externaloauth.AuthService
-	Internal          internaltoken.InternalToken
-	SessionManagement cache.Cache
+	External externaloauth.AuthService
+	Internal internaltoken.InternalToken
 }

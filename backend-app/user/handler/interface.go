@@ -10,19 +10,10 @@ type Handler interface {
 	GetAppTokenForGoogle(w http.ResponseWriter, req *http.Request)
 }
 
-type CombineHandler struct {
-	*httpHandler
-	*grpcHandler
-}
-
-func New(cfg Config) *CombineHandler {
-	return &CombineHandler{
-		httpHandler: &httpHandler{
-			randomizer: cfg.Randomizer,
-			svc:        cfg.Svc,
-		},
-		grpcHandler: &grpcHandler{
-			internalToken: cfg.InternalToken,
-		},
+func New(cfg Config) Handler {
+	return &httpHandler{
+		randomizer: cfg.Randomizer,
+		svc:        cfg.Svc,
+		internal:   cfg.InternalToken,
 	}
 }

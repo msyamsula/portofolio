@@ -1,14 +1,19 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	"github.com/msyamsula/portofolio/backend-app/pkg/randomizer"
 	"github.com/msyamsula/portofolio/backend-app/user/service"
+	internaltoken "github.com/msyamsula/portofolio/backend-app/user/service/internal-token"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -18,6 +23,7 @@ var (
 type httpHandler struct {
 	randomizer randomizer.Randomizer
 	svc        service.Service
+	internal   internaltoken.InternalToken
 }
 
 func (h *httpHandler) GoogleRedirectUrl(w http.ResponseWriter, req *http.Request) {
@@ -47,6 +53,7 @@ func (h *httpHandler) GoogleRedirectUrl(w http.ResponseWriter, req *http.Request
 		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		MaxAge:   1 * 60, // hardcoded 1 minute
 	})
 	// log.Println(browserCookie, "DEBUG", browserCookie == nil)
 	var url string
@@ -99,4 +106,47 @@ func (h *httpHandler) GetAppTokenForGoogle(w http.ResponseWriter, req *http.Requ
 	}
 
 	response.Token, err = h.svc.GetAppTokenForGoogleUser(ctx, state, code)
+}
+
+// handler for SayHello
+func (s *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
+	var span trace.Span
+	var ctx context.Context
+	ctx, span = otel.Tracer("").Start(ctx, "handler.ValidateToken")
+	var err error
+	type response struct {
+		Header
+		internaltoken.UserData
+	}
+	var resp response
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			logger.Logger.Error(err.Error())
+		}
+		span.End()
+		json.NewEncoder(w).Encode(&resp)
+	}()
+
+	bearer := req.Header.Get("Authorization")
+	if bearer == "" {
+		err = errors.New("bearer token not found")
+		return
+	}
+	bearerToken := strings.Split(bearer, " ")
+	if len(bearerToken) != 2 {
+		err = errors.New("invalid bearer format")
+		return
+	}
+
+	token := bearerToken[1]
+
+	var userData internaltoken.UserData
+	userData, err = s.internal.ValidateToken(ctx, token)
+	if err != nil {
+		return
+	}
+	logger.Logger.Infof("validated user data: %+v", userData)
+	resp.UserData = userData
 }
