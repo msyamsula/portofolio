@@ -3,7 +3,6 @@ package internaltoken
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -63,13 +62,9 @@ func (g *internalToken) ValidateToken(ctx context.Context, tokenString string) (
 		span.End()
 	}()
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (secret interface{}, err error) {
-		// Ensure the signing method is HMAC
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-		return secret, nil
-	})
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		return []byte(g.appTokenSecret), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
 	if err != nil {
 		logger.Logger.Error(err.Error())
@@ -90,7 +85,7 @@ func (g *internalToken) ValidateToken(ctx context.Context, tokenString string) (
 		// fmt.Println("Email:", claims["email"])
 		// fmt.Println("Expires at:", claims["exp"])
 		return UserData{
-			ID:    claims["user_id"].(string),
+			ID:    claims["id"].(string),
 			Email: claims["email"].(string),
 			Name:  claims["name"].(string),
 		}, nil

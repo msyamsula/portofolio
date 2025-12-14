@@ -64,6 +64,7 @@ func route(r *mux.Router, h handler.Handler) *mux.Router {
 	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP) // endpoint exporter, for prometheus scrapping
 	r.HandleFunc("/login", h.GoogleRedirectUrl).Methods(http.MethodGet)
 	r.HandleFunc("/google/callback", h.GetAppTokenForGoogle).Methods(http.MethodGet)
+	r.HandleFunc("/validate", h.ValidateToken).Methods(http.MethodGet)
 	return r
 }
 

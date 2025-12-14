@@ -109,14 +109,14 @@ func (h *httpHandler) GetAppTokenForGoogle(w http.ResponseWriter, req *http.Requ
 }
 
 // handler for SayHello
-func (s *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
+func (h *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
 	var span trace.Span
 	var ctx context.Context
 	ctx, span = otel.Tracer("").Start(ctx, "handler.ValidateToken")
 	var err error
 	type response struct {
 		Header
-		internaltoken.UserData
+		internaltoken.UserData `json:"data"`
 	}
 	var resp response
 	defer func() {
@@ -124,6 +124,7 @@ func (s *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 			logger.Logger.Error(err.Error())
+			resp.Error = err.Error()
 		}
 		span.End()
 		json.NewEncoder(w).Encode(&resp)
@@ -143,10 +144,9 @@ func (s *httpHandler) ValidateToken(w http.ResponseWriter, req *http.Request) {
 	token := bearerToken[1]
 
 	var userData internaltoken.UserData
-	userData, err = s.internal.ValidateToken(ctx, token)
+	userData, err = h.internal.ValidateToken(ctx, token)
 	if err != nil {
 		return
 	}
-	logger.Logger.Infof("validated user data: %+v", userData)
 	resp.UserData = userData
 }
