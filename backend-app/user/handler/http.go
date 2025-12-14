@@ -47,11 +47,11 @@ func (h *httpHandler) GoogleRedirectUrl(w http.ResponseWriter, req *http.Request
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     oauthStateCookieKey,
-		Value:    state,
-		Path:     "/",
-		Secure:   false,
-		Domain:   "syamsul.online",
+		Name:   oauthStateCookieKey,
+		Value:  state,
+		Path:   "/",
+		Secure: false,
+		// Domain:   "syamsul.online",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   5 * 60, // hardcoded 1 minute
