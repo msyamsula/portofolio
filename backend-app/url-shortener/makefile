@@ -33,7 +33,7 @@ load:
 
 ### aws env
 aws-kube:
-	aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+	aws eks --region ${AWS_REGION} update-kubeconfig --name ${CLUSTER}
 
 aws-deploy-canary:
 	kubectl set image deployment/url-shortener-canary url-shortener-canary=717420436752.dkr.ecr.ap-southeast-1.amazonaws.com/url-shortener:${VERSION}
