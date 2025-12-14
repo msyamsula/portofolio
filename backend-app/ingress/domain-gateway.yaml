@@ -11,13 +11,13 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "syamsul.online"
-    - "jaeger.syamsul.online"
-    - "prometheus.syamsul.online"
-    - "url.syamsul.online"
-    - "kiali.syamsul.online"
-    - "graph.syamsul.online"
-    - "grafana.syamsul.online"
+      - "syamsul.online"
+      - "jaeger.syamsul.online"
+      - "prometheus.syamsul.online"
+      - "url.syamsul.online"
+      - "grafana.syamsul.online"
+      - "kiali.syamsul.online"
+      - "user.syamsul.online"
 
 ---
 apiVersion: networking.istio.io/v1
@@ -26,13 +26,13 @@ metadata:
   name: app-vs
 spec:
   hosts:
-  - "syamsul.online"
-  - "jaeger.syamsul.online"
-  - "prometheus.syamsul.online"
-  - "url.syamsul.online"
-  - "kiali.syamsul.online"
-  - "graph.syamsul.online"
-  - "grafana.syamsul.online"
+    - "syamsul.online"
+    - "jaeger.syamsul.online"
+    - "prometheus.syamsul.online"
+    - "url.syamsul.online"
+    - "grafana.syamsul.online"
+    - "kiali.syamsul.online"
+    - "user.syamsul.online"
   gateways:
   - app-gateway
   http:
@@ -55,7 +55,7 @@ spec:
           exact: "jaeger.syamsul.online"
     route:
     - destination:
-        host: jaeger
+        host: jaeger.obs.svc.cluster.local
         port:
           number: 16686
   - match:
@@ -66,44 +66,9 @@ spec:
           exact: "prometheus.syamsul.online"
     route:
     - destination:
-        host: prometheus
+        host: prometheus.obs.svc.cluster.local
         port:
           number: 9090
-  - match: # rewriting root to /kiali
-    - uri:
-        exact: /
-      headers:
-        host:
-          exact: "kiali.syamsul.online"
-    rewrite:
-      uri: "/kiali"
-    route:
-    - destination:
-        host: kiali
-        port:
-          number: 20001
-  - match:
-    - uri:
-        prefix: /
-      headers:
-        host:
-          exact: "kiali.syamsul.online"
-    route:
-    - destination:
-        host: kiali
-        port:
-          number: 20001
-  - match:
-    - uri:
-        prefix: /
-      headers:
-        host:
-          exact: "graph.syamsul.online"
-    route:
-    - destination:
-        host: graph
-        port:
-          number: 10000
   - match:
     - uri:
         prefix: /
@@ -112,7 +77,28 @@ spec:
           exact: "grafana.syamsul.online"
     route:
     - destination:
-        host: grafana
+        host: grafana.obs.svc.cluster.local
         port:
           number: 3000
-
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "kiali.syamsul.online"
+    route:
+    - destination:
+        host: kiali.obs.svc.cluster.local
+        port:
+          number: 20001
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: "user.syamsul.online"
+    route:
+    - destination:
+        host: user
+        port:
+          number: 10000

@@ -12,6 +12,8 @@ deploy-hosting:
 		SubDomainPrometheus=${SubDomainPrometheus} \
 		SubDomainKiali=${SubDomainKiali} \
 		SubDomainGraph=${SubDomainGraph} \
+		SubDomainGrafana=${SubDomainGrafana} \
+		SubDomainUser=${SubDomainUser} \
 		LoadBalancerDNSName=${LoadBalancerDNSName} \
 		LoadBalancerCanonicalHostedZoneId=${LoadBalancerCanonicalHostedZoneId} \
 	--capabilities CAPABILITY_NAMED_IAM
@@ -21,4 +23,4 @@ destroy-hosting:
 	aws cloudformation delete-stack --stack-name hosting
 
 ingress:
-	kubectl apply -f domain-gateway.yaml
+	kubectl apply -f domain-gateway.yaml -n default
