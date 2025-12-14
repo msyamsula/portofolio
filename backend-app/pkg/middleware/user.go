@@ -24,6 +24,7 @@ func (mw *userMiddleware) AuthMiddleware(next http.Handler) http.Handler {
 		// If authentication succeeds
 		if r.URL.Path == "/health" || r.URL.Path == "/metrics" {
 			next.ServeHTTP(w, r)
+			return
 		}
 		c := http.Client{
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
