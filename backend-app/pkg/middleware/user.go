@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/msyamsula/portofolio/backend-app/observability/logger"
+	"github.com/msyamsula/portofolio/backend-app/pkg/logger"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
