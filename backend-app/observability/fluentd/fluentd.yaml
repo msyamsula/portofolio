@@ -65,7 +65,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: fluentd
-          image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+          image: fluent/fluentd-kubernetes-daemonset:v1.19.0-debian-opensearch-1.1
           envFrom:
           - configMapRef:
               name: fluentd-env
@@ -183,7 +183,7 @@ data:
     # ======= Output: stdout (or replace with elasticsearch) =======
     <match **>
       # @type stdout
-      @type elasticsearch
+      @type opensearch
       host "#{ENV['ELASTICSEARCH_HOST']}"
       port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
       scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'https'}"
