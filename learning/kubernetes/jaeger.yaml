@@ -10,7 +10,7 @@ data:
       extensions: [jaeger_storage, jaeger_query, healthcheckv2]
       pipelines:
         traces:
-          receivers: [zipkin]
+          receivers: [otlp]
           processors: [batch]
           exporters: [jaeger_storage_exporter]
       telemetry:
@@ -37,16 +37,16 @@ data:
       jaeger_storage:
         backends:
           some_storage: 
-            elasticsearch:
+            opensearch:
               server_urls:
-                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@elastic:9200
+                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@opensearch:9200
               tls:
                 insecure: true
               # custom_headers:
               #   Host: "my-opensearch-domain.us-east-1.es.amazonaws.com"
               #   X-Custom-Header: "custom-value"
               indices:
-                index_prefix: "jaeger-span"
+                index_prefix: ""
                 spans:
                   date_layout: "2006-01-02"
                   rollover_frequency: "day"
@@ -68,9 +68,9 @@ data:
                   shards: 5
                   replicas: 1
           another_storage:
-            elasticsearch:
+            opensearch:
               server_urls:
-                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@elastic:9200
+                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@opensearch:9200
               tls:
                 insecure: true
               indices:
@@ -78,8 +78,10 @@ data:
 
 
     receivers:
-      zipkin:
-        endpoint: "0.0.0.0:9411"
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
 
     processors:
       batch:
@@ -114,7 +116,7 @@ spec:
           image: cr.jaegertracing.io/jaegertracing/jaeger:2.13.0
           ports:
             - containerPort: 16686
-            - containerPort: 9411
+            - containerPort: 4317
           volumeMounts:
             - name: jaeger-config
               mountPath: /jaeger
@@ -137,7 +139,7 @@ spec:
     - name: ui
       port: 16686
       targetPort: 16686
-    - name: zipkin
-      port: 9411
-      targetPort: 9411
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
   type: ClusterIP
