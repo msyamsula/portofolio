@@ -39,6 +39,29 @@ kube:
 token:
 	aws sts get-caller-identity
 
+## loud balancer provider in kind
+## in cloud provider you do not have to do this
+## this install, run, and allow is just for mimicking cloud behavior in local
+install-lb-cloud-provider:
+	brew install cloud-provider-kind
+
+run-lb-provider:
+	sudo cloud-provider-kind
+
+## istio
+istio-install:
+	istioctl install -f istio.yaml -y
+
+istio-label:
+	kubectl label namespace default istio-injection=enabled
+
+istio-check:
+	kubectl get pods -n istio-system
+	kubectl get namespace --show-labels
+
+istio-uninstall:
+	istioctl uninstall --purge -y
+
 
 ## bastion tunneling
 tunnel-postgres:
@@ -55,20 +78,5 @@ tunnel-neptune:
 	ssh -i ${KEY_NAME}.pem \
 		-L 1${NEPTUNE_PORT}:${NEPTUNE_HOST}:${NEPTUNE_PORT} \
 		ec2-user@${BASTION_IP}
-
-
-## istio
-istio-install:
-	istioctl install -f istio.yaml -y
-
-istio-label:
-	kubectl label namespace default istio-injection=enabled
-
-istio-check:
-	kubectl get pods -n istio-system
-	kubectl get namespace --show-labels
-
-istio-uninstall:
-	istioctl uninstall --purge -y
 
 

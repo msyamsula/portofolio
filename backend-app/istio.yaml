@@ -11,8 +11,8 @@ spec:
     enableTracing: true
     defaultConfig:
       tracing:
-        zipkin:
-          address: jaeger.obs.svc.cluster.local:9411 # replace with your Jaeger endpoint
+        otlp:
+          address: jaeger.obs.svc.cluster.local:4317 # replace with your Jaeger endpoint
         sampling: 100.0  # percentage of traces to sample; adjust as needed
   components:
     pilot:
