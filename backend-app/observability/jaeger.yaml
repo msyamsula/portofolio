@@ -31,8 +31,11 @@ data:
         storage:
           traces: some_storage
           traces_archive: another_storage
+          metrics: some_metric_backends
         http:
           endpoint: 0.0.0.0:16686
+        ui:
+          config_file: /jaeger/config-ui.json
 
       jaeger_storage:
         backends:
@@ -75,6 +78,15 @@ data:
                 insecure: true
               indices:
                 index_prefix: "jaeger-archive"
+        metric_backends:
+          some_metric_backends:
+            opensearch:
+              server_urls:
+                - https://${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@opensearch:9200
+              tls:
+                insecure: true
+              indices:
+                index_prefix: "jaeger-metrics"
 
 
     receivers:
@@ -89,6 +101,62 @@ data:
     exporters:
       jaeger_storage_exporter:
         trace_storage: some_storage
+  config-ui.json: |
+    {
+      "dependencies": {
+        "dagMaxNumServices": 200,
+        "menuEnabled": true
+      },
+      "monitor": {
+        "menuEnabled": true
+      },
+      "archiveEnabled": true,
+      "tracking": {
+        "gaID": "UA-000000-2",
+        "trackErrors": true
+      },
+      "menu": [
+        {
+          "label": "About Jaeger",
+          "items": [
+            {
+              "label": "GitHub",
+              "url": "https://github.com/jaegertracing/jaeger"
+            },
+            {
+              "label": "Docs",
+              "url": "https://www.jaegertracing.io/docs/latest/"
+            }
+          ]
+        }
+      ],
+      "search": {
+        "maxLookback": {
+          "label": "2 Days",
+          "value": "2d"
+        },
+        "maxLimit": 1500
+      },
+      "linkPatterns": [{
+        "type": "process",
+        "key": "jaeger.version",
+        "url": "https://github.com/jaegertracing/jaeger-client-java/releases/tag/#{jaeger.version}",
+        "text": "Information about Jaeger release #{jaeger.version}"
+      },
+      {
+        "type": "tags",
+        "key": "uniqueId",
+        "url": "https://mykibana.com/uniqueId=#{uniqueId}&traceId=#{trace.traceID}",
+        "text": "Redirect to kibana to view log"
+      },
+      {
+        "type": "traces",
+        "url": "https://my-logs.server?from=#{startTime | add -60000000 | epoch_micros_to_date_iso}&to=#{endTime | add 60000000 | epoch_micros_to_date_iso}'",
+        "text": "Redirect to kibana to view log with formatted dates"
+      }],
+      "traceIdDisplayLength": 20
+    }
+
 
 ---
 apiVersion: apps/v1
