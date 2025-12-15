@@ -98,63 +98,10 @@ uninstall:
 
 
 
-# url-shortener
-url-shortener-setup-env:
-	kubectl create configmap url-shortener-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n default
-
-url-shortener-run:
-	kubectl apply -f url-shortener.yaml -n default
-
-url-shortener-deploy:
-	kubectl set image deployment/url-shortener url-shortener=docker.io/library/url-shortener:${VERSION} -n default
-
-url-shortener-delete:
-	kubectl delete -f url-shortener.yaml -n default
-
-url-shortener-load:
-	kind load docker-image url-shortener:${VERSION} --name ${CLUSTER}
-
-
 restart-app:
 	kubectl rollout restart deploy
 
 
-ingress:
-	kubectl apply -f domain-gateway.yaml -n default
-
-
-## observability namespace
-jaeger-setup-env:
-	kubectl create configmap jaeger-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n obs
-
-jaeger:
-	kubectl apply -f jaeger.yaml -n obs
-
-delete-jaeger:
-	kubectl delete -f jaeger.yaml -n obs
-
-prometheus:
-	kubectl apply -f prom.yaml -n obs
-
-prometheus-restart:
-	kubectl rollout restart deployment prometheus -n obs
-
-# kiali
-kiali:
-	kubectl apply -f kiali.yaml -n obs
-
-kiali-ui:
-	istioctl dashboard kiali -n obs
-
-delete-kiali:
-	kubectl delete -f kiali.yaml -n obs 
-
-# grafana
-grafana:
-	kubectl apply -f grafana.yaml -n obs
-
-destroy-grafana:
-	kubectl delete -f grafana.yaml -n obs
 
 # elastic search
 load-elastic:
@@ -182,20 +129,6 @@ elastic-save-cert:
 kibana-start:
 	docker run -itd --name kibana --net test -p 5601:5601 docker.elastic.co/kibana/kibana:9.2.1
 
-# fluentd
-fluentd:
-	kubectl apply -f fluentd.yaml -n obs
-
-fluentd-delete:
-	kubectl delete -f fluentd.yaml -n obs
-
-fluentd-setup-env:
-	kubectl create configmap fluentd-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f - -n obs
-
-
-# hit
-hit:
-	watch -n 1 curl -o /dev/null -s -w http://172.19.0.4/short?long_url=https://mail.google.com/mail/u/0/%23search/nameserver/FMfcgzQcqtkJtqcMJDxDmQpgbZMbMksz
 
 
 
