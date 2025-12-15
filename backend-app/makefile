@@ -39,15 +39,6 @@ kube:
 token:
 	aws sts get-caller-identity
 
-## loud balancer provider in kind
-## in cloud provider you do not have to do this
-## this install, run, and allow is just for mimicking cloud behavior in local
-install-lb-cloud-provider:
-	brew install cloud-provider-kind
-
-run-lb-provider:
-	sudo cloud-provider-kind
-
 ## istio
 istio-install:
 	istioctl install -f istio.yaml -y
