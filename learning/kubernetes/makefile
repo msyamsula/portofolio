@@ -102,10 +102,6 @@ restart-app:
 	kubectl rollout restart deploy
 
 
-
-# elastic search
-load-elastic:
-	kind load docker-image docker.elastic.co/elasticsearch/elasticsearch:9.2.1 --name ${CLUSTER}
 	
 
 
