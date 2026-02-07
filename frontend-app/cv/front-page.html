@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
@@ -34,7 +34,24 @@
     <style type="text/tailwindcss">
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9f8f6;
+            background-color: #f5f3ed;
+            background-image:
+                /* Paper grain noise */
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E"),
+                /* Yellow-brown stains */
+                radial-gradient(ellipse 300px 200px at 15% 20%, rgba(205, 175, 125, 0.15) 0%, transparent 70%),
+                radial-gradient(ellipse 250px 180px at 85% 40%, rgba(195, 165, 115, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 200px 150px at 40% 85%, rgba(200, 170, 120, 0.14) 0%, transparent 60%),
+                radial-gradient(ellipse 180px 120px at 70% 75%, rgba(190, 160, 110, 0.10) 0%, transparent 65%),
+                /* Torn edge effect at bottom */
+                linear-gradient(180deg, transparent 95%, rgba(100, 100, 100, 0.05) 98%, rgba(100, 100, 100, 0.08) 100%),
+                /* Ink smudges/discoloration */
+                radial-gradient(ellipse 100px 80px at 25% 60%, rgba(100, 100, 100, 0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 120px 90px at 75% 25%, rgba(110, 110, 110, 0.05) 0%, transparent 70%),
+                /* Greyish vignette */
+                radial-gradient(ellipse at center, transparent 40%, rgba(140, 140, 140, 0.05) 100%);
+            background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+            background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
             color: #1a1a1a;
         }
         .masthead {
@@ -61,6 +78,131 @@
             background-color: rgba(249, 248, 246, 0.95);
             backdrop-filter: blur(8px);
         }
+        .dark .global-nav {
+            background-color: rgba(20, 20, 20, 0.95);
+        }
+        .dark body {
+            background-color: #1a1a1a;
+            background-image:
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"),
+                radial-gradient(ellipse 300px 200px at 15% 20%, rgba(80, 60, 40, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 250px 180px at 85% 40%, rgba(70, 50, 35, 0.10) 0%, transparent 70%),
+                radial-gradient(ellipse 200px 150px at 40% 85%, rgba(75, 55, 35, 0.11) 0%, transparent 60%),
+                radial-gradient(ellipse 180px 120px at 70% 75%, rgba(65, 45, 25, 0.08) 0%, transparent 65%),
+                linear-gradient(180deg, transparent 95%, rgba(60, 60, 60, 0.04) 98%, rgba(80, 80, 80, 0.06) 100%),
+                radial-gradient(ellipse 100px 80px at 25% 60%, rgba(70, 70, 70, 0.05) 0%, transparent 70%),
+                radial-gradient(ellipse 120px 90px at 75% 25%, rgba(75, 75, 75, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(80, 80, 80, 0.04) 100%);
+            background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+            background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+            color: #e5e5e5;
+        }
+        .dark .nav-link {
+            color: #d4d4d4;
+        }
+        .dark .nav-link:hover {
+            color: #a3a3a3;
+        }
+        .dark .horizontal-rule {
+            border-top: 1px solid #404040;
+        }
+        .dark .vertical-rule {
+            border-left: 1px solid #404040;
+        }
+        .dark .border-gray-200 {
+            border-color: #404040;
+        }
+        .dark .border-gray-300 {
+            border-color: #404040;
+        }
+        .dark .border-gray-900 {
+            border-color: #606060;
+        }
+        .dark .border-news-border {
+            border-color: #404040;
+        }
+        .dark .bg-gray-50 {
+            background-color: #262626;
+        }
+        .dark .bg-gray-100 {
+            background-color: #2a2a2a;
+        }
+        .dark .bg-white {
+            background-color: #262626;
+        }
+        .dark .text-gray-400 {
+            color: #a3a3a3;
+        }
+        .dark .text-gray-500 {
+            color: #a3a3a3;
+        }
+        .dark .text-gray-600 {
+            color: #b0b0b0;
+        }
+        .dark .text-gray-700 {
+            color: #c0c0c0;
+        }
+        .dark .text-gray-800 {
+            color: #d4d4d4;
+        }
+        .dark .text-news-gray {
+            color: #a0a0a0;
+        }
+        .dark .text-ink {
+            color: #e5e5e5;
+        }
+        .dark .text-primary {
+            color: #e5e5e5;
+        }
+        .dark .h1, .dark .h2, .dark .h3, .dark .h4, .dark .h5, .dark .h6 {
+            color: #e5e5e5;
+        }
+        .dark .masthead {
+            color: #e5e5e5;
+        }
+        .dark .headline {
+            color: #e5e5e5;
+        }
+        .dark .section-title {
+            color: #e5e5e5;
+        }
+        .dark p, .dark li, .dark span, .dark a:not(.nav-link) {
+            color: #d4d4d4;
+        }
+        .dark input, .dark textarea {
+            border-bottom: 1px solid #525252 !important;
+            color: #e5e5e5;
+        }
+        .dark input:focus, .dark textarea:focus {
+            border-bottom: 1.5px solid #a3a3a3 !important;
+        }
+        .dark input::placeholder, .dark textarea::placeholder {
+            color: #737373;
+        }
+        .theme-toggle {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        .theme-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dark .theme-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .theme-toggle .sun-icon {
+            display: none;
+        }
+        .theme-toggle .moon-icon {
+            display: block;
+        }
+        .dark .theme-toggle .sun-icon {
+            display: block;
+        }
+        .dark .theme-toggle .moon-icon {
+            display: none;
+        }
         .fade-in {
             opacity: 0;
             transform: translateY(20px);
@@ -76,7 +218,7 @@
 <body class="bg-newsprint text-ink min-h-screen">
     <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
         <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
-            <div class="flex justify-center items-center py-4">
+            <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-8 md:space-x-12">
                     <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline"
                         href="front-page.html">Front Page</a>
@@ -89,6 +231,14 @@
                     <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
                         href="contact.html">Contact</a>
                 </div>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <svg class="w-5 h-5 sun-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"/>
+                    </svg>
+                    <svg class="w-5 h-5 moon-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </nav>
@@ -273,7 +423,7 @@
                             <li>API &amp; Database Design</li>
                             <li>Distributed Systems &amp; Microservices</li>
                             <li>Event-Driven Architecture</li>
-                            <li>Ad Tech Domain</li>
+                            <li>Digital Marketing and Advertisement</li>
                         </ul>
                     </div>
                     <div class="bg-white p-6 rounded-sm border-2 border-gray-300 fade-in">
@@ -321,6 +471,23 @@
 
         document.querySelectorAll('.fade-in').forEach(el => {
             observer.observe(el);
+        });
+
+        // Dark mode toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        // Check for saved preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            html.classList.add('dark');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
         });
     </script>
 

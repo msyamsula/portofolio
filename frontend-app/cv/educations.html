@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
@@ -34,7 +34,19 @@
     <style type="text/tailwindcss">
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9f8f6;
+            background-color: #f5f3ed;
+            background-image:
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E"),
+                radial-gradient(ellipse 300px 200px at 15% 20%, rgba(205, 175, 125, 0.15) 0%, transparent 70%),
+                radial-gradient(ellipse 250px 180px at 85% 40%, rgba(195, 165, 115, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 200px 150px at 40% 85%, rgba(200, 170, 120, 0.14) 0%, transparent 60%),
+                radial-gradient(ellipse 180px 120px at 70% 75%, rgba(190, 160, 110, 0.10) 0%, transparent 65%),
+                linear-gradient(180deg, transparent 95%, rgba(100, 100, 100, 0.05) 98%, rgba(100, 100, 100, 0.08) 100%),
+                radial-gradient(ellipse 100px 80px at 25% 60%, rgba(100, 100, 100, 0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 120px 90px at 75% 25%, rgba(110, 110, 110, 0.05) 0%, transparent 70%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(140, 140, 140, 0.05) 100%);
+            background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+            background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
             color: #1a1a1a;
         }
         .masthead {
@@ -55,6 +67,118 @@
             background-color: rgba(249, 248, 246, 0.95);
             backdrop-filter: blur(8px);
         }
+        .dark .global-nav {
+            background-color: rgba(20, 20, 20, 0.95);
+        }
+        .dark body {
+            background-color: #1a1a1a;
+            background-image:
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"),
+                radial-gradient(ellipse 300px 200px at 15% 20%, rgba(80, 60, 40, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 250px 180px at 85% 40%, rgba(70, 50, 35, 0.10) 0%, transparent 70%),
+                radial-gradient(ellipse 200px 150px at 40% 85%, rgba(75, 55, 35, 0.11) 0%, transparent 60%),
+                radial-gradient(ellipse 180px 120px at 70% 75%, rgba(65, 45, 25, 0.08) 0%, transparent 65%),
+                linear-gradient(180deg, transparent 95%, rgba(60, 60, 60, 0.04) 98%, rgba(80, 80, 80, 0.06) 100%),
+                radial-gradient(ellipse 100px 80px at 25% 60%, rgba(70, 70, 70, 0.05) 0%, transparent 70%),
+                radial-gradient(ellipse 120px 90px at 75% 25%, rgba(75, 75, 75, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(80, 80, 80, 0.04) 100%);
+            background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+            background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+        }
+        .dark .nav-link {
+            color: #d4d4d4;
+        }
+        .dark .nav-link:hover {
+            color: #a3a3a3;
+        }
+        .dark .horizontal-rule {
+            border-top: 1px solid #404040;
+        }
+        .dark .border-gray-200 {
+            border-color: #404040;
+        }
+        .dark .text-gray-400 {
+            color: #a3a3a3;
+        }
+        .dark .text-gray-500 {
+            color: #a3a3a3;
+        }
+        .dark .text-gray-600 {
+            color: #b0b0b0;
+        }
+        .dark .text-gray-700 {
+            color: #c0c0c0;
+        }
+        .dark .text-ink {
+            color: #e5e5e5;
+        }
+        .dark .masthead {
+            color: #e5e5e5;
+        }
+        .dark .headline {
+            color: #e5e5e5;
+        }
+        .dark .section-title {
+            color: #e5e5e5;
+        }
+        .dark p, .dark li, .dark span, .dark a:not(.nav-link) {
+            color: #d4d4d4;
+        }
+        .theme-toggle {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        .theme-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dark .theme-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .theme-toggle .sun-icon {
+            display: none;
+        }
+        .theme-toggle .moon-icon {
+            display: block;
+        }
+        .dark .theme-toggle .sun-icon {
+            display: block;
+        }
+        .dark .theme-toggle .moon-icon {
+            display: none;
+        }
+        .cert-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border: 1px solid #d1d5db;
+            background-color: transparent;
+            color: #1a1a1a;
+            text-decoration: none;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .cert-button:hover {
+            background-color: #1a1a1a;
+            color: #f5f3ed;
+            border-color: #1a1a1a;
+        }
+        .dark .cert-button {
+            border-color: #606060;
+            color: #d4d4d4;
+        }
+        .dark .cert-button:hover {
+            background-color: #d4d4d4;
+            color: #1a1a1a;
+            border-color: #d4d4d4;
+        }
         .section-title {
             font-family: 'Newsreader', serif;
             letter-spacing: -0.02em;
@@ -74,7 +198,7 @@
 <body class="bg-newsprint text-ink min-h-screen">
     <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
         <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
-            <div class="flex justify-center items-center py-4">
+            <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-8 md:space-x-12">
                     <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
                         href="front-page.html">Front Page</a>
@@ -87,6 +211,16 @@
                     <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
                         href="contact.html">Contact</a>
                 </div>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <svg class="w-5 h-5 sun-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            fill-rule="evenodd" clip-rule="evenodd" />
+                    </svg>
+                    <svg class="w-5 h-5 moon-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                </button>
             </div>
         </div>
     </nav>
@@ -105,75 +239,196 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in">
                 <!-- Academic Column -->
                 <div class="pr-0 md:pr-8 border-r border-gray-200">
-                    <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Academic</h2>
+                    <h2
+                        class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">
+                        Academic</h2>
                     <div class="space-y-6 pt-3">
-                        <article>
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">2018 — 2020</span>
-                                <span class="text-gray-300 text-xs">•</span>
-                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Master's</span>
+                        <article class="flex flex-col gap-3 fade-in">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">2013 —
+                                        2018</span>
+                                    <span class="text-gray-300 text-xs">•</span>
+                                    <span
+                                        class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Bachelor's</span>
+                                </div>
+                                <h3 class="headline text-xl md:text-2xl font-semibold mb-1">Bachelor of Science in
+                                    Engineering Physics</h3>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <img src="itb.png" alt="ITB Logo" class="w-8 h-8 object-contain" />
+                                    <p class="text-base text-gray-600">Institut Teknologi Bandung</p>
+                                </div>
+                                <p class="text-sm leading-relaxed text-gray-700">
+                                    Create simulation by combining software engineering with physics—thermodynamics,
+                                    electromagnetics, Newton's Law, etc.
+                                </p>
                             </div>
-                            <h3 class="headline text-xl md:text-2xl font-semibold mb-1">Master of Science in Computer Science</h3>
-                            <p class="text-base text-gray-600 mb-2">Stellenbosch University</p>
-                            <p class="text-sm leading-relaxed text-gray-700">
-                                Specialized in distributed systems and machine learning. Thesis focused on scalable
-                                architecture for real-time data processing pipelines.
-                            </p>
-                        </article>
-                        <article>
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">2014 — 2018</span>
-                                <span class="text-gray-300 text-xs">•</span>
-                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Bachelor's</span>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="certificates/bachelors-certificate.pdf" target="_blank" class="cert-button">
+                                    View Certificate
+                                </a>
+                                <a href="certificates/bachelors-transcript.pdf" target="_blank" class="cert-button">
+                                    View Transcript
+                                </a>
                             </div>
-                            <h3 class="headline text-xl md:text-2xl font-semibold mb-1">Bachelor of Science in Computer Science</h3>
-                            <p class="text-base text-gray-600 mb-2">University of Indonesia</p>
-                            <p class="text-sm leading-relaxed text-gray-700">
-                                Foundation in algorithms, data structures, and software engineering principles.
-                                Graduated with honors for outstanding academic performance.
-                            </p>
                         </article>
                     </div>
                 </div>
 
                 <!-- Certifications Column -->
                 <div class="px-0 md:px-8 border-r border-gray-200">
-                    <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Certifications</h2>
+                    <h2
+                        class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">
+                        Certifications</h2>
                     <div class="space-y-4 pt-3">
-                        <article>
-                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">AWS Certified Solutions Architect</h4>
-                            <p class="text-xs text-gray-600">Professional Level — 2023</p>
+                        <article class="flex flex-col gap-2 fade-in">
+                            <div>
+                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">AWS Certified Cloud
+                                    Practitioner</h4>
+                                <p class="text-xs text-gray-600">Professional Level — 2023</p>
+                            </div>
+                            <a href="certificates/aws-sa-certificate.pdf" target="_blank" class="cert-button">
+                                View Certificate
+                            </a>
                         </article>
-                        <article>
-                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Google Cloud Professional Data Engineer</h4>
-                            <p class="text-xs text-gray-600">Professional Certification — 2022</p>
-                        </article>
-                        <article>
-                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Kubernetes Administrator (CKA)</h4>
-                            <p class="text-xs text-gray-600">Cloud Native Computing Foundation — 2021</p>
+                        <article class="flex flex-col gap-2 fade-in">
+                            <div>
+                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">IELTS (English Proficiency)
+                                </h4>
+                                <p class="text-xs text-gray-600">Professional Certification — 2022</p>
+                            </div>
+                            <a href="certificates/gcp-data-engineer-certificate.pdf" target="_blank"
+                                class="cert-button">
+                                View Certificate
+                            </a>
                         </article>
                     </div>
                 </div>
 
                 <!-- Honors Column -->
                 <div class="pl-0 md:pl-8">
-                    <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Honors</h2>
+                    <h2
+                        class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">
+                        Honors</h2>
                     <div class="space-y-4 pt-3">
-                        <article class="fade-in">
-                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Dean's List</h4>
-                            <p class="text-xs text-gray-600">University of Indonesia — 2016, 2017</p>
+                        <article class="flex flex-col gap-2 fade-in">
+                            <div>
+                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Best Paper Award</h4>
+                                <p class="text-xs text-gray-600">ICIIOT 2018 — International Conference on Internet of
+                                    Things and Innovation</p>
+                            </div>
+                            <a href="certificates/deans-list-certificate.pdf" target="_blank" class="cert-button">
+                                View Certificate
+                            </a>
                         </article>
-                        <article class="fade-in">
-                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Best Thesis Award</h4>
-                            <p class="text-xs text-gray-600">Faculty of Computer Science — 2020</p>
+                        <article class="flex flex-col gap-2 fade-in">
+                            <div>
+                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Ganesha Karsa</h4>
+                                <p class="text-xs text-gray-600">Institut Teknologi Bandung — 2014</p>
+                            </div>
+                            <a href="certificates/best-thesis-certificate.pdf" target="_blank" class="cert-button">
+                                View Certificate
+                            </a>
                         </article>
-                        <article class="fade-in">
-                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">1st Place — National Programming Competition</h4>
-                            <p class="text-xs text-gray-600">Indonesia — 2017</p>
+                        <article class="flex flex-col gap-2 fade-in">
+                            <div>
+                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Silver Medalist - National
+                                    Physics Competition</h4>
+                                <p class="text-xs text-gray-600">Indonesian Ministry of Education — 2014</p>
+                            </div>
+                            <a href="certificates/programming-competition-certificate.pdf" target="_blank"
+                                class="cert-button">
+                                View Certificate
+                            </a>
                         </article>
                     </div>
                 </div>
             </div>
+
+            <!-- Publications Section -->
+            <section class="fade-in pt-8 border-t border-gray-200">
+                <h2 class="section-title text-2xl md:text-3xl font-semibold mb-8 italic pb-3 border-b border-gray-200">
+                    Publications</h2>
+                <div class="space-y-6 pt-3">
+                    <article class="flex flex-col gap-2 fade-in">
+                        <div class="flex items-start gap-3">
+                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                            <div class="flex-1">
+                                <div>
+                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Switching Model of a
+                                        Dynamic Social Network</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="text-sm text-gray-700">
+                                            <span class="italic">Research Gate</span>
+                                        </p>
+                                        <a href="https://www.researchgate.net/publication/332253819_Switching_model_of_a_dynamic_social_network"
+                                            target="_blank" class="cert-button whitespace-nowrap">
+                                            View Paper
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="flex flex-col gap-2 fade-in">
+                        <div class="flex items-start gap-3">
+                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                            <div class="flex-1">
+                                <div>
+                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Communication-Efficient Optimal-Based Control of a Quadrotor UAV by Event-Triggered Mechanism</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="text-sm text-gray-700">
+                                            <span class="italic">IEEE explore</span>
+                                        </p>
+                                        <a href="https://ieeexplore.ieee.org/document/8593118"
+                                            target="_blank" class="cert-button whitespace-nowrap">
+                                            View Paper
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="flex flex-col gap-2 fade-in">
+                        <div class="flex items-start gap-3">
+                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                            <div class="flex-1">
+                                <div>
+                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Experimental Modeling of a Quadrotor UAV Using an Indoor Local Positioning System</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="text-sm text-gray-700">
+                                            <span class="italic">IEEE explore</span>
+                                        </p>
+                                        <a href="https://ieeexplore.ieee.org/document/8628424"
+                                            target="_blank" class="cert-button whitespace-nowrap">
+                                            View Paper
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="flex flex-col gap-2 fade-in">
+                        <div class="flex items-start gap-3">
+                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                            <div class="flex-1">
+                                <div>
+                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Opinion Formation for Decision Making Process in Command, Control, Communications, Computers, Intelligence, Surveillance, and Reconnaissance</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="text-sm text-gray-700">
+                                            <span class="italic">IEEE explore</span>
+                                        </p>
+                                        <a href="https://ieeexplore.ieee.org/document/8592979"
+                                            target="_blank" class="cert-button whitespace-nowrap">
+                                            View Paper
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
         </main>
         <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
@@ -205,6 +460,22 @@
 
         document.querySelectorAll('.fade-in').forEach(el => {
             observer.observe(el);
+        });
+
+        // Dark mode toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            html.classList.add('dark');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
         });
     </script>
 
