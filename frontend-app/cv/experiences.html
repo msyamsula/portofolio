@@ -67,6 +67,15 @@
             width: 1px;
             background-color: #d1d5db;
         }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1.2s ease-out, transform 1.2s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 
@@ -90,7 +99,7 @@
         </div>
     </nav>
     <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
-        <header class="mb-12 text-center">
+        <header class="mb-12 text-center fade-in">
             <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Work Experience</h1>
             <div class="horizontal-rule w-full mb-4"></div>
             <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
@@ -102,7 +111,7 @@
         </header>
         <main class="flex flex-col gap-12">
             <section>
-                <div class="relative pl-12 space-y-16">
+                <div class="relative pl-12 space-y-16 fade-in">
                     <div class="timeline-line"></div>
                     <article class="relative border-b border-gray-200 pb-12">
                         <div class="absolute -left-[52.5px] top-3 w-1.5 h-1.5 bg-black rounded-full"></div>
@@ -123,7 +132,7 @@
                             </div>
                         </div>
                     </article>
-                    <article class="relative border-b border-gray-200 pb-12">
+                    <article class="relative border-b border-gray-200 pb-12 fade-in">
                         <div class="absolute -left-[52.5px] top-3 w-1.5 h-1.5 border border-black bg-white rounded-full"></div>
                         <div class="flex flex-col gap-4">
                             <div class="space-y-1">
@@ -141,7 +150,7 @@
                             </div>
                         </div>
                     </article>
-                    <article class="relative pb-12">
+                    <article class="relative pb-12 fade-in">
                         <div class="absolute -left-[52.5px] top-3 w-1.5 h-1.5 border border-black bg-white rounded-full"></div>
                         <div class="flex flex-col gap-4">
                             <div class="space-y-1">
@@ -162,7 +171,7 @@
                 </div>
             </section>
         </main>
-        <footer class="mt-24 pt-8 border-t border-gray-200">
+        <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
                 <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
                     © Muhammad Syamsul Arifin
@@ -173,6 +182,26 @@
     <script>
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
     </script>
 
 </body>

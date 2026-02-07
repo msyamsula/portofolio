@@ -70,6 +70,15 @@
             border-bottom: 1.5px solid #1a1a1a !important;
             box-shadow: none !important;
         }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1.2s ease-out, transform 1.2s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 
@@ -93,7 +102,7 @@
         </div>
     </nav>
     <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
-        <header class="mb-20 text-center">
+        <header class="mb-20 text-center fade-in">
             <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Contact</h1>
             <div class="horizontal-rule w-full mb-4"></div>
             <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
@@ -105,7 +114,7 @@
         </header>
         <main class="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
             <section class="md:col-span-7">
-                <div class="mb-12">
+                <div class="mb-12 fade-in">
                     <h2 class="headline text-2xl md:text-3xl font-semibold mb-6 italic">
                         Let's start a conversation
                     </h2>
@@ -114,7 +123,7 @@
                         or general correspondence, please use the form below or reach out directly via email.
                     </p>
                 </div>
-                <form action="#" class="space-y-8">
+                <form action="#" class="space-y-8 fade-in">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="flex flex-col gap-2">
                             <label class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Name</label>
@@ -142,7 +151,7 @@
                 </form>
             </section>
             <aside class="md:col-span-5 md:border-l md:border-accent-line md:pl-12 flex flex-col gap-12">
-                <div class="bg-gray-50 p-6 rounded-sm">
+                <div class="bg-gray-50 p-6 rounded-sm fade-in">
                     <h3 class="headline text-xl font-bold mb-4">Direct Contact</h3>
                     <div class="space-y-4">
                         <a href="mailto:hello@johndoe.dev" class="block text-sm hover:text-gray-500 transition-colors">
@@ -153,7 +162,7 @@
                         </p>
                     </div>
                 </div>
-                <div>
+                <div class="fade-in">
                     <h3 class="text-xs font-bold uppercase tracking-widest mb-6 text-gray-400">Connect</h3>
                     <div class="space-y-4">
                         <a class="flex items-center gap-3 text-sm hover:text-gray-500 transition-colors" href="#">
@@ -174,7 +183,7 @@
                         </a>
                     </div>
                 </div>
-                <div>
+                <div class="fade-in">
                     <h3 class="text-xs font-bold uppercase tracking-widest mb-6 text-gray-400">Availability</h3>
                     <p class="text-sm leading-relaxed text-gray-700">
                         Currently open to:<br>
@@ -186,7 +195,7 @@
                 </div>
             </aside>
         </main>
-        <footer class="mt-24 pt-8 border-t border-gray-200">
+        <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
                 <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
                     © Muhammad Syamsul Arifin
@@ -197,6 +206,26 @@
     <script>
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
     </script>
 
 </body>

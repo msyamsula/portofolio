@@ -61,6 +61,15 @@
             font-family: 'Newsreader', serif;
             letter-spacing: -0.02em;
         }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1.2s ease-out, transform 1.2s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 
@@ -84,7 +93,7 @@
         </div>
     </nav>
     <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
-        <header class="mb-12 text-center">
+        <header class="mb-12 text-center fade-in">
             <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Personal Projects</h1>
             <div class="horizontal-rule w-full mb-4"></div>
             <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
@@ -95,7 +104,7 @@
             <div class="horizontal-rule w-full mt-4"></div>
         </header>
         <main class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="Distributed Cache System"
                         class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
@@ -113,7 +122,7 @@
                     <span>Distributed Systems</span>
                 </div>
             </article>
-            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="Real-time Code Review Platform"
                         class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
@@ -131,7 +140,7 @@
                     <span>React</span>
                 </div>
             </article>
-            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="Kubernetes Operator SDK"
                         class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
@@ -149,7 +158,7 @@
                     <span>CRD</span>
                 </div>
             </article>
-            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="GraphQL Federation Gateway"
                         class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
@@ -167,7 +176,7 @@
                     <span>Apollo</span>
                 </div>
             </article>
-            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="Ad Tech Analytics Dashboard"
                         class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
@@ -185,7 +194,7 @@
                     <span>Data Pipeline</span>
                 </div>
             </article>
-            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="Event-Driven Framework"
                         class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
@@ -204,7 +213,7 @@
                 </div>
             </article>
         </main>
-        <footer class="mt-24 pt-8 border-t border-gray-200">
+        <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
                 <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
                     © Muhammad Syamsul Arifin
@@ -215,6 +224,26 @@
     <script>
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
     </script>
 
 </body>

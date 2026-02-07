@@ -59,6 +59,15 @@
             font-family: 'Newsreader', serif;
             letter-spacing: -0.02em;
         }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1.2s ease-out, transform 1.2s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 
@@ -82,7 +91,7 @@
         </div>
     </nav>
     <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
-        <header class="mb-20 text-center">
+        <header class="mb-20 text-center fade-in">
             <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Education &amp; Honors</h1>
             <div class="horizontal-rule w-full mb-4"></div>
             <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
@@ -93,7 +102,7 @@
             <div class="horizontal-rule w-full mt-4"></div>
         </header>
         <main class="flex flex-col gap-16 pb-32">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in">
                 <!-- Academic Column -->
                 <div class="pr-0 md:pr-8 border-r border-gray-200">
                     <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Academic</h2>
@@ -150,15 +159,15 @@
                 <div class="pl-0 md:pl-8">
                     <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Honors</h2>
                     <div class="space-y-4 pt-3">
-                        <article>
+                        <article class="fade-in">
                             <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Dean's List</h4>
                             <p class="text-xs text-gray-600">University of Indonesia — 2016, 2017</p>
                         </article>
-                        <article>
+                        <article class="fade-in">
                             <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Best Thesis Award</h4>
                             <p class="text-xs text-gray-600">Faculty of Computer Science — 2020</p>
                         </article>
-                        <article>
+                        <article class="fade-in">
                             <h4 class="headline text-xl md:text-2xl font-semibold mb-1">1st Place — National Programming Competition</h4>
                             <p class="text-xs text-gray-600">Indonesia — 2017</p>
                         </article>
@@ -166,7 +175,7 @@
                 </div>
             </div>
         </main>
-        <footer class="mt-24 pt-8 border-t border-gray-200">
+        <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
                 <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
                     © Muhammad Syamsul Arifin
@@ -177,6 +186,26 @@
     <script>
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
     </script>
 
 </body>
