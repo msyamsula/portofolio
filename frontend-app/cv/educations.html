@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Education & Honors | Muhammad Syamsul Arifin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a1a1a",
+                        "newsprint": "#f9f8f6",
+                        "ink": "#1a1a1a",
+                        "accent-line": "#d1d5db"
+                    },
+                    fontFamily: {
+                        "serif-display": ["Newsreader", "serif"],
+                        "sans-body": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f8f6;
+            color: #1a1a1a;
+        }
+        .masthead {
+            font-family: 'Newsreader', serif;
+            letter-spacing: -0.02em;
+        }
+        .nav-link {
+            font-family: 'Newsreader', serif;
+        }
+        .headline {
+            font-family: 'Newsreader', serif;
+            line-height: 1.1;
+        }
+        .horizontal-rule {
+            border-top: 1px solid #1a1a1a;
+        }
+        .global-nav {
+            background-color: rgba(249, 248, 246, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        .section-title {
+            font-family: 'Newsreader', serif;
+            letter-spacing: -0.02em;
+        }
+    </style>
+</head>
+
+<body class="bg-newsprint text-ink min-h-screen">
+    <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
+        <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
+            <div class="flex justify-center items-center py-4">
+                <div class="flex items-center space-x-8 md:space-x-12">
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="front-page.html">Front Page</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline"
+                        href="educations.html">Education &amp; Honors</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="experiences.html">Work Experience</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="projects.html">Personal Projects</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="contact.html">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
+        <header class="mb-20 text-center">
+            <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Education &amp; Honors</h1>
+            <div class="horizontal-rule w-full mb-4"></div>
+            <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
+                <span>Software Engineer</span>
+                <span>Systems &amp; Architecture</span>
+                <span id="current-date">Friday, October 25, 2024</span>
+            </div>
+            <div class="horizontal-rule w-full mt-4"></div>
+        </header>
+        <main class="flex flex-col gap-16 pb-32">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Academic Column -->
+                <div class="pr-0 md:pr-8 border-r border-gray-200">
+                    <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Academic</h2>
+                    <div class="space-y-6 pt-3">
+                        <article>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">2018 — 2020</span>
+                                <span class="text-gray-300 text-xs">•</span>
+                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Master's</span>
+                            </div>
+                            <h3 class="headline text-xl md:text-2xl font-semibold mb-1">Master of Science in Computer Science</h3>
+                            <p class="text-base text-gray-600 mb-2">Stellenbosch University</p>
+                            <p class="text-sm leading-relaxed text-gray-700">
+                                Specialized in distributed systems and machine learning. Thesis focused on scalable
+                                architecture for real-time data processing pipelines.
+                            </p>
+                        </article>
+                        <article>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">2014 — 2018</span>
+                                <span class="text-gray-300 text-xs">•</span>
+                                <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Bachelor's</span>
+                            </div>
+                            <h3 class="headline text-xl md:text-2xl font-semibold mb-1">Bachelor of Science in Computer Science</h3>
+                            <p class="text-base text-gray-600 mb-2">University of Indonesia</p>
+                            <p class="text-sm leading-relaxed text-gray-700">
+                                Foundation in algorithms, data structures, and software engineering principles.
+                                Graduated with honors for outstanding academic performance.
+                            </p>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Certifications Column -->
+                <div class="px-0 md:px-8 border-r border-gray-200">
+                    <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Certifications</h2>
+                    <div class="space-y-4 pt-3">
+                        <article>
+                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">AWS Certified Solutions Architect</h4>
+                            <p class="text-xs text-gray-600">Professional Level — 2023</p>
+                        </article>
+                        <article>
+                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Google Cloud Professional Data Engineer</h4>
+                            <p class="text-xs text-gray-600">Professional Certification — 2022</p>
+                        </article>
+                        <article>
+                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Kubernetes Administrator (CKA)</h4>
+                            <p class="text-xs text-gray-600">Cloud Native Computing Foundation — 2021</p>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Honors Column -->
+                <div class="pl-0 md:pl-8">
+                    <h2 class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">Honors</h2>
+                    <div class="space-y-4 pt-3">
+                        <article>
+                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Dean's List</h4>
+                            <p class="text-xs text-gray-600">University of Indonesia — 2016, 2017</p>
+                        </article>
+                        <article>
+                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Best Thesis Award</h4>
+                            <p class="text-xs text-gray-600">Faculty of Computer Science — 2020</p>
+                        </article>
+                        <article>
+                            <h4 class="headline text-xl md:text-2xl font-semibold mb-1">1st Place — National Programming Competition</h4>
+                            <p class="text-xs text-gray-600">Indonesia — 2017</p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="mt-24 pt-8 border-t border-gray-200">
+            <div class="text-center">
+                <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
+                    © Muhammad Syamsul Arifin
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script>
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Contact | Muhammad Syamsul Arifin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a1a1a",
+                        "newsprint": "#f9f8f6",
+                        "ink": "#1a1a1a",
+                        "accent-line": "#d1d5db"
+                    },
+                    fontFamily: {
+                        "serif-display": ["Newsreader", "serif"],
+                        "sans-body": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f8f6;
+            color: #1a1a1a;
+        }
+        .masthead {
+            font-family: 'Newsreader', serif;
+            letter-spacing: -0.02em;
+        }
+        .nav-link {
+            font-family: 'Newsreader', serif;
+        }
+        .headline {
+            font-family: 'Newsreader', serif;
+            line-height: 1.1;
+        }
+        .horizontal-rule {
+            border-top: 1px solid #1a1a1a;
+        }
+        .global-nav {
+            background-color: rgba(249, 248, 246, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        input, textarea {
+            border-top: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-bottom: 1px solid #d1d5db !important;
+            background-color: transparent !important;
+            border-radius: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        input:focus, textarea:focus {
+            outline: none !important;
+            border-bottom: 1.5px solid #1a1a1a !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-newsprint text-ink min-h-screen">
+    <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
+        <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
+            <div class="flex justify-center items-center py-4">
+                <div class="flex items-center space-x-8 md:space-x-12">
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="front-page.html">Front Page</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="educations.html">Education &amp; Honors</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="experiences.html">Work Experience</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="projects.html">Personal Projects</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline"
+                        href="contact.html">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
+        <header class="mb-20 text-center">
+            <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Contact</h1>
+            <div class="horizontal-rule w-full mb-4"></div>
+            <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
+                <span>Software Engineer</span>
+                <span>Systems &amp; Architecture</span>
+                <span id="current-date">Friday, October 25, 2024</span>
+            </div>
+            <div class="horizontal-rule w-full mt-4"></div>
+        </header>
+        <main class="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
+            <section class="md:col-span-7">
+                <div class="mb-12">
+                    <h2 class="headline text-2xl md:text-3xl font-semibold mb-6 italic">
+                        Let's start a conversation
+                    </h2>
+                    <p class="text-base leading-relaxed text-gray-700">
+                        For inquiries regarding engineering consultations, technical collaborations, speaking engagements,
+                        or general correspondence, please use the form below or reach out directly via email.
+                    </p>
+                </div>
+                <form action="#" class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Name</label>
+                            <input class="py-2 text-base placeholder:text-gray-300" placeholder="Your name" type="text" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Email</label>
+                            <input class="py-2 text-base placeholder:text-gray-300" placeholder="your@email.com" type="email" />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Subject</label>
+                        <input class="py-2 text-base placeholder:text-gray-300" placeholder="What's this about?" type="text" />
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Message</label>
+                        <textarea class="py-2 text-base placeholder:text-gray-300 resize-none" placeholder="Your message here..." rows="5"></textarea>
+                    </div>
+                    <div class="flex justify-start pt-4">
+                        <button
+                            class="px-8 py-3 bg-black text-white text-[11px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all">
+                            Send Message
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <aside class="md:col-span-5 md:border-l md:border-accent-line md:pl-12 flex flex-col gap-12">
+                <div class="bg-gray-50 p-6 rounded-sm">
+                    <h3 class="headline text-xl font-bold mb-4">Direct Contact</h3>
+                    <div class="space-y-4">
+                        <a href="mailto:hello@johndoe.dev" class="block text-sm hover:text-gray-500 transition-colors">
+                            hello@johndoe.dev
+                        </a>
+                        <p class="text-sm text-gray-600">
+                            Response time: Typically within 24-48 hours
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-widest mb-6 text-gray-400">Connect</h3>
+                    <div class="space-y-4">
+                        <a class="flex items-center gap-3 text-sm hover:text-gray-500 transition-colors" href="#">
+                            <span class="material-symbols-outlined text-base">link</span>
+                            LinkedIn Profile
+                        </a>
+                        <a class="flex items-center gap-3 text-sm hover:text-gray-500 transition-colors" href="#">
+                            <span class="material-symbols-outlined text-base">code</span>
+                            GitHub Profile
+                        </a>
+                        <a class="flex items-center gap-3 text-sm hover:text-gray-500 transition-colors" href="#">
+                            <span class="material-symbols-outlined text-base">chat</span>
+                            Twitter / X
+                        </a>
+                        <a class="flex items-center gap-3 text-sm hover:text-gray-500 transition-colors" href="#">
+                            <span class="material-symbols-outlined text-base">description</span>
+                            Resume (PDF)
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-widest mb-6 text-gray-400">Availability</h3>
+                    <p class="text-sm leading-relaxed text-gray-700">
+                        Currently open to:<br>
+                        • Technical advisory roles<br>
+                        • Speaking opportunities<br>
+                        • Open source collaborations<br>
+                        • Select consulting projects
+                    </p>
+                </div>
+            </aside>
+        </main>
+        <footer class="mt-24 pt-8 border-t border-gray-200">
+            <div class="text-center">
+                <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
+                    © Muhammad Syamsul Arifin
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script>
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+    </script>
+
+</body>
+
+</html>

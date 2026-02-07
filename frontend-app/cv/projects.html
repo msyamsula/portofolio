@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Personal Projects | Muhammad Syamsul Arifin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a1a1a",
+                        "newsprint": "#f9f8f6",
+                        "ink": "#1a1a1a",
+                        "accent-line": "#d1d5db",
+                        "news-border": "#e5e7eb",
+                        "news-gray": "#6b7280"
+                    },
+                    fontFamily: {
+                        "serif-display": ["Newsreader", "serif"],
+                        "sans-body": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f8f6;
+            color: #1a1a1a;
+        }
+        .masthead {
+            font-family: 'Newsreader', serif;
+            letter-spacing: -0.02em;
+        }
+        .nav-link {
+            font-family: 'Newsreader', serif;
+        }
+        .headline {
+            font-family: 'Newsreader', serif;
+            line-height: 1.1;
+        }
+        .horizontal-rule {
+            border-top: 1px solid #1a1a1a;
+        }
+        .global-nav {
+            background-color: rgba(249, 248, 246, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        .section-title {
+            font-family: 'Newsreader', serif;
+            letter-spacing: -0.02em;
+        }
+    </style>
+</head>
+
+<body class="bg-newsprint text-ink min-h-screen">
+    <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
+        <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
+            <div class="flex justify-center items-center py-4">
+                <div class="flex items-center space-x-8 md:space-x-12">
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="front-page.html">Front Page</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="educations.html">Education &amp; Honors</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="experiences.html">Work Experience</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline"
+                        href="projects.html">Personal Projects</a>
+                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                        href="contact.html">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
+        <header class="mb-12 text-center">
+            <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Personal Projects</h1>
+            <div class="horizontal-rule w-full mb-4"></div>
+            <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
+                <span>Software Engineer</span>
+                <span>Systems &amp; Architecture</span>
+                <span id="current-date">Friday, October 25, 2024</span>
+            </div>
+            <div class="horizontal-rule w-full mt-4"></div>
+        </header>
+        <main class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+                <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
+                    <img alt="Distributed Cache System"
+                        class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYzK9rxvCIBe4-10u-_nCA007liwXe5M6YR_nogVWs4JXriMM66UxM9jrcNaLPLAV5liQU1tWw0BoO4Jz-rD6lZKsp418qLNYbujN4gCPli9rwylo6ReW_my-0KCFZ9dxAZISssYnQ9cj4agNeE54uCvbdUR_2zqvhSeXqyi5Oxn2GpNebG1VRwA8VhwoBzIFfLz62oV5pdxc65T6FzO_drIvZpDTdoOQ5jDgPuJDwlULYRiYpdw7jQKTU6kyvMRCYRBBJ_dTAw" />
+                </div>
+                <h3 class="text-3xl font-light mb-4 leading-tight">Distributed Cache System</h3>
+                <p class="text-news-gray font-sans text-sm leading-relaxed font-light mb-6">
+                    A high-performance, distributed caching layer built with Go and Raft consensus algorithm.
+                    Supports automatic failover, data sharding, and horizontal scaling with minimal configuration.
+                </p>
+                <div
+                    class="flex gap-4 font-sans text-[10px] uppercase tracking-widest text-news-gray pt-4 border-t border-news-border">
+                    <span>Go</span>
+                    <span>Raft</span>
+                    <span>Distributed Systems</span>
+                </div>
+            </article>
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+                <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
+                    <img alt="Real-time Code Review Platform"
+                        class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYzK9rxvCIBe4-10u-_nCA007liwXe5M6YR_nogVWs4JXriMM66UxM9jrcNaLPLAV5liQU1tWw0BoO4Jz-rD6lZKsp418qLNYbujN4gCPli9rwylo6ReW_my-0KCFZ9dxAZISssYnQ9cj4agNeE54uCvbdUR_2zqvhSeXqyi5Oxn2GpNebG1VRwA8VhwoBzIFfLz62oV5pdxc65T6FzO_drIvZpDTdoOQ5jDgPuJDwlULYRiYpdw7jQKTU6kyvMRCYRBBJ_dTAw" />
+                </div>
+                <h3 class="text-3xl font-light mb-4 leading-tight">Real-time Code Review Platform</h3>
+                <p class="text-news-gray font-sans text-sm leading-relaxed font-light mb-6">
+                    Web-based collaborative code review tool with live diff viewing, inline comments,
+                    and AI-powered suggestions for improving code quality and team workflow.
+                </p>
+                <div
+                    class="flex gap-4 font-sans text-[10px] uppercase tracking-widest text-news-gray pt-4 border-t border-news-border">
+                    <span>TypeScript</span>
+                    <span>WebSocket</span>
+                    <span>React</span>
+                </div>
+            </article>
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+                <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
+                    <img alt="Kubernetes Operator SDK"
+                        class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYzK9rxvCIBe4-10u-_nCA007liwXe5M6YR_nogVWs4JXriMM66UxM9jrcNaLPLAV5liQU1tWw0BoO4Jz-rD6lZKsp418qLNYbujN4gCPli9rwylo6ReW_my-0KCFZ9dxAZISssYnQ9cj4agNeE54uCvbdUR_2zqvhSeXqyi5Oxn2GpNebG1VRwA8VhwoBzIFfLz62oV5pdxc65T6FzO_drIvZpDTdoOQ5jDgPuJDwlULYRiYpdw7jQKTU6kyvMRCYRBBJ_dTAw" />
+                </div>
+                <h3 class="text-3xl font-light mb-4 leading-tight">Kubernetes Operator SDK</h3>
+                <p class="text-news-gray font-sans text-sm leading-relaxed font-light mb-6">
+                    A lightweight framework for building Kubernetes operators with minimal boilerplate.
+                    Simplifies custom resource management and provides built-in health checking and metrics.
+                </p>
+                <div
+                    class="flex gap-4 font-sans text-[10px] uppercase tracking-widest text-news-gray pt-4 border-t border-news-border">
+                    <span>Go</span>
+                    <span>Kubernetes</span>
+                    <span>CRD</span>
+                </div>
+            </article>
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+                <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
+                    <img alt="GraphQL Federation Gateway"
+                        class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYzK9rxvCIBe4-10u-_nCA007liwXe5M6YR_nogVWs4JXriMM66UxM9jrcNaLPLAV5liQU1tWw0BoO4Jz-rD6lZKsp418qLNYbujN4gCPli9rwylo6ReW_my-0KCFZ9dxAZISssYnQ9cj4agNeE54uCvbdUR_2zqvhSeXqyi5Oxn2GpNebG1VRwA8VhwoBzIFfLz62oV5pdxc65T6FzO_drIvZpDTdoOQ5jDgPuJDwlULYRiYpdw7jQKTU6kyvMRCYRBBJ_dTAw" />
+                </div>
+                <h3 class="text-3xl font-light mb-4 leading-tight">GraphQL Federation Gateway</h3>
+                <p class="text-news-gray font-sans text-sm leading-relaxed font-light mb-6">
+                    High-performance API gateway that implements GraphQL federation. Supports schema composition,
+                    query batching, and distributed tracing with minimal latency overhead.
+                </p>
+                <div
+                    class="flex gap-4 font-sans text-[10px] uppercase tracking-widest text-news-gray pt-4 border-t border-news-border">
+                    <span>Node.js</span>
+                    <span>GraphQL</span>
+                    <span>Apollo</span>
+                </div>
+            </article>
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+                <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
+                    <img alt="Ad Tech Analytics Dashboard"
+                        class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYzK9rxvCIBe4-10u-_nCA007liwXe5M6YR_nogVWs4JXriMM66UxM9jrcNaLPLAV5liQU1tWw0BoO4Jz-rD6lZKsp418qLNYbujN4gCPli9rwylo6ReW_my-0KCFZ9dxAZISssYnQ9cj4agNeE54uCvbdUR_2zqvhSeXqyi5Oxn2GpNebG1VRwA8VhwoBzIFfLz62oV5pdxc65T6FzO_drIvZpDTdoOQ5jDgPuJDwlULYRiYpdw7jQKTU6kyvMRCYRBBJ_dTAw" />
+                </div>
+                <h3 class="text-3xl font-light mb-4 leading-tight">Ad Tech Analytics Dashboard</h3>
+                <p class="text-news-gray font-sans text-sm leading-relaxed font-light mb-6">
+                    Real-time analytics platform for advertising campaigns, providing insights on impressions,
+                    clicks, and conversion rates with customizable dashboards and reporting.
+                </p>
+                <div
+                    class="flex gap-4 font-sans text-[10px] uppercase tracking-widest text-news-gray pt-4 border-t border-news-border">
+                    <span>Python</span>
+                    <span>BigQuery</span>
+                    <span>Data Pipeline</span>
+                </div>
+            </article>
+            <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105">
+                <div class="mb-8 overflow-hidden bg-gray-50 border border-news-border">
+                    <img alt="Event-Driven Framework"
+                        class="w-full grayscale group-hover:grayscale-0 transition-all duration-700 aspect-[16/10] object-cover opacity-90 group-hover:opacity-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYzK9rxvCIBe4-10u-_nCA007liwXe5M6YR_nogVWs4JXriMM66UxM9jrcNaLPLAV5liQU1tWw0BoO4Jz-rD6lZKsp418qLNYbujN4gCPli9rwylo6ReW_my-0KCFZ9dxAZISssYnQ9cj4agNeE54uCvbdUR_2zqvhSeXqyi5Oxn2GpNebG1VRwA8VhwoBzIFfLz62oV5pdxc65T6FzO_drIvZpDTdoOQ5jDgPuJDwlULYRiYpdw7jQKTU6kyvMRCYRBBJ_dTAw" />
+                </div>
+                <h3 class="text-3xl font-light mb-4 leading-tight">Event-Driven Framework</h3>
+                <p class="text-news-gray font-sans text-sm leading-relaxed font-light mb-6">
+                    Lightweight framework for building event-driven microservices with support for multiple
+                    messaging backends including Kafka, RabbitMQ, and Google Pub/Sub.
+                </p>
+                <div
+                    class="flex gap-4 font-sans text-[10px] uppercase tracking-widest text-news-gray pt-4 border-t border-news-border">
+                    <span>Go</span>
+                    <span>Kafka</span>
+                    <span>Event-Driven</span>
+                </div>
+            </article>
+        </main>
+        <footer class="mt-24 pt-8 border-t border-gray-200">
+            <div class="text-center">
+                <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
+                    © Muhammad Syamsul Arifin
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script>
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+    </script>
+
+</body>
+
+</html>
