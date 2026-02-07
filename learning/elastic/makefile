@@ -22,3 +22,7 @@ elastic-save-cert:
 # kibana
 kibana-start:
 	docker run -itd --name kibana --net test -p 5601:5601 docker.elastic.co/kibana/kibana:9.2.1
+
+pwXERWJBrogQwPlVaouK
+
+d1ZwOUo1d0JWclpNb1FiNmZqeGQ6S2d6dS1nckRwNnFjbmxKQk1lUzhZQQ==

@@ -13,3 +13,7 @@ secret.*
 dist*
 *_log
 volumes
+venv
+.vscode
+working
+google.json

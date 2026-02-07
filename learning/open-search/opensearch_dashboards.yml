@@ -9,7 +9,7 @@ opensearch.hosts: ["https://opensearch:9200"] # Using the opensearch container n
   
 opensearch.ssl.verificationMode: none
 opensearch.username: admin
-opensearch.password: admin
+opensearch.password: agh765@Vagh765@V
 opensearch.requestHeadersWhitelist: ["securitytenant","Authorization"]
   
 # Multitenancy
