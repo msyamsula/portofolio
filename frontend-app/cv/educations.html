@@ -192,26 +192,189 @@
             opacity: 1;
             transform: translateY(0);
         }
+        /* Mobile-specific improvements */
+        /* Mobile Navigation Panel */
+        .mobile-nav-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80%;
+            max-width: 300px;
+            height: 100%;
+            background-color: rgba(249, 248, 246, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .dark .mobile-nav-panel {
+            background-color: rgba(20, 20, 20, 0.98);
+        }
+        .mobile-nav-panel.open {
+            transform: translateX(0);
+        }
+        .mobile-nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+        .mobile-nav-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .mobile-nav-link {
+            display: block;
+            font-family: 'Newsreader', serif;
+            font-size: 1.125rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            color: #1a1a1a;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .dark .mobile-nav-link {
+            color: #d4d4d4;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .mobile-nav-link:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dark .mobile-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .mobile-nav-link.active {
+            text-decoration: underline;
+        }
+        /* Hamburger Menu Button */
+        .hamburger-button {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+        }
+        .hamburger-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dark .hamburger-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .hamburger-line {
+            width: 1.25rem;
+            height: 2px;
+            background-color: #1a1a1a;
+            transition: all 0.3s ease-out;
+            border-radius: 1px;
+        }
+        .dark .hamburger-line {
+            background-color: #d4d4d4;
+        }
+        .hamburger-line:nth-child(2) {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .hamburger-button.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(4px, 4px);
+        }
+        .hamburger-button.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger-button.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(4px, -4px);
+        }
+        /* Desktop navigation - hide on mobile */
+        .desktop-nav {
+            display: flex;
+        }
+        @media (max-width: 768px) {
+            .hamburger-button {
+                display: flex;
+            }
+            .desktop-nav {
+                display: none;
+            }
+        }
     </style>
 </head>
 
 <body class="bg-newsprint text-ink min-h-screen">
+    <!-- Mobile Navigation Overlay -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
+
+    <!-- Mobile Navigation Panel -->
+    <nav id="mobile-nav-panel" class="mobile-nav-panel">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <span class="font-semibold text-sm uppercase tracking-wide">Menu</span>
+            <button id="close-mobile-nav" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="py-4">
+            <a class="mobile-nav-link" href="index.html">Front Page</a>
+            <a class="mobile-nav-link active" href="educations.html">Education &amp; Honors</a>
+            <a class="mobile-nav-link" href="experiences.html">Work Experience</a>
+            <a class="mobile-nav-link" href="projects.html">Personal Projects</a>
+            <a class="mobile-nav-link" href="contact.html">Contact</a>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+            <button id="mobile-theme-toggle" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5 sun-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                        fill-rule="evenodd" clip-rule="evenodd" />
+                </svg>
+                <svg class="w-5 h-5 moon-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
+                <span class="text-sm font-medium">Toggle Theme</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Desktop Navigation -->
     <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
-        <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-8 md:space-x-12">
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+        <div class="max-w-[1000px] mx-auto px-3 sm:px-4 md:px-8 lg:px-12">
+            <div class="flex justify-between items-center py-2 sm:py-3 md:py-4">
+                <!-- Hamburger Menu Button (Mobile) -->
+                <button id="hamburger-button" class="hamburger-button" aria-label="Toggle menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+
+                <!-- Desktop Navigation Links -->
+                <div class="desktop-nav items-center gap-2 sm:gap-4 md:gap-8 lg:gap-12">
+                    <a class="nav-link text-[10px] sm:text-xs md:text-sm lg:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="index.html">Front Page</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline"
+                    <a class="nav-link text-[10px] sm:text-xs md:text-sm lg:text-base font-medium hover:text-gray-500 transition-colors underline whitespace-nowrap"
                         href="educations.html">Education &amp; Honors</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-[10px] sm:text-xs md:text-sm lg:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="experiences.html">Work Experience</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-[10px] sm:text-xs md:text-sm lg:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="projects.html">Personal Projects</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-[10px] sm:text-xs md:text-sm lg:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="contact.html">Contact</a>
                 </div>
-                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+
+                <!-- Desktop Theme Toggle -->
+                <button id="theme-toggle" class="theme-toggle hidden md:block" aria-label="Toggle dark mode">
                     <svg class="w-5 h-5 sun-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path
                             d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
@@ -224,81 +387,98 @@
             </div>
         </div>
     </nav>
-    <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
-        <header class="mb-20 text-center fade-in">
-            <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Education &amp; Honors</h1>
-            <div class="horizontal-rule w-full mb-4"></div>
-            <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
+    <div class="max-w-[1000px] mx-auto px-3 sm:px-4 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
+        <header class="mb-10 sm:mb-14 md:mb-20 text-center fade-in">
+            <h1 class="masthead text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium mb-4 sm:mb-5 md:mb-6 px-2">Education &amp; Honors</h1>
+            <div class="horizontal-rule w-full mb-3 sm:mb-4"></div>
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-1 sm:gap-2 text-[9px] sm:text-[10px] md:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-medium px-2">
                 <span>Software Engineer</span>
                 <span>Systems &amp; Architecture</span>
-                <span id="current-date">Friday, October 25, 2024</span>
+                <span id="current-date" class="mt-1 sm:mt-0">Friday, October 25, 2024</span>
             </div>
-            <div class="horizontal-rule w-full mt-4"></div>
+            <div class="horizontal-rule w-full mt-3 sm:mt-4"></div>
         </header>
-        <main class="flex flex-col gap-16 pb-32">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in">
+        <main class="flex flex-col gap-10 sm:gap-12 md:gap-14 lg:gap-16 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 fade-in">
                 <!-- Academic Column -->
-                <div class="pr-0 md:pr-8 border-r border-gray-200">
+                <div class="pr-0 md:pr-4 lg:pr-8 border-r-0 md:border-r border-gray-200">
                     <h2
-                        class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">
+                        class="section-title text-xl sm:text-2xl md:text-3xl font-semibold mb-4 sm:mb-5 md:mb-6 italic pb-2 sm:pb-3 border-b border-gray-200">
                         Academic</h2>
-                    <div class="space-y-6 pt-3">
-                        <article class="flex flex-col gap-3 fade-in">
+                    <div class="space-y-4 sm:space-y-5 md:space-y-6 pt-2 sm:pt-3">
+                        <article class="flex flex-col gap-2 sm:gap-2.5 md:gap-3 fade-in">
                             <div>
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400">2013 —
+                                <div class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                                    <span class="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-400">2013 —
                                         2018</span>
-                                    <span class="text-gray-300 text-xs">•</span>
+                                    <span class="text-gray-300 text-[10px] sm:text-xs">•</span>
                                     <span
-                                        class="text-[10px] uppercase font-bold tracking-widest text-gray-400">Bachelor's</span>
+                                        class="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-400">Bachelor's</span>
                                 </div>
-                                <h3 class="headline text-xl md:text-2xl font-semibold mb-1">Bachelor of Science in
+                                <h3 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">Bachelor of Science in
                                     Engineering Physics</h3>
-                                <div class="flex items-center gap-3 mb-2">
-                                    <img src="itb.png" alt="ITB Logo" class="w-8 h-8 object-contain" />
-                                    <p class="text-base text-gray-600">Institut Teknologi Bandung</p>
+                                <div class="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
+                                    <img src="itb.png" alt="ITB Logo" class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
+                                    <p class="text-sm sm:text-base text-gray-600">Institut Teknologi Bandung</p>
                                 </div>
-                                <p class="text-sm leading-relaxed text-gray-700">
+                                <p class="text-xs sm:text-sm leading-relaxed text-gray-700">
                                     Create simulation by combining software engineering with physics—thermodynamics,
                                     electromagnetics, Newton's Law, etc.
                                 </p>
                             </div>
-                            <div class="flex flex-wrap gap-2">
-                                <a href="certificates/bachelors-certificate.pdf" target="_blank" class="cert-button">
-                                    View Certificate
-                                </a>
-                                <a href="certificates/bachelors-transcript.pdf" target="_blank" class="cert-button">
-                                    View Transcript
-                                </a>
+                            <div class="space-y-2">
+                                <!-- Certificate Section -->
+                                <div>
+                                    <div class="text-[9px] uppercase font-semibold tracking-wide text-gray-500 mb-1">Certificate</div>
+                                    <div class="flex gap-1.5 sm:gap-2">
+                                        <a href="files/sarjana.jpg" target="_blank" class="cert-button flex-1 text-center justify-center">
+                                            Original (Indonesian)
+                                        </a>
+                                        <a href="files/bachelor.jpg" target="_blank" class="cert-button flex-1 text-center justify-center">
+                                            English Translation
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Transcript Section -->
+                                <div>
+                                    <div class="text-[9px] uppercase font-semibold tracking-wide text-gray-500 mb-1">Transcript</div>
+                                    <div class="flex gap-1.5 sm:gap-2">
+                                        <a href="files/transkrip.jpg" target="_blank" class="cert-button flex-1 text-center justify-center">
+                                            Original (Indonesian)
+                                        </a>
+                                        <a href="files/transcript.jpg" target="_blank" class="cert-button flex-1 text-center justify-center">
+                                            English Translation
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </article>
                     </div>
                 </div>
 
                 <!-- Certifications Column -->
-                <div class="px-0 md:px-8 border-r border-gray-200">
+                <div class="px-0 md:px-2 lg:px-4 xl:px-8 border-r-0 md:border-r border-gray-200">
                     <h2
-                        class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">
+                        class="section-title text-xl sm:text-2xl md:text-3xl font-semibold mb-4 sm:mb-5 md:mb-6 italic pb-2 sm:pb-3 border-b border-gray-200">
                         Certifications</h2>
-                    <div class="space-y-4 pt-3">
-                        <article class="flex flex-col gap-2 fade-in">
+                    <div class="space-y-3 sm:space-y-4 pt-2 sm:pt-3">
+                        <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
                             <div>
-                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">AWS Certified Cloud
+                                <h4 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">AWS Certified Cloud
                                     Practitioner</h4>
-                                <p class="text-xs text-gray-600">Professional Level — 2023</p>
+                                <p class="text-[10px] sm:text-xs text-gray-600">2024 - 2027</p>
                             </div>
-                            <a href="certificates/aws-sa-certificate.pdf" target="_blank" class="cert-button">
+                            <a href="files/cloud-practitioner.pdf" target="_blank" class="cert-button">
                                 View Certificate
                             </a>
                         </article>
-                        <article class="flex flex-col gap-2 fade-in">
+                        <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
                             <div>
-                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">IELTS (English Proficiency)
+                                <h4 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">IELTS (English Proficiency)
                                 </h4>
-                                <p class="text-xs text-gray-600">Professional Certification — 2022</p>
+                                <p class="text-[10px] sm:text-xs text-gray-600">Overall Band: 7.5 — 2024</p>
                             </div>
-                            <a href="certificates/gcp-data-engineer-certificate.pdf" target="_blank"
-                                class="cert-button">
+                            <a href="files/ielts.pdf" target="_blank" class="cert-button">
                                 View Certificate
                             </a>
                         </article>
@@ -306,37 +486,47 @@
                 </div>
 
                 <!-- Honors Column -->
-                <div class="pl-0 md:pl-8">
+                <div class="pl-0 md:pl-2 lg:pl-4 xl:pl-8">
                     <h2
-                        class="section-title text-2xl md:text-3xl font-semibold mb-6 italic pb-3 border-b border-gray-200">
+                        class="section-title text-xl sm:text-2xl md:text-3xl font-semibold mb-4 sm:mb-5 md:mb-6 italic pb-2 sm:pb-3 border-b border-gray-200">
                         Honors</h2>
-                    <div class="space-y-4 pt-3">
-                        <article class="flex flex-col gap-2 fade-in">
+                    <div class="space-y-3 sm:space-y-4 pt-2 sm:pt-3">
+                        <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
                             <div>
-                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Best Paper Award</h4>
-                                <p class="text-xs text-gray-600">ICIIOT 2018 — International Conference on Internet of
+                                <h4 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">Best Paper Award</h4>
+                                <p class="text-[10px] sm:text-xs text-gray-600">ICIIOT 2018 — International Conference on Internet of
                                     Things and Innovation</p>
                             </div>
-                            <a href="certificates/deans-list-certificate.pdf" target="_blank" class="cert-button">
+                            <a href="files/best-paper.jpg" target="_blank" class="cert-button">
                                 View Certificate
                             </a>
                         </article>
-                        <article class="flex flex-col gap-2 fade-in">
+                        <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
                             <div>
-                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Ganesha Karsa</h4>
-                                <p class="text-xs text-gray-600">Institut Teknologi Bandung — 2014</p>
+                                <h4 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">Ganesha Karsa</h4>
+                                <p class="text-[10px] sm:text-xs text-gray-600">Institut Teknologi Bandung — 2015</p>
                             </div>
-                            <a href="certificates/best-thesis-certificate.pdf" target="_blank" class="cert-button">
+                            <a href="files/ganesha-karsa.jpg" target="_blank" class="cert-button">
                                 View Certificate
                             </a>
                         </article>
-                        <article class="flex flex-col gap-2 fade-in">
+                        <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
                             <div>
-                                <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Silver Medalist - National
+                                <h4 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">Gold Medalist - National
                                     Physics Competition</h4>
-                                <p class="text-xs text-gray-600">Indonesian Ministry of Education — 2014</p>
+                                <p class="text-[10px] sm:text-xs text-gray-600">Indonesian Ministry of Education — 2015</p>
                             </div>
-                            <a href="certificates/programming-competition-certificate.pdf" target="_blank"
+                            <a href="files/gold-medalist.jpg" target="_blank"
+                                class="cert-button">
+                                View Certificate
+                            </a>
+                        </article>
+                        <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
+                            <div>
+                                <h4 class="headline text-lg sm:text-xl md:text-2xl font-semibold mb-1">Silver Medalist - Olimpiade Sains National (Physics)</h4>
+                                <p class="text-[10px] sm:text-xs text-gray-600">Indonesian Ministry of Education — 2012</p>
+                            </div>
+                            <a href="files/silver-medalist.jpg" target="_blank"
                                 class="cert-button">
                                 View Certificate
                             </a>
@@ -346,19 +536,19 @@
             </div>
 
             <!-- Publications Section -->
-            <section class="fade-in pt-8 border-t border-gray-200">
-                <h2 class="section-title text-2xl md:text-3xl font-semibold mb-8 italic pb-3 border-b border-gray-200">
+            <section class="fade-in pt-6 sm:pt-8 border-t border-gray-200">
+                <h2 class="section-title text-xl sm:text-2xl md:text-3xl font-semibold mb-5 sm:mb-6 md:mb-8 italic pb-2 sm:pb-3 border-b border-gray-200">
                     Publications</h2>
-                <div class="space-y-6 pt-3">
-                    <article class="flex flex-col gap-2 fade-in">
-                        <div class="flex items-start gap-3">
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                <div class="space-y-4 sm:space-y-5 md:space-y-6 pt-2 sm:pt-3">
+                    <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
+                        <div class="flex items-start gap-2 sm:gap-3">
+                            <span class="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-0.5 sm:mt-1">2018</span>
                             <div class="flex-1">
                                 <div>
-                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Switching Model of a
+                                    <h4 class="headline text-base sm:text-lg md:text-xl lg:text-2xl font-semibold mb-1">Switching Model of a
                                         Dynamic Social Network</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <p class="text-sm text-gray-700">
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 mt-1">
+                                        <p class="text-xs sm:text-sm text-gray-700">
                                             <span class="italic">Research Gate</span>
                                         </p>
                                         <a href="https://www.researchgate.net/publication/332253819_Switching_model_of_a_dynamic_social_network"
@@ -370,14 +560,14 @@
                             </div>
                         </div>
                     </article>
-                    <article class="flex flex-col gap-2 fade-in">
-                        <div class="flex items-start gap-3">
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                    <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
+                        <div class="flex items-start gap-2 sm:gap-3">
+                            <span class="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-0.5 sm:mt-1">2018</span>
                             <div class="flex-1">
                                 <div>
-                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Communication-Efficient Optimal-Based Control of a Quadrotor UAV by Event-Triggered Mechanism</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <p class="text-sm text-gray-700">
+                                    <h4 class="headline text-base sm:text-lg md:text-xl lg:text-2xl font-semibold mb-1">Communication-Efficient Optimal-Based Control of a Quadrotor UAV by Event-Triggered Mechanism</h4>
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 mt-1">
+                                        <p class="text-xs sm:text-sm text-gray-700">
                                             <span class="italic">IEEE explore</span>
                                         </p>
                                         <a href="https://ieeexplore.ieee.org/document/8593118"
@@ -389,14 +579,14 @@
                             </div>
                         </div>
                     </article>
-                    <article class="flex flex-col gap-2 fade-in">
-                        <div class="flex items-start gap-3">
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                    <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
+                        <div class="flex items-start gap-2 sm:gap-3">
+                            <span class="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-0.5 sm:mt-1">2018</span>
                             <div class="flex-1">
                                 <div>
-                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Experimental Modeling of a Quadrotor UAV Using an Indoor Local Positioning System</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <p class="text-sm text-gray-700">
+                                    <h4 class="headline text-base sm:text-lg md:text-xl lg:text-2xl font-semibold mb-1">Experimental Modeling of a Quadrotor UAV Using an Indoor Local Positioning System</h4>
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 mt-1">
+                                        <p class="text-xs sm:text-sm text-gray-700">
                                             <span class="italic">IEEE explore</span>
                                         </p>
                                         <a href="https://ieeexplore.ieee.org/document/8628424"
@@ -408,14 +598,14 @@
                             </div>
                         </div>
                     </article>
-                    <article class="flex flex-col gap-2 fade-in">
-                        <div class="flex items-start gap-3">
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-1">2018</span>
+                    <article class="flex flex-col gap-1.5 sm:gap-2 fade-in">
+                        <div class="flex items-start gap-2 sm:gap-3">
+                            <span class="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-0.5 sm:mt-1">2018</span>
                             <div class="flex-1">
                                 <div>
-                                    <h4 class="headline text-xl md:text-2xl font-semibold mb-1">Opinion Formation for Decision Making Process in Command, Control, Communications, Computers, Intelligence, Surveillance, and Reconnaissance</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <p class="text-sm text-gray-700">
+                                    <h4 class="headline text-base sm:text-lg md:text-xl lg:text-2xl font-semibold mb-1">Opinion Formation for Decision Making Process in Command, Control, Communications, Computers, Intelligence, Surveillance, and Reconnaissance</h4>
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 mt-1">
+                                        <p class="text-xs sm:text-sm text-gray-700">
                                             <span class="italic">IEEE explore</span>
                                         </p>
                                         <a href="https://ieeexplore.ieee.org/document/8592979"
@@ -430,9 +620,9 @@
                 </div>
             </section>
         </main>
-        <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
+        <footer class="mt-16 sm:mt-20 md:mt-24 pt-6 sm:pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
-                <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
+                <div class="text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-gray-500">
                     © Muhammad Syamsul Arifin
                 </div>
             </div>
@@ -464,6 +654,7 @@
 
         // Dark mode toggle
         const themeToggle = document.getElementById('theme-toggle');
+        const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
         const html = document.documentElement;
 
         const savedTheme = localStorage.getItem('theme');
@@ -473,9 +664,53 @@
             html.classList.add('dark');
         }
 
-        themeToggle.addEventListener('click', () => {
+        const toggleTheme = () => {
             html.classList.toggle('dark');
             localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        };
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        if (mobileThemeToggle) {
+            mobileThemeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // Mobile Navigation Toggle
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const mobileNavPanel = document.getElementById('mobile-nav-panel');
+        const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+        const closeMobileNav = document.getElementById('close-mobile-nav');
+
+        const openMobileNav = () => {
+            mobileNavPanel.classList.add('open');
+            mobileNavOverlay.classList.add('open');
+            hamburgerButton.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        const closeMobileNavPanel = () => {
+            mobileNavPanel.classList.remove('open');
+            mobileNavOverlay.classList.remove('open');
+            hamburgerButton.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        if (hamburgerButton) {
+            hamburgerButton.addEventListener('click', openMobileNav);
+        }
+
+        if (closeMobileNav) {
+            closeMobileNav.addEventListener('click', closeMobileNavPanel);
+        }
+
+        if (mobileNavOverlay) {
+            mobileNavOverlay.addEventListener('click', closeMobileNavPanel);
+        }
+
+        // Close mobile nav when clicking a link
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', closeMobileNavPanel);
         });
     </script>
 

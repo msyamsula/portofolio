@@ -212,26 +212,194 @@
             opacity: 1;
             transform: translateY(0);
         }
+        /* Mobile-specific improvements */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        /* Mobile Navigation Panel */
+        .mobile-nav-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80%;
+            max-width: 300px;
+            height: 100%;
+            background-color: rgba(249, 248, 246, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .dark .mobile-nav-panel {
+            background-color: rgba(20, 20, 20, 0.98);
+        }
+        .mobile-nav-panel.open {
+            transform: translateX(0);
+        }
+        .mobile-nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+        .mobile-nav-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .mobile-nav-link {
+            display: block;
+            font-family: 'Newsreader', serif;
+            font-size: 1.125rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            color: #1a1a1a;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .dark .mobile-nav-link {
+            color: #d4d4d4;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .mobile-nav-link:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dark .mobile-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .mobile-nav-link.active {
+            text-decoration: underline;
+        }
+        /* Hamburger Menu Button */
+        .hamburger-button {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+        }
+        .hamburger-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dark .hamburger-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .hamburger-line {
+            width: 1.25rem;
+            height: 2px;
+            background-color: #1a1a1a;
+            transition: all 0.3s ease-out;
+            border-radius: 1px;
+        }
+        .dark .hamburger-line {
+            background-color: #d4d4d4;
+        }
+        .hamburger-line:nth-child(2) {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .hamburger-button.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(4px, 4px);
+        }
+        .hamburger-button.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger-button.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(4px, -4px);
+        }
+        /* Desktop navigation - hide on mobile */
+        .desktop-nav {
+            display: flex;
+        }
+        @media (max-width: 768px) {
+            .hamburger-button {
+                display: flex;
+            }
+            .desktop-nav {
+                display: none;
+            }
+        }
     </style>
 </head>
 
 <body class="bg-newsprint text-ink min-h-screen">
+    <!-- Mobile Navigation Overlay -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
+
+    <!-- Mobile Navigation Panel -->
+    <nav id="mobile-nav-panel" class="mobile-nav-panel">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <span class="font-semibold text-sm uppercase tracking-wide">Menu</span>
+            <button id="close-mobile-nav" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="py-4">
+            <a class="mobile-nav-link active" href="index.html">Front Page</a>
+            <a class="mobile-nav-link" href="educations.html">Education &amp; Honors</a>
+            <a class="mobile-nav-link" href="experiences.html">Work Experience</a>
+            <a class="mobile-nav-link" href="projects.html">Personal Projects</a>
+            <a class="mobile-nav-link" href="contact.html">Contact</a>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+            <button id="mobile-theme-toggle" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5 sun-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"/>
+                </svg>
+                <svg class="w-5 h-5 moon-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                </svg>
+                <span class="text-sm font-medium">Toggle Theme</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Desktop Navigation -->
     <nav class="global-nav sticky top-0 z-50 w-full border-b border-gray-200">
-        <div class="max-w-[1000px] mx-auto px-8 lg:px-12">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-8 md:space-x-12">
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline"
+        <div class="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-12">
+            <div class="flex justify-between items-center py-3 sm:py-4">
+                <!-- Hamburger Menu Button (Mobile) -->
+                <button id="hamburger-button" class="hamburger-button" aria-label="Toggle menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+
+                <!-- Desktop Navigation Links -->
+                <div class="desktop-nav items-center gap-4 sm:gap-6 md:gap-8 lg:gap-12">
+                    <a class="nav-link text-xs sm:text-sm md:text-base font-medium hover:text-gray-500 transition-colors underline whitespace-nowrap"
                         href="index.html">Front Page</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-xs sm:text-sm md:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="educations.html">Education &amp; Honors</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-xs sm:text-sm md:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="experiences.html">Work Experience</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-xs sm:text-sm md:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="projects.html">Personal Projects</a>
-                    <a class="nav-link text-sm md:text-base font-medium hover:text-gray-500 transition-colors"
+                    <a class="nav-link text-xs sm:text-sm md:text-base font-medium hover:text-gray-500 transition-colors whitespace-nowrap"
                         href="contact.html">Contact</a>
                 </div>
-                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+
+                <!-- Desktop Theme Toggle -->
+                <button id="theme-toggle" class="theme-toggle hidden md:block" aria-label="Toggle dark mode">
                     <svg class="w-5 h-5 sun-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"/>
                     </svg>
@@ -242,53 +410,60 @@
             </div>
         </div>
     </nav>
-    <div class="max-w-[1000px] mx-auto px-8 lg:px-12 py-16">
-        <header class="mb-20 text-center fade-in">
-            <h1 class="masthead text-5xl md:text-6xl font-medium mb-6 whitespace-nowrap">Muhammad Syamsul Arifin</h1>
+    <div class="max-w-[1000px] mx-auto px-3 sm:px-4 md:px-6 lg:px-12 py-6 sm:py-8 md:py-12 lg:py-16">
+        <header class="mb-8 sm:mb-12 md:mb-16 lg:mb-20 text-center fade-in">
+            <h1 class="masthead text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium mb-3 sm:mb-4 md:mb-6 leading-tight px-2">Muhammad Syamsul Arifin</h1>
 
-            <div class="horizontal-rule w-full mb-4"></div>
-            <div class="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-medium">
+            <div class="horizontal-rule w-full mb-3 sm:mb-4"></div>
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-1.5 sm:gap-2 md:gap-4 text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em] md:tracking-[0.2em] font-medium px-2">
                 <span>Software Engineer</span>
                 <span>Systems &amp; Architecture</span>
-                <span id="current-date">Friday, October 25, 2024</span>
+                <span id="current-date" class="mt-1 sm:mt-0">Friday, October 25, 2024</span>
             </div>
-            <div class="horizontal-rule w-full mt-4"></div>
-            <div class="flex justify-center items-center text-[10px] tracking-widest font-bold my-6 fade-in">
-                <div class="flex gap-12 items-center">
-                    <a class="hover:opacity-70 transition-opacity flex items-center gap-2"
+            <div class="horizontal-rule w-full mt-3 sm:mt-4"></div>
+            <div class="flex justify-center items-center text-[8px] sm:text-[9px] md:text-[10px] tracking-widest font-bold my-3 sm:my-4 md:my-6 fade-in">
+                <div class="flex flex-row gap-5 sm:gap-6 md:gap-8 lg:gap-12 items-center px-2 flex-wrap">
+                    <a class="hover:opacity-70 transition-opacity flex items-center gap-1.5 sm:gap-2"
                         href="https://www.linkedin.com/in/msyamsula/" target="_blank">
-                        <svg class="w-4 h-4" fill="#0077B5" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="#0077B5" viewBox="0 0 24 24">
                             <path
                                 d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                         </svg>
-                        linkedin.com/in/msyamsula
+                        <span class="hidden sm:inline">linkedin.com/in/msyamsula</span>
                     </a>
-                    <a class="hover:opacity-70 transition-opacity flex items-center gap-2"
+                    <a class="hover:opacity-70 transition-opacity flex items-center gap-1.5 sm:gap-2"
                         href="https://github.com/msyamsula" target="_blank">
-                        <svg class="w-4 h-4" fill="#333333" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="#333333" viewBox="0 0 24 24">
                             <path
                                 d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                         </svg>
-                        github.com/msyamsula
+                        <span class="hidden sm:inline">github.com/msyamsula</span>
                     </a>
-                    <a class="hover:opacity-70 transition-opacity flex items-center gap-2"
+                    <a class="hover:opacity-70 transition-opacity flex items-center gap-1.5 sm:gap-2"
                         href="mailto:msyamsula1995@gmail.com">
-                        <svg class="w-4 h-4" fill="#EA4335" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="#EA4335" viewBox="0 0 24 24">
                             <path
                                 d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                         </svg>
-                        msyamsula1995@gmail.com
+                        <span class="hidden sm:inline">msyamsula1995@gmail.com</span>
+                    </a>
+                    <a class="hover:opacity-70 transition-opacity flex items-center gap-1.5 sm:gap-2"
+                        href="https://medium.com/@msyamsula" target="_blank">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="#000000" viewBox="0 0 24 24">
+                            <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 0113.54 12zm7.42 0c0 3.53-2.1 6.62-5.3 8.25.08.72.44 1.3.94 1.65.48.33 1.05.5 1.63.44.46-.05.89-.2 1.25-.42.19-.12.37-.27.54-.43-.5.46-1.15 1.03-1.91 1.54-.78.52-1.63.93-2.48 1.19a8.5 8.5 0 01-3.28.65c-2.3 0-4.39-.78-5.83-2.08a7.95 7.95 0 01-2.05-5.58c0-3.02 2.15-6.34 5.7-7.53.14-.05.25-.13.2-.25-.06-.13.05-.24.17-.33.3-.19.63-.31 1.01-.33.4-.02.79.07 1.14.27.37.22.67.52.89.88.22.36.34.76.34 1.18 0 .46-.15.88-.4 1.24a3.03 3.03 0 01-.98.98c-.4.26-.88.38-1.37.38a2.95 2.95 0 01-1.46-.4c-.41-.23-.76-.56-1-.97-.25-.41-.39-.87-.39-1.36 0-.5.15-.96.42-1.36.28-.41.66-.74 1.1-.97.44-.22.92-.34 1.42-.34.5 0 .96.12 1.37.35.4.23.74.56.97.97.23.41.36.87.36 1.36 0 .48-.13.93-.36 1.33-.22.4-.55.73-.96.96-.42.24-.9.36-1.42.36-.5 0-.97-.12-1.38-.35-.41-.23-.75-.56-.98-.97-.23-.41-.36-.87-.36-1.36zm-7.42 6.82c3.17 0 5.8-2.62 5.8-5.8s-2.63-5.8-5.8-5.8-5.8 2.62-5.8 5.8 2.62 5.8 5.8 5.8z"/>
+                        </svg>
+                        <span class="hidden sm:inline">medium.com/@msyamsula</span>
                     </a>
                 </div>
             </div>
         </header>
-        <main class="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
+        <main class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 xl:gap-16">
             <section class="md:col-span-7 flex flex-col justify-start">
-                <div class="mb-10 fade-in">
-                    <h2 class="headline text-4xl md:text-5xl font-semibold mb-8 italic">
+                <div class="mb-4 sm:mb-6 md:mb-8 lg:mb-10 fade-in">
+                    <h2 class="headline text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold mb-4 sm:mb-6 md:mb-8 italic leading-tight px-1">
                         Building & designing systems from the ground up—one deployment at a time.
                     </h2>
-                    <div class="space-y-6 text-base leading-relaxed text-gray-800">
+                    <div class="space-y-4 sm:space-y-5 md:space-y-6 text-sm sm:text-base leading-relaxed text-gray-800 px-1">
                         <p class="fade-in">
                             Seven years as a software engineer have taught me that great systems aren't built alone.
                             I've taken ad systems from ideation to production—writing documentation, setting timelines,
@@ -306,21 +481,21 @@
                             brutally honest—especially with yourself. I don't aspire to be the best; I aspire to be
                             beneficial. Leadership, to me, means openness, continuous learning, and driving outcomes.
                         </p>
-                        <p class="text-sm text-gray-600 italic fade-in">
+                        <p class="text-xs sm:text-sm text-gray-600 italic fade-in">
                             Outside of code, I'm an avid tennis and badminton player. Always up for a single match.
                         </p>
                     </div>
-                    <div class="mt-12 pt-8 border-t border-gray-200 fade-in">
-                        <div class="text-center text-sm font-bold uppercase tracking-widest text-gray-800 mb-6">Tech
+                    <div class="mt-8 sm:mt-10 md:mt-12 pt-6 sm:pt-8 border-t border-gray-200 fade-in">
+                        <div class="text-center text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-widest text-gray-800 mb-4 sm:mb-5 md:mb-6">Tech
                             Stack
                         </div>
 
-                        <div class="grid grid-cols-3 gap-8">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                             <!-- Column 1 -->
                             <div>
-                                <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">Languages
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 sm:mb-2 md:mb-3">Languages
                                 </h4>
-                                <ul class="space-y-1 text-sm">
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
                                     <li><span class="text-gray-400">▸</span> Go</li>
                                     <li><span class="text-gray-400">▸</span> Java</li>
                                     <li><span class="text-gray-400">▸</span> JavaScript</li>
@@ -328,9 +503,9 @@
                                     <li><span class="text-gray-400">▸</span> C++</li>
                                 </ul>
 
-                                <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 mt-6">
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3 mt-4 sm:mt-5 md:mt-6">
                                     Protocols</h4>
-                                <ul class="space-y-1 text-sm">
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
                                     <li><span class="text-gray-400">▸</span> HTTP</li>
                                     <li><span class="text-gray-400">▸</span> gRPC</li>
                                     <li><span class="text-gray-400">▸</span> WebSocket</li>
@@ -340,9 +515,9 @@
 
                             <!-- Column 2 -->
                             <div>
-                                <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">Data
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3">Data
                                     &amp; Databases</h4>
-                                <ul class="space-y-1 text-sm">
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
                                     <li><span class="text-gray-400">▸</span> PostgreSQL</li>
                                     <li><span class="text-gray-400">▸</span> MySQL</li>
                                     <li><span class="text-gray-400">▸</span> DynamoDB</li>
@@ -355,9 +530,9 @@
                                     <li><span class="text-gray-400">▸</span> OpenSearch</li>
                                 </ul>
 
-                                <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 mt-6">
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3 mt-4 sm:mt-5 md:mt-6">
                                     Messaging</h4>
-                                <ul class="space-y-1 text-sm">
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
                                     <li><span class="text-gray-400">▸</span> Redis</li>
                                     <li><span class="text-gray-400">▸</span> Kafka</li>
                                     <li><span class="text-gray-400">▸</span> RabbitMQ</li>
@@ -370,20 +545,50 @@
 
                             <!-- Column 3 -->
                             <div>
-                                <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3">
                                     Infrastructure</h4>
-                                <ul class="space-y-1 text-sm">
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
                                     <li><span class="text-gray-400">▸</span> Kubernetes</li>
                                     <li><span class="text-gray-400">▸</span> Docker</li>
+                                    <li><span class="text-gray-400">▸</span> Istio</li>
+                                    <li><span class="text-gray-400">▸</span> Service Mesh</li>
                                     <li><span class="text-gray-400">▸</span> AWS</li>
                                     <li><span class="text-gray-400">▸</span> Google Cloud</li>
                                     <li><span class="text-gray-400">▸</span> Cron</li>
                                     <li><span class="text-gray-400">▸</span> Vector</li>
                                 </ul>
 
-                                <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 mt-6">
-                                    Architecture</h4>
-                                <ul class="space-y-1 text-sm">
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3 mt-4 sm:mt-5 md:mt-6">
+                                    Observability
+                                </h4>
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
+                                    <li><span class="text-gray-400">▸</span> Prometheus</li>
+                                    <li><span class="text-gray-400">▸</span> Jaeger</li>
+                                    <li><span class="text-gray-400">▸</span> NewRelic</li>
+                                    <li><span class="text-gray-400">▸</span> Datadog</li>
+                                </ul>
+                            </div>
+
+                            <!-- Column 4 -->
+                            <div>
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3">
+                                    Data Visualization
+                                </h4>
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
+                                    <li><span class="text-gray-400">▸</span> Kibana</li>
+                                </ul>
+
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3 mt-4 sm:mt-5 md:mt-6">
+                                    Dev Tools
+                                </h4>
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
+                                    <li><span class="text-gray-400">▸</span> Postman</li>
+                                </ul>
+
+                                <h4 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5 md:mb-3 mt-4 sm:mt-5 md:mt-6">
+                                    Architecture
+                                </h4>
+                                <ul class="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs md:text-sm">
                                     <li><span class="text-gray-400">▸</span> Domain-Driven Design</li>
                                     <li><span class="text-gray-400">▸</span> Design Patterns</li>
                                     <li><span class="text-gray-400">▸</span> Algorithms</li>
@@ -396,28 +601,28 @@
                     </div>
                 </div>
             </section>
-            <section class="md:col-span-5 md:border-l md:border-accent-line md:pl-12 flex flex-col">
-                <div class="mb-8 fade-in">
-                    <img alt="Professional portrait" class="w-full contrast-110 brightness-95 mb-4"
+            <section class="md:col-span-5 md:border-l md:border-accent-line md:pl-4 lg:md:pl-8 xl:md:pl-12 flex flex-col">
+                <div class="mb-4 sm:mb-6 md:mb-8 fade-in">
+                    <img alt="Professional portrait" class="w-full contrast-110 brightness-95 mb-2 sm:mb-3 md:mb-4"
                         src="front-page.png" />
-                    <p class="text-[10px] uppercase tracking-wider text-gray-500 italic">
+                    <p class="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 italic">
                         Muhammad Syamsul Arifin
                     </p>
                 </div>
-                <div class="space-y-8">
-                    <div class="bg-gray-100 p-6 rounded-sm fade-in">
-                        <h3 class="headline text-xl font-bold mb-2">The Editorial</h3>
-                        <p class="text-xs italic leading-relaxed text-gray-700 mb-2">
+                <div class="space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8">
+                    <div class="bg-gray-100 p-3 sm:p-4 md:p-6 rounded-sm fade-in">
+                        <h3 class="headline text-base sm:text-lg md:text-xl font-bold mb-1.5 sm:mb-2">The Editorial</h3>
+                        <p class="text-[10px] sm:text-xs italic leading-relaxed text-gray-700 mb-1.5 sm:mb-2">
                             "True greatness is not about being great yourself—it is about how you can make
                             your surroundings great."
                         </p>
-                        <p class="text-xs not-italic text-gray-500 text-right">— Syamsul</p>
+                        <p class="text-[10px] sm:text-xs not-italic text-gray-500 text-right">— Syamsul</p>
                     </div>
                     <div class="fade-in">
                         <h3
-                            class="text-xs font-bold uppercase tracking-tighter mb-3 pb-1 border-b border-gray-900 inline-block">
+                            class="text-[10px] sm:text-xs font-bold uppercase tracking-tighter mb-1.5 sm:mb-2 md:mb-3 pb-1 border-b border-gray-900 inline-block">
                             Competencies and Skills</h3>
-                        <ul class="text-sm space-y-2 font-medium">
+                        <ul class="text-[10px] sm:text-xs md:text-sm space-y-1 sm:space-y-1.5 md:space-y-2 font-medium">
                             <li>Backend Services</li>
                             <li>Cloud Infrastructure</li>
                             <li>API &amp; Database Design</li>
@@ -426,11 +631,11 @@
                             <li>Digital Marketing and Advertisement</li>
                         </ul>
                     </div>
-                    <div class="bg-white p-6 rounded-sm border-2 border-gray-300 fade-in">
-                        <h3 class="headline text-lg font-bold mb-3">Curriculum Vitae</h3>
+                    <div class="bg-white p-3 sm:p-4 md:p-6 rounded-sm border-2 border-gray-300 fade-in">
+                        <h3 class="headline text-sm sm:text-base md:text-lg font-bold mb-1.5 sm:mb-2 md:mb-3">Curriculum Vitae</h3>
                         <a href="cv.pdf"
-                            class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest hover:text-gray-500 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:text-gray-500 transition-colors">
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
@@ -440,9 +645,9 @@
                 </div>
             </section>
         </main>
-        <footer class="mt-24 pt-8 border-t border-gray-200 fade-in">
+        <footer class="mt-10 sm:mt-14 md:mt-16 lg:mt-20 xl:mt-24 pt-4 sm:pt-6 md:pt-8 border-t border-gray-200 fade-in">
             <div class="text-center">
-                <div class="text-[10px] uppercase tracking-widest font-bold text-gray-500">
+                <div class="text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-gray-500">
                     © Muhammad Syamsul Arifin
                 </div>
             </div>
@@ -475,6 +680,7 @@
 
         // Dark mode toggle
         const themeToggle = document.getElementById('theme-toggle');
+        const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
         const html = document.documentElement;
 
         // Check for saved preference or system preference
@@ -485,9 +691,53 @@
             html.classList.add('dark');
         }
 
-        themeToggle.addEventListener('click', () => {
+        const toggleTheme = () => {
             html.classList.toggle('dark');
             localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        };
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        if (mobileThemeToggle) {
+            mobileThemeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // Mobile Navigation Toggle
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const mobileNavPanel = document.getElementById('mobile-nav-panel');
+        const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+        const closeMobileNav = document.getElementById('close-mobile-nav');
+
+        const openMobileNav = () => {
+            mobileNavPanel.classList.add('open');
+            mobileNavOverlay.classList.add('open');
+            hamburgerButton.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        const closeMobileNavPanel = () => {
+            mobileNavPanel.classList.remove('open');
+            mobileNavOverlay.classList.remove('open');
+            hamburgerButton.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        if (hamburgerButton) {
+            hamburgerButton.addEventListener('click', openMobileNav);
+        }
+
+        if (closeMobileNav) {
+            closeMobileNav.addEventListener('click', closeMobileNavPanel);
+        }
+
+        if (mobileNavOverlay) {
+            mobileNavOverlay.addEventListener('click', closeMobileNavPanel);
+        }
+
+        // Close mobile nav when clicking a link
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', closeMobileNavPanel);
         });
     </script>
 
