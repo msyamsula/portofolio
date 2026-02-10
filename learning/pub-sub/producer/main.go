@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub/v2"
-	pb "github.com/msyamsula/portofolio/pub-sub"
+	pb "github.com/msyamsula/portofolio/learning/pub-sub"
 )
 
 var projectID = "developer-certification-376713"

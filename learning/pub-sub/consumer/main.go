@@ -1,7 +1,7 @@
 package main
 
 import (
-	pubsub "github.com/msyamsula/portofolio/pub-sub"
+	pubsub "github.com/msyamsula/portofolio/learning/pub-sub"
 )
 
 func main() {
