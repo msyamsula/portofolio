@@ -279,3 +279,59 @@ func DefaultConfig(serviceName string) Config {
 		Environment:   "development",
 	}
 }
+
+// Package-level logger for convenience
+// Use SetDefaultLogger to set a custom logger
+var defaultLogger = Default()
+
+// SetDefaultLogger sets the package-level logger
+func SetDefaultLogger(l *Logger) {
+	defaultLogger = l
+}
+
+// GetDefaultLogger returns the package-level logger
+func GetDefaultLogger() *Logger {
+	return defaultLogger
+}
+
+// Package-level convenience functions for logging
+
+// Debug logs a debug message using the default logger
+func Debug(msg string, metadata map[string]any) {
+	defaultLogger.Debug(msg, metadata)
+}
+
+// DebugError logs a debug message with an error using the default logger
+func DebugError(msg string, err error, metadata map[string]any) {
+	defaultLogger.DebugError(msg, err, metadata)
+}
+
+// Info logs an info message using the default logger
+func Info(msg string, metadata map[string]any) {
+	defaultLogger.Info(msg, metadata)
+}
+
+// InfoError logs an info message with an error using the default logger
+func InfoError(msg string, err error, metadata map[string]any) {
+	defaultLogger.InfoError(msg, err, metadata)
+}
+
+// Warn logs a warning message using the default logger
+func Warn(msg string, metadata map[string]any) {
+	defaultLogger.Warn(msg, metadata)
+}
+
+// WarnError logs a warning message with an error using the default logger
+func WarnError(msg string, err error, metadata map[string]any) {
+	defaultLogger.WarnError(msg, err, metadata)
+}
+
+// Error logs an error message using the default logger
+func Error(msg string, metadata map[string]any) {
+	defaultLogger.Error(msg, metadata)
+}
+
+// ErrorError logs an error message with an error using the default logger
+func ErrorError(msg string, err error, metadata map[string]any) {
+	defaultLogger.ErrorError(msg, err, metadata)
+}

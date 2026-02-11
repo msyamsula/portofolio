@@ -13,10 +13,18 @@ type otelWriter struct {
 }
 
 // SetOTELLogger sets an OpenTelemetry logger as the output destination
-// This allows formatted logs to be exported via OTLP
+// This allows formatted logs to be exported via OTLP while preserving console output
 func SetOTELLogger(otelLogger log.Logger) {
 	w := &otelWriter{logger: otelLogger}
+
+	// Capture the original console logFunc to preserve stdout output
+	originalLogFunc := logFunc
+
+	// Replace logFunc with dual-output version that sends to both console and OTLP
 	logFunc = func(format string, args ...any) {
+		// 1. Send to console (preserves stdout)
+		originalLogFunc(format, args...)
+		// 2. Send to OTLP
 		msg := fmt.Sprintf(format, args...)
 		w.emit(msg)
 	}
@@ -35,9 +43,4 @@ func ResetToStdout() {
 	logFunc = func(format string, args ...any) {
 		fmt.Printf(format+"\n", args...)
 	}
-}
-
-// setLogFunc is a variable for testing purposes
-var setLogFunc = func(fn func(format string, args ...any)) {
-	logFunc = fn
 }
