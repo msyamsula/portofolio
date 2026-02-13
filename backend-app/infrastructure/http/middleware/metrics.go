@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/logger"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/metrics"
 )
@@ -11,6 +12,10 @@ import (
 // MetricsMiddleware records HTTP request metrics (counter by path and status)
 func MetricsMiddleware(instruments *metrics.Instruments) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
+		if instruments == nil {
+			return next
+		}
+
 		// Create the handler function
 		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -27,8 +32,16 @@ func MetricsMiddleware(instruments *metrics.Instruments) func(next http.Handler)
 			status := wrappedWriter.statusCode
 			method := r.Method
 			path := r.URL.Path
+			if route := mux.CurrentRoute(r); route != nil {
+				if template, err := route.GetPathTemplate(); err == nil {
+					path = template
+				} else if regex, err := route.GetPathRegexp(); err == nil {
+					path = regex
+				}
+			}
 
-			instruments.IncrementRequestCounter(ctx, method, path, status)
+			instruments.RecordRequest(ctx, method, path, status, duration)
+			instruments.SetResponseTime(duration)
 
 			logger.Debug("request metrics recorded", map[string]any{
 				"method":   method,

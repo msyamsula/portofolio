@@ -1,0 +1,64 @@
+# OpenTelemetry Collector config for:
+# - Traces -> Jaeger (OTLP gRPC)
+# - Metrics -> Prometheus (scrape from collector)
+# - Logs -> Loki (HTTP)
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 256
+
+exporters:
+  logging:
+    loglevel: info
+
+  # Traces to Jaeger via OTLP
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Metrics to Prometheus: collector exposes /metrics
+  prometheus:
+    endpoint: 0.0.0.0:9464
+    namespace: app
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  # Logs to Loki
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    labels:
+      attributes:
+        service.name: service
+        deployment.environment: env
+
+service:
+  telemetry:
+    logs:
+      level: info
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/jaeger, logging]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [loki, logging]

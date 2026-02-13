@@ -26,6 +26,7 @@ import (
 	redisinf "github.com/msyamsula/portofolio/backend-app/infrastructure/database/redis"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/http/middleware"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/logger"
+	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/metrics"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/span"
 )
 
@@ -45,6 +46,7 @@ type Config struct {
 	// Telemetry configuration
 	TelemetryCollectorEndpoint string
 	ServiceName                string
+	MetricsPushInterval        time.Duration
 	// Logger configuration
 	LogLevel  string
 	LogFormat string
@@ -79,6 +81,15 @@ func main() {
 		}()
 	}
 
+	metricsClient, instruments := initMetrics(cfg)
+	if metricsClient != nil {
+		defer func() {
+			if err := metricsClient.Shutdown(context.Background()); err != nil {
+				logger.ErrorError("failed to shutdown metrics", err, nil)
+			}
+		}()
+	}
+
 	// Initialize dependencies
 	db := initPostgres(cfg)
 	rdb := initRedis(cfg)
@@ -97,7 +108,7 @@ func main() {
 		url:         urlHandler,
 		healthcheck: healthHandler,
 	}
-	router := setupServer(domainHandler)
+	router := setupServer(domainHandler, instruments)
 
 	// Start server
 	startServer(router, cfg.ServerPort)
@@ -118,6 +129,7 @@ func loadConfig() Config {
 		RedisDB:                    0,
 		TelemetryCollectorEndpoint: getEnv("OTEL_COLLECTOR_ENDPOINT", "localhost:4317"),
 		ServiceName:                getEnv("SERVICE_NAME", "url-shortener"),
+		MetricsPushInterval:        getDurationEnv("OTEL_METRICS_INTERVAL", 15*time.Second),
 		LogLevel:                   getEnv("LOG_LEVEL", "INFO"),
 		LogFormat:                  getEnv("LOG_FORMAT", "TEXT"),
 	}
@@ -198,11 +210,48 @@ func initTelemetry(cfg Config) *span.Client {
 	return spanClient
 }
 
+func initMetrics(cfg Config) (*metrics.Client, *metrics.Instruments) {
+	ctx := context.Background()
+
+	metricsClient, err := metrics.NewClient(ctx, metrics.Config{
+		ServiceName:       cfg.ServiceName,
+		CollectorEndpoint: cfg.TelemetryCollectorEndpoint,
+		Insecure:          true,
+		PushInterval:      cfg.MetricsPushInterval,
+		Environment:       getEnv("ENVIRONMENT", "local"),
+	})
+	if err != nil {
+		logger.WarnError("failed to create metrics client", err, map[string]any{"service": cfg.ServiceName})
+		return nil, nil
+	}
+
+	instruments, err := metrics.NewInstruments(metricsClient.Meter(cfg.ServiceName))
+	if err != nil {
+		logger.WarnError("failed to create metrics instruments", err, nil)
+		return metricsClient, nil
+	}
+
+	logger.Info("metrics initialized", map[string]any{"service": cfg.ServiceName})
+	return metricsClient, instruments
+}
+
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
 	return defaultValue
+}
+
+func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	parsed, err := time.ParseDuration(value)
+	if err != nil {
+		return defaultValue
+	}
+	return parsed
 }
 
 func initPostgres(cfg Config) *sqlx.DB {
@@ -257,8 +306,11 @@ type domainHandler struct {
 	healthcheck *healthcheckHandler.Handler
 }
 
-func setupServer(h domainHandler) *mux.Router {
+func setupServer(h domainHandler, instruments *metrics.Instruments) *mux.Router {
 	r := mux.NewRouter()
+
+	// Metrics for all routes
+	r.Use(middleware.MetricsMiddleware(instruments))
 
 	// Swagger UI
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)

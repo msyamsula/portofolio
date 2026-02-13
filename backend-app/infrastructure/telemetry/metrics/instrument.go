@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"sync/atomic"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -13,7 +14,9 @@ type Instruments struct {
 	RequestCounter metric.Int64Counter
 
 	// Gauge
-	ActiveUsersGauge metric.Int64ObservableGauge
+	ActiveUsersGauge   metric.Int64ObservableGauge
+	ResponseTimeGauge  metric.Float64ObservableGauge
+	latestResponseTime atomic.Value
 
 	// Histogram
 	RequestDuration metric.Float64Histogram
@@ -26,6 +29,8 @@ func NewInstruments(meter any) (*Instruments, error) {
 		// Return empty instruments if meter is not the right type
 		return &Instruments{}, nil
 	}
+
+	instruments := &Instruments{}
 
 	reqCounter, err := m.Int64Counter("http_requests_total",
 		metric.WithDescription("Total number of HTTP requests"),
@@ -43,10 +48,36 @@ func NewInstruments(meter any) (*Instruments, error) {
 		return nil, err
 	}
 
-	return &Instruments{
-		RequestCounter:  reqCounter,
-		RequestDuration: duration,
-	}, nil
+	responseTimeGauge, err := m.Float64ObservableGauge(
+		"http_response_time_latest_seconds",
+		metric.WithDescription("Latest HTTP response time in seconds"),
+		metric.WithUnit("s"),
+		metric.WithFloat64Callback(func(ctx context.Context, observer metric.Float64Observer) error {
+			if v := instruments.latestResponseTime.Load(); v != nil {
+				observer.Observe(v.(float64))
+			}
+			return nil
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instruments.latestResponseTime.Store(float64(0))
+
+	instruments.RequestCounter = reqCounter
+	instruments.RequestDuration = duration
+	instruments.ResponseTimeGauge = responseTimeGauge
+
+	return instruments, nil
+}
+
+// SetResponseTime sets the latest response time for gauge observation
+func (i *Instruments) SetResponseTime(duration float64) {
+	if i.ResponseTimeGauge == nil {
+		return
+	}
+	i.latestResponseTime.Store(duration)
 }
 
 // RecordRequest records an HTTP request metric
@@ -65,6 +96,9 @@ func (i *Instruments) RecordRequest(ctx context.Context, method, path string, st
 
 	if i.RequestDuration != nil {
 		i.RequestDuration.Record(ctx, duration, metric.WithAttributes(attrs...))
+	}
+	if i.ResponseTimeGauge != nil {
+		i.SetResponseTime(duration)
 	}
 }
 
