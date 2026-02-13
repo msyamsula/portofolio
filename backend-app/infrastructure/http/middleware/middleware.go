@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/http/handler"
+	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/logger"
 )
 
 // Chain chains multiple middleware together in reverse order
@@ -28,7 +28,7 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("PANIC recovered: %v", err)
+				logger.Error("PANIC recovered", map[string]any{"error": err})
 				_ = handler.InternalError(w, "internal server error")
 			}
 		}()
@@ -40,11 +40,19 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		log.Printf("[%s] %s %s", r.Method, r.URL.Path, r.URL.RawQuery)
+		logger.Info("request started", map[string]any{
+			"method": r.Method,
+			"path":   r.URL.Path,
+			"query":  r.URL.RawQuery,
+		})
 
 		next.ServeHTTP(w, r)
 
-		log.Printf("[%s] %s completed in %v", r.Method, r.URL.Path, time.Since(start))
+		logger.Info("request completed", map[string]any{
+			"method":    r.Method,
+			"path":      r.URL.Path,
+			"duration": time.Since(start).Milliseconds(),
+		})
 	})
 }
 
@@ -96,7 +104,7 @@ func AdminMiddleware(next http.Handler) http.Handler {
 		}
 
 		// TODO: Implement actual admin check
-		log.Printf("Admin check for user: %s", userID)
+		logger.Info("Admin check for user", map[string]any{"user_id": userID})
 
 		next.ServeHTTP(w, r)
 	})

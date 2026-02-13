@@ -53,28 +53,29 @@ func main() {
 	cfg := loadConfig()
 
 	// Initialize logger (must be first for proper logging)
-	loggerClient := initLogger(cfg)
-	if loggerClient != nil {
-		defer func() {
-			if err := loggerClient.Shutdown(context.Background()); err != nil {
-				loggerClient.Logger.ErrorError("failed to shutdown logger", err, nil)
-			}
-		}()
+	if err := initLogger(cfg); err != nil {
+		logger.Error("failed to initialize logger", map[string]any{"error": err})
+		os.Exit(1)
 	}
+	defer func() {
+		if err := logger.Shutdown(context.Background()); err != nil {
+			logger.ErrorError("failed to shutdown logger", err, nil)
+		}
+	}()
 
 	// Initialize telemetry
-	spanClient := initTelemetry(cfg, loggerClient.Logger)
+	spanClient := initTelemetry(cfg)
 	if spanClient != nil {
 		defer func() {
 			if err := spanClient.Shutdown(context.Background()); err != nil {
-				loggerClient.Logger.ErrorError("failed to shutdown telemetry", err, nil)
+				logger.ErrorError("failed to shutdown telemetry", err, nil)
 			}
 		}()
 	}
 
 	// Initialize dependencies
-	db := initPostgres(cfg, loggerClient.Logger)
-	rdb := initRedis(cfg, loggerClient.Logger)
+	db := initPostgres(cfg)
+	rdb := initRedis(cfg)
 
 	// Initialize URL shortener domain
 	urlShortenerRepo := repository.NewRepository(db, rdb)
@@ -93,7 +94,7 @@ func main() {
 	router := setupServer(domainHandler)
 
 	// Start server
-	startServer(router, cfg.ServerPort, loggerClient.Logger)
+	startServer(router, cfg.ServerPort)
 }
 
 func loadConfig() Config {
@@ -116,7 +117,7 @@ func loadConfig() Config {
 	}
 }
 
-func initLogger(cfg Config) *logger.Client {
+func initLogger(cfg Config) error {
 	ctx := context.Background()
 
 	// Parse log level
@@ -142,34 +143,30 @@ func initLogger(cfg Config) *logger.Client {
 		format = logger.TextFormat
 	}
 
-	// Initialize logger client with dual output (stdout + OTLP)
-	loggerClient, err := logger.NewClient(ctx, logger.Config{
+	// Initialize logger with dual output (stdout + OTLP)
+	if err := logger.Init(ctx, logger.Config{
 		ServiceName:       cfg.ServiceName,
 		CollectorEndpoint: cfg.TelemetryCollectorEndpoint,
-		Insecure:          true,
-		Environment:       getEnv("ENVIRONMENT", "local"),
-		LogsEnabled:       true, // Enable OTLP export
-		Level:             level,
-		Format:            format,
-		TimeFormat:        time.RFC3339,
-	})
-	if err != nil {
-		// Fallback to default logger if initialization fails
-		defaultLogger := logger.Default()
-		defaultLogger.ErrorError("failed to initialize logger client, using default", err, nil)
-		return &logger.Client{Logger: defaultLogger}
+		Insecure:         true,
+		Environment:      getEnv("ENVIRONMENT", "local"),
+		LogsEnabled:      true, // Enable OTLP export
+		Level:            level,
+		Format:           format,
+		TimeFormat:       time.RFC3339,
+	}); err != nil {
+		return err
 	}
 
-	loggerClient.Logger.Info("logger initialized", map[string]any{
+	logger.Info("logger initialized", map[string]any{
 		"level": cfg.LogLevel,
 		"format": cfg.LogFormat,
 		"otlp_enabled": true,
 	})
 
-	return loggerClient
+	return nil
 }
 
-func initTelemetry(cfg Config, log *logger.Logger) *span.Client {
+func initTelemetry(cfg Config) *span.Client {
 	ctx := context.Background()
 
 	// Initialize telemetry span client using infrastructure
@@ -181,7 +178,7 @@ func initTelemetry(cfg Config, log *logger.Logger) *span.Client {
 		Environment:       getEnv("ENVIRONMENT", "local"),
 	})
 	if err != nil {
-		log.WarnError("failed to create telemetry client", err, map[string]any{"service": cfg.ServiceName})
+		logger.WarnError("failed to create telemetry client", err, map[string]any{"service": cfg.ServiceName})
 		return nil
 	}
 
@@ -191,7 +188,7 @@ func initTelemetry(cfg Config, log *logger.Logger) *span.Client {
 		propagation.Baggage{},
 	))
 
-	log.Info("telemetry initialized", map[string]any{"service": cfg.ServiceName})
+	logger.Info("telemetry initialized", map[string]any{"service": cfg.ServiceName})
 	return spanClient
 }
 
@@ -202,7 +199,7 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func initPostgres(cfg Config, log *logger.Logger) *sqlx.DB {
+func initPostgres(cfg Config) *sqlx.DB {
 	ctx := context.Background()
 	db, err := postgres.NewPostgresClient(ctx, postgres.Config{
 		Host:     cfg.PostgresHost,
@@ -213,14 +210,14 @@ func initPostgres(cfg Config, log *logger.Logger) *sqlx.DB {
 		SSLMode:  cfg.PostgresSSL,
 	})
 	if err != nil {
-		log.ErrorError("failed to connect to postgres", err, map[string]any{
+		logger.ErrorError("failed to connect to postgres", err, map[string]any{
 			"host": cfg.PostgresHost,
 			"port": cfg.PostgresPort,
 			"database": cfg.PostgresDB,
 		})
 		os.Exit(1)
 	}
-	log.Info("connected to postgres", map[string]any{
+	logger.Info("connected to postgres", map[string]any{
 		"host": cfg.PostgresHost,
 		"port": cfg.PostgresPort,
 		"database": cfg.PostgresDB,
@@ -228,7 +225,7 @@ func initPostgres(cfg Config, log *logger.Logger) *sqlx.DB {
 	return db
 }
 
-func initRedis(cfg Config, log *logger.Logger) *redis.Client {
+func initRedis(cfg Config) *redis.Client {
 	ctx := context.Background()
 	rdb := redisinf.NewRedisClient(ctx, redisinf.RedisConfig{
 		Host:     cfg.RedisHost,
@@ -236,13 +233,13 @@ func initRedis(cfg Config, log *logger.Logger) *redis.Client {
 		DB:       cfg.RedisDB,
 	})
 	if err := redisinf.PingRedis(ctx, rdb); err != nil {
-		log.ErrorError("failed to connect to redis", err, map[string]any{
+		logger.ErrorError("failed to connect to redis", err, map[string]any{
 			"host": cfg.RedisHost,
 			"db": cfg.RedisDB,
 		})
 		os.Exit(1)
 	}
-	log.Info("connected to redis", map[string]any{
+	logger.Info("connected to redis", map[string]any{
 		"host": cfg.RedisHost,
 		"db": cfg.RedisDB,
 	})
@@ -297,7 +294,7 @@ func xPortofolioMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func startServer(router *mux.Router, port string, log *logger.Logger) {
+func startServer(router *mux.Router, port string) {
 	addr := ":" + port
 	server := &http.Server{
 		Addr:         addr,
@@ -309,14 +306,14 @@ func startServer(router *mux.Router, port string, log *logger.Logger) {
 
 	// Start server in goroutine
 	go func() {
-		log.Info("starting server", map[string]any{"address": addr})
-		log.Info("available endpoints", nil)
-		log.Info("  GET  /health", nil)
-		log.Info("  GET  /{shortCode}           (x-portofolio header required)", nil)
-		log.Info("  POST /shorten                (x-portofolio header required)", nil)
+		logger.Info("starting server", map[string]any{"address": addr})
+		logger.Info("available endpoints", nil)
+		logger.Info("  GET  /health", nil)
+		logger.Info("  GET  /{shortCode}           (x-portofolio header required)", nil)
+		logger.Info("  POST /shorten                (x-portofolio header required)", nil)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.ErrorError("server error", err, nil)
+			logger.ErrorError("server error", err, nil)
 			os.Exit(1)
 		}
 	}()
@@ -326,11 +323,11 @@ func startServer(router *mux.Router, port string, log *logger.Logger) {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	log.Info("shutting down server", nil)
+	logger.Info("shutting down server", nil)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.ErrorError("server shutdown error", err, nil)
+		logger.ErrorError("server shutdown error", err, nil)
 	}
-	log.Info("server stopped", nil)
+	logger.Info("server stopped", nil)
 }

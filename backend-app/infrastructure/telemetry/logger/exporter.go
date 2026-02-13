@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
-	"go.opentelemetry.io/otel/log"
+	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -95,6 +95,6 @@ func (c *ExporterClient) Shutdown(ctx context.Context) error {
 }
 
 // OTELLogger returns a typed OpenTelemetry logger for use with SetOTELLogger
-func (c *ExporterClient) OTELLogger(name string) log.Logger {
+func (c *ExporterClient) OTELLogger(name string) otellog.Logger {
 	return c.LoggerProvider.Logger(name)
 }

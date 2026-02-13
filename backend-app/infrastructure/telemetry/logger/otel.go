@@ -4,20 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"go.opentelemetry.io/otel/log"
+	otellog "go.opentelemetry.io/otel/log"
 )
 
 // otelWriter is a log writer that uses OpenTelemetry logs
 type otelWriter struct {
-	logger log.Logger
+	logger otellog.Logger
 }
 
 // SetOTELLogger sets an OpenTelemetry logger as the output destination
 // This allows formatted logs to be exported via OTLP while preserving console output
-func SetOTELLogger(otelLogger log.Logger) {
-	w := &otelWriter{logger: otelLogger}
+func SetOTELLogger(otelLog otellog.Logger) {
+	w := &otelWriter{logger: otelLog}
 
-	// Capture the original console logFunc to preserve stdout output
+	// First reset to get the clean console function
+	ResetToStdout()
 	originalLogFunc := logFunc
 
 	// Replace logFunc with dual-output version that sends to both console and OTLP
@@ -33,8 +34,8 @@ func SetOTELLogger(otelLogger log.Logger) {
 // emit sends a log record via OpenTelemetry
 func (w *otelWriter) emit(formattedLog string) {
 	// Create a new log record
-	var r log.Record
-	r.SetBody(log.StringValue(formattedLog))
+	var r otellog.Record
+	r.SetBody(otellog.StringValue(formattedLog))
 	w.logger.Emit(context.Background(), r)
 }
 

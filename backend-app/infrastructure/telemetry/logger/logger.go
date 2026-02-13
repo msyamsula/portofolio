@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"runtime"
 	"time"
+
+	otellog "go.opentelemetry.io/otel/log"
 )
 
 // Level represents log level
@@ -48,50 +50,59 @@ const (
 	JSONFormat
 )
 
-// ConsoleConfig holds the console logger configuration
-type ConsoleConfig struct {
-	Level      Level
-	Format     Format
-	TimeFormat string
-}
-
-// Config holds common configuration for logger
+// Config holds the logger configuration
 type Config struct {
-	// Common settings
 	ServiceName       string
 	CollectorEndpoint string
-	Insecure          bool
-	Environment       string
+	Insecure         bool
+	Environment      string
+	LogsEnabled      bool
 
-	// Logs settings
-	LogsEnabled bool
-
-	// Console logger settings
+	// Console settings
 	Level      Level
 	Format     Format
 	TimeFormat string
 }
 
-// Logger represents a logger instance
-type Logger struct {
-	cfg ConsoleConfig
-}
+var (
+	cfg            Config
+	otelLogger     otellog.Logger
+	exporterClient *ExporterClient
+)
 
-// New creates a new logger with the given configuration
-func New(cfg ConsoleConfig) *Logger {
-	if cfg.TimeFormat == "" {
+// Init initializes the logger with the given configuration
+func Init(ctx context.Context, c Config) error {
+	cfg = c
+
+	if c.TimeFormat == "" {
 		cfg.TimeFormat = time.RFC3339
 	}
-	return &Logger{cfg: cfg}
+
+	if c.LogsEnabled {
+		exporterCfg := ExporterConfig{
+			ServiceName:       c.ServiceName,
+			CollectorEndpoint: c.CollectorEndpoint,
+			Insecure:         c.Insecure,
+			Environment:      c.Environment,
+		}
+		client, err := NewExporterClient(ctx, exporterCfg)
+		if err != nil {
+			return fmt.Errorf("failed to initialize logs exporter: %w", err)
+		}
+		exporterClient = client
+		otelLogger = client.OTELLogger(c.ServiceName)
+		SetOTELLogger(otelLogger)
+	}
+
+	return nil
 }
 
-// Default creates a logger with default configuration
-func Default() *Logger {
-	return New(ConsoleConfig{
-		Level:      InfoLevel,
-		Format:     TextFormat,
-		TimeFormat: time.RFC3339,
-	})
+// Shutdown gracefully shuts down the logger
+func Shutdown(ctx context.Context) error {
+	if exporterClient != nil {
+		return exporterClient.Shutdown(ctx)
+	}
+	return nil
 }
 
 // logFunc is the function that writes the log output
@@ -100,8 +111,8 @@ var logFunc = func(format string, args ...any) {
 }
 
 // shouldLog determines if a message should be logged based on level
-func (l *Logger) shouldLog(level Level) bool {
-	return level >= l.cfg.Level
+func shouldLog(level Level) bool {
+	return level >= cfg.Level
 }
 
 // formatTime formats the current time
@@ -123,11 +134,11 @@ var getCaller = func(skip int) (file string, line int) {
 }
 
 // formatMessage formats the log message according to the configured format
-func (l *Logger) formatMessage(level Level, file string, line int, msg string, metadata map[string]any, err error) string {
-	timestamp := formatTime(l.cfg.TimeFormat)
+func formatMessage(level Level, file string, line int, msg string, metadata map[string]any, err error) string {
+	timestamp := formatTime(cfg.TimeFormat)
 
-	if l.cfg.Format == JSONFormat {
-		logEntry := map[string]any{
+	if cfg.Format == JSONFormat {
+		entry := map[string]any{
 			"time":     timestamp,
 			"level":    level.String(),
 			"file":     file,
@@ -136,13 +147,13 @@ func (l *Logger) formatMessage(level Level, file string, line int, msg string, m
 			"metadata": metadata,
 		}
 		if err != nil {
-			logEntry["error"] = err.Error()
+			entry["error"] = err.Error()
 		}
-		jsonBytes, _ := json.Marshal(logEntry)
+		jsonBytes, _ := json.Marshal(entry)
 		return string(jsonBytes)
 	}
 
-	// Text format: [time][file][line]: message, metadata, error
+	// Text format: [time][level][file][line]: message, metadata, error
 	metaStr := ""
 	if len(metadata) > 0 {
 		metaBytes, _ := json.Marshal(metadata)
@@ -154,184 +165,56 @@ func (l *Logger) formatMessage(level Level, file string, line int, msg string, m
 		errStr = ", " + err.Error()
 	}
 
-	return fmt.Sprintf("[%s][%s][%d]: %s%s%s", timestamp, file, line, msg, metaStr, errStr)
+	return fmt.Sprintf("[%s][%s][%s][%d]: %s%s%s", timestamp, level.String(), file, line, msg, metaStr, errStr)
 }
 
 // log writes a log message with the given level
-func (l *Logger) log(level Level, msg string, metadata map[string]any, err error) {
-	if !l.shouldLog(level) {
+func log(level Level, msg string, metadata map[string]any, err error) {
+	if !shouldLog(level) {
 		return
 	}
 
-	file, line := getCaller(3) // Skip: log, log level function, caller
-	formatted := l.formatMessage(level, file, line, msg, metadata, err)
+	file, line := getCaller(3) // Skip: log, level function, caller
+	formatted := formatMessage(level, file, line, msg, metadata, err)
 	logFunc("%s", formatted)
 }
 
 // Debug logs a debug message
-func (l *Logger) Debug(msg string, metadata map[string]any) {
-	l.log(DebugLevel, msg, metadata, nil)
+func Debug(msg string, metadata map[string]any) {
+	log(DebugLevel, msg, metadata, nil)
 }
 
 // DebugError logs a debug message with an error
-func (l *Logger) DebugError(msg string, err error, metadata map[string]any) {
-	l.log(DebugLevel, msg, metadata, err)
+func DebugError(msg string, err error, metadata map[string]any) {
+	log(DebugLevel, msg, metadata, err)
 }
 
 // Info logs an info message
-func (l *Logger) Info(msg string, metadata map[string]any) {
-	l.log(InfoLevel, msg, metadata, nil)
+func Info(msg string, metadata map[string]any) {
+	log(InfoLevel, msg, metadata, nil)
 }
 
 // InfoError logs an info message with an error
-func (l *Logger) InfoError(msg string, err error, metadata map[string]any) {
-	l.log(InfoLevel, msg, metadata, err)
+func InfoError(msg string, err error, metadata map[string]any) {
+	log(InfoLevel, msg, metadata, err)
 }
 
 // Warn logs a warning message
-func (l *Logger) Warn(msg string, metadata map[string]any) {
-	l.log(WarnLevel, msg, metadata, nil)
+func Warn(msg string, metadata map[string]any) {
+	log(WarnLevel, msg, metadata, nil)
 }
 
 // WarnError logs a warning message with an error
-func (l *Logger) WarnError(msg string, err error, metadata map[string]any) {
-	l.log(WarnLevel, msg, metadata, err)
+func WarnError(msg string, err error, metadata map[string]any) {
+	log(WarnLevel, msg, metadata, err)
 }
 
 // Error logs an error message
-func (l *Logger) Error(msg string, metadata map[string]any) {
-	l.log(ErrorLevel, msg, metadata, nil)
+func Error(msg string, metadata map[string]any) {
+	log(ErrorLevel, msg, metadata, nil)
 }
 
 // ErrorError logs an error message with an error
-func (l *Logger) ErrorError(msg string, err error, metadata map[string]any) {
-	l.log(ErrorLevel, msg, metadata, err)
-}
-
-// Client is a unified logger client that combines console logging and OTLP export
-type Client struct {
-	// Console logger
-	Logger *Logger
-
-	// OTLP exporter (optional)
-	ExporterClient *ExporterClient
-	exporterEnabled bool
-}
-
-// NewClient creates a new unified logger client
-func NewClient(ctx context.Context, cfg Config) (*Client, error) {
-	c := &Client{
-		exporterEnabled: cfg.LogsEnabled,
-	}
-
-	// Initialize console logger
-	consoleLogger := New(ConsoleConfig{
-		Level:      cfg.Level,
-		Format:     cfg.Format,
-		TimeFormat: cfg.TimeFormat,
-	})
-	if consoleLogger == nil {
-		consoleLogger = Default()
-	}
-	c.Logger = consoleLogger
-
-	// Initialize OTLP exporter if enabled
-	if cfg.LogsEnabled {
-		exporterCfg := ExporterConfig{
-			ServiceName:       cfg.ServiceName,
-			CollectorEndpoint: cfg.CollectorEndpoint,
-			Insecure:          cfg.Insecure,
-			Environment:       cfg.Environment,
-		}
-		exporterClient, err := NewExporterClient(ctx, exporterCfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize logs exporter: %w", err)
-		}
-		c.ExporterClient = exporterClient
-
-		// Set OTEL logger for the logger package
-		otelLogger := exporterClient.OTELLogger(cfg.ServiceName)
-		SetOTELLogger(otelLogger)
-	}
-
-	return c, nil
-}
-
-// Shutdown gracefully shuts down the logger client
-func (c *Client) Shutdown(ctx context.Context) error {
-	if c.exporterEnabled && c.ExporterClient != nil {
-		if err := c.ExporterClient.Shutdown(ctx); err != nil {
-			return fmt.Errorf("logger shutdown: %w", err)
-		}
-	}
-	return nil
-}
-
-// DefaultConfig returns a logger config with sensible defaults
-func DefaultConfig(serviceName string) Config {
-	return Config{
-		ServiceName:   serviceName,
-		Level:         InfoLevel,
-		Format:        TextFormat,
-		TimeFormat:    time.RFC3339,
-		LogsEnabled:   true,
-		Insecure:      true,
-		Environment:   "development",
-	}
-}
-
-// Package-level logger for convenience
-// Use SetDefaultLogger to set a custom logger
-var defaultLogger = Default()
-
-// SetDefaultLogger sets the package-level logger
-func SetDefaultLogger(l *Logger) {
-	defaultLogger = l
-}
-
-// GetDefaultLogger returns the package-level logger
-func GetDefaultLogger() *Logger {
-	return defaultLogger
-}
-
-// Package-level convenience functions for logging
-
-// Debug logs a debug message using the default logger
-func Debug(msg string, metadata map[string]any) {
-	defaultLogger.Debug(msg, metadata)
-}
-
-// DebugError logs a debug message with an error using the default logger
-func DebugError(msg string, err error, metadata map[string]any) {
-	defaultLogger.DebugError(msg, err, metadata)
-}
-
-// Info logs an info message using the default logger
-func Info(msg string, metadata map[string]any) {
-	defaultLogger.Info(msg, metadata)
-}
-
-// InfoError logs an info message with an error using the default logger
-func InfoError(msg string, err error, metadata map[string]any) {
-	defaultLogger.InfoError(msg, err, metadata)
-}
-
-// Warn logs a warning message using the default logger
-func Warn(msg string, metadata map[string]any) {
-	defaultLogger.Warn(msg, metadata)
-}
-
-// WarnError logs a warning message with an error using the default logger
-func WarnError(msg string, err error, metadata map[string]any) {
-	defaultLogger.WarnError(msg, err, metadata)
-}
-
-// Error logs an error message using the default logger
-func Error(msg string, metadata map[string]any) {
-	defaultLogger.Error(msg, metadata)
-}
-
-// ErrorError logs an error message with an error using the default logger
 func ErrorError(msg string, err error, metadata map[string]any) {
-	defaultLogger.ErrorError(msg, err, metadata)
+	log(ErrorLevel, msg, metadata, err)
 }
