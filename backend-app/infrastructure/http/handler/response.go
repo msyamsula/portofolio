@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 )
 
 // Response is the standardized API response format
@@ -20,13 +19,9 @@ type Meta struct {
 
 // JSON writes a standardized JSON response
 func JSON(w http.ResponseWriter, status int, data any) error {
-	start := time.Now()
-
 	resp := Response{
 		Data: data,
-		Meta: Meta{
-			ResponseTime: float64(time.Since(start).Microseconds()) / 1000,
-		},
+		Meta: Meta{},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -36,10 +31,6 @@ func JSON(w http.ResponseWriter, status int, data any) error {
 
 // JSONWithMeta writes a JSON response with custom metadata
 func JSONWithMeta(w http.ResponseWriter, status int, data any, meta Meta) error {
-	start := time.Now()
-
-	meta.ResponseTime = float64(time.Since(start).Microseconds()) / 1000
-
 	resp := Response{
 		Data: data,
 		Meta: meta,
@@ -52,13 +43,9 @@ func JSONWithMeta(w http.ResponseWriter, status int, data any, meta Meta) error 
 
 // Error writes an error response
 func Error(w http.ResponseWriter, status int, message string) error {
-	start := time.Now()
-
 	resp := Response{
 		Error: message,
-		Meta: Meta{
-			ResponseTime: float64(time.Since(start).Microseconds()) / 1000,
-		},
+		Meta:  Meta{},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

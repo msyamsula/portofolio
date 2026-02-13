@@ -25,6 +25,13 @@ func New(svc healthService.Service) *Handler {
 }
 
 // Check handles GET /health requests
+// @Summary Health check
+// @Description Returns service health status and uptime
+// @Tags health
+// @Produce json
+// @Success 200 {object} handler.HealthResponse
+// @Failure 500 {object} map[string]any
+// @Router /health [get]
 func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

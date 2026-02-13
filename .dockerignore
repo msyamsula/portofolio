@@ -1,0 +1,12 @@
+.git
+.gitignore
+.DS_Store
+**/.DS_Store
+**/node_modules
+**/dist
+**/build
+**/bin
+**/tmp
+**/coverage
+**/.env
+**/*.log

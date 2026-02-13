@@ -11,7 +11,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	_ "github.com/msyamsula/portofolio/backend-app/binary/http/docs"
 	"github.com/redis/go-redis/v9"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 
@@ -44,10 +46,14 @@ type Config struct {
 	TelemetryCollectorEndpoint string
 	ServiceName                string
 	// Logger configuration
-	LogLevel string
+	LogLevel  string
 	LogFormat string
 }
 
+// @title URL Shortener API
+// @version 1.0
+// @description HTTP API for URL shortener
+// @BasePath /
 func main() {
 	// Load configuration
 	cfg := loadConfig()
@@ -147,19 +153,19 @@ func initLogger(cfg Config) error {
 	if err := logger.Init(ctx, logger.Config{
 		ServiceName:       cfg.ServiceName,
 		CollectorEndpoint: cfg.TelemetryCollectorEndpoint,
-		Insecure:         true,
-		Environment:      getEnv("ENVIRONMENT", "local"),
-		LogsEnabled:      true, // Enable OTLP export
-		Level:            level,
-		Format:           format,
-		TimeFormat:       time.RFC3339,
+		Insecure:          true,
+		Environment:       getEnv("ENVIRONMENT", "local"),
+		LogsEnabled:       true, // Enable OTLP export
+		Level:             level,
+		Format:            format,
+		TimeFormat:        time.RFC3339,
 	}); err != nil {
 		return err
 	}
 
 	logger.Info("logger initialized", map[string]any{
-		"level": cfg.LogLevel,
-		"format": cfg.LogFormat,
+		"level":        cfg.LogLevel,
+		"format":       cfg.LogFormat,
 		"otlp_enabled": true,
 	})
 
@@ -211,15 +217,15 @@ func initPostgres(cfg Config) *sqlx.DB {
 	})
 	if err != nil {
 		logger.ErrorError("failed to connect to postgres", err, map[string]any{
-			"host": cfg.PostgresHost,
-			"port": cfg.PostgresPort,
+			"host":     cfg.PostgresHost,
+			"port":     cfg.PostgresPort,
 			"database": cfg.PostgresDB,
 		})
 		os.Exit(1)
 	}
 	logger.Info("connected to postgres", map[string]any{
-		"host": cfg.PostgresHost,
-		"port": cfg.PostgresPort,
+		"host":     cfg.PostgresHost,
+		"port":     cfg.PostgresPort,
 		"database": cfg.PostgresDB,
 	})
 	return db
@@ -235,13 +241,13 @@ func initRedis(cfg Config) *redis.Client {
 	if err := redisinf.PingRedis(ctx, rdb); err != nil {
 		logger.ErrorError("failed to connect to redis", err, map[string]any{
 			"host": cfg.RedisHost,
-			"db": cfg.RedisDB,
+			"db":   cfg.RedisDB,
 		})
 		os.Exit(1)
 	}
 	logger.Info("connected to redis", map[string]any{
 		"host": cfg.RedisHost,
-		"db": cfg.RedisDB,
+		"db":   cfg.RedisDB,
 	})
 	return rdb
 }
@@ -254,18 +260,23 @@ type domainHandler struct {
 func setupServer(h domainHandler) *mux.Router {
 	r := mux.NewRouter()
 
+	// Swagger UI
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 	// Health check - tracing only (no auth/cors for k8s probes)
 	healthRouter := r.PathPrefix("/health").Subrouter()
+	healthRouter.Use(middleware.ResponseTimeMiddleware)
 	healthRouter.Use(middleware.TracingMiddleware("healthcheck"))
 	healthRouter.HandleFunc("", h.healthcheck.Check).Methods("GET")
 
 	// Common middleware for all URL shortener routes
 	urlShortenerChain := middleware.Chain(
+		middleware.ResponseTimeMiddleware,
 		middleware.TracingMiddleware("urlshortener"),
 		middleware.RecoveryMiddleware,
 		middleware.LoggingMiddleware,
 		middleware.CORSMiddleware,
-		xPortofolioMiddleware,
+		middleware.XPortofolioMiddleware,
 	)
 
 	// URL shortener admin routes - Using /url prefix
@@ -279,19 +290,6 @@ func setupServer(h domainHandler) *mux.Router {
 	redirectRouter.HandleFunc("/{shortCode}", h.url.Redirect).Methods("GET")
 
 	return r
-}
-
-func xPortofolioMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check for x-portofolio header
-		if r.Header.Get("x-portofolio") == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error":"missing x-portofolio header","meta":{"responseTime":0}}`))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 func startServer(router *mux.Router, port string) {

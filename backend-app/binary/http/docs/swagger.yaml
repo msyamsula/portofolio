@@ -1,0 +1,112 @@
+basePath: /
+definitions:
+  backend-app_domain_healthcheck_handler.HealthResponse:
+    properties:
+      status:
+        type: string
+      uptime_seconds:
+        type: number
+    type: object
+  backend-app_domain_url-shortener_handler.ShortenRequest:
+    properties:
+      long_url:
+        type: string
+    type: object
+  backend-app_domain_url-shortener_handler.ShortenResponse:
+    properties:
+      short_url:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: HTTP API for URL shortener
+  title: URL Shortener API
+  version: "1.0"
+paths:
+  /{shortCode}:
+    get:
+      description: Redirects to original long URL
+      parameters:
+      - description: x-portofolio
+        in: header
+        name: x-portofolio
+        required: true
+        type: string
+      - description: Short code
+        in: path
+        name: shortCode
+        required: true
+        type: string
+      responses:
+        "301":
+          description: redirect
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Redirect short URL
+      tags:
+      - url
+  /health:
+    get:
+      description: Returns service health status and uptime
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-app_domain_healthcheck_handler.HealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /url/shorten:
+    post:
+      consumes:
+      - application/json
+      description: Creates a short URL from a long URL
+      parameters:
+      - description: x-portofolio
+        in: header
+        name: x-portofolio
+        type: string
+      - description: Shorten request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/backend-app_domain_url-shortener_handler.ShortenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/backend-app_domain_url-shortener_handler.ShortenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Shorten URL
+      tags:
+      - url
+swagger: "2.0"

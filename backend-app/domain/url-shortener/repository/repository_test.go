@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/redis/go-redis/v9"
@@ -25,13 +26,13 @@ func TestRepository_Save_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// Expect DB insert
-	mockDB.EXPECT().ExecContext(ctx, gomock.Any(), "test123", "https://example.com").Return(nil, nil)
+	mockDB.EXPECT().ExecContext(gomock.Any(), gomock.Any(), "test123", "https://example.com").Return(nil, nil)
 
 	// Expect cache invalidation for shortCode
-	mockCache.EXPECT().Del(ctx, "test123").Return(redis.NewIntCmd(ctx, 1))
+	mockCache.EXPECT().Del(gomock.Any(), "test123").Return(redis.NewIntCmd(ctx, 1))
 
 	// Expect cache invalidation for longURL
-	mockCache.EXPECT().Del(ctx, "https://example.com").Return(redis.NewIntCmd(ctx, 1))
+	mockCache.EXPECT().Del(gomock.Any(), "https://example.com").Return(redis.NewIntCmd(ctx, 1))
 
 	err := repo.Save(ctx, "test123", "https://example.com")
 	assert.NoError(t, err)
@@ -48,7 +49,7 @@ func TestRepository_Save_DBError(t *testing.T) {
 	ctx := context.Background()
 
 	expectedErr := errors.New("database error")
-	mockDB.EXPECT().ExecContext(ctx, gomock.Any(), "test123", "https://example.com").Return(nil, expectedErr)
+	mockDB.EXPECT().ExecContext(gomock.Any(), gomock.Any(), "test123", "https://example.com").Return(nil, expectedErr)
 
 	err := repo.Save(ctx, "test123", "https://example.com")
 	assert.Error(t, err)
@@ -71,11 +72,12 @@ func TestRepository_FindByShortCode_CacheHit(t *testing.T) {
 	}
 
 	// Create a mock StringCmd with cached data
-	data := []byte(`{"short_code":"test123","long_url":"https://example.com","created_at":1234567890}`)
+	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
+	data := []byte(`{"short_code":"test123","long_url":"https://example.com","created_at":"` + createdAt.Format(time.RFC3339Nano) + `"}`)
 	cmd := redis.NewStringCmd(ctx)
 	cmd.SetVal(string(data))
 
-	mockCache.EXPECT().Get(ctx, "test123").Return(cmd)
+	mockCache.EXPECT().Get(gomock.Any(), "test123").Return(cmd)
 
 	// DB should not be called on cache hit
 	result, err := repo.FindByShortCode(ctx, "test123")
@@ -97,21 +99,22 @@ func TestRepository_FindByShortCode_CacheMiss_DBHit(t *testing.T) {
 	// Cache miss - return nil data with error
 	cacheCmd := redis.NewStringCmd(ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(ctx, "test123").Return(cacheCmd)
+	mockCache.EXPECT().Get(gomock.Any(), "test123").Return(cacheCmd)
 
 	// DB hit - return the record
+	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	expectedRecord := &dto.URLRecord{
 		ShortCode: "test123",
 		LongURL:   "https://example.com",
-		CreatedAt: 1234567890,
+		CreatedAt: createdAt,
 	}
 
-	mockDB.EXPECT().GetContext(ctx, gomock.Any(), gomock.Any(), "test123").Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
+	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), "test123").Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
 		*dest = *expectedRecord
 	}).Return(nil)
 
 	// Expect cache to be populated
-	mockCache.EXPECT().Set(ctx, "test123", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(ctx))
+	mockCache.EXPECT().Set(gomock.Any(), "test123", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(ctx))
 
 	result, err := repo.FindByShortCode(ctx, "test123")
 	assert.NoError(t, err)
@@ -132,10 +135,10 @@ func TestRepository_FindByShortCode_NotFound(t *testing.T) {
 	// Cache miss
 	cacheCmd := redis.NewStringCmd(ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(ctx, "nonexistent").Return(cacheCmd)
+	mockCache.EXPECT().Get(gomock.Any(), "nonexistent").Return(cacheCmd)
 
 	// DB miss
-	mockDB.EXPECT().GetContext(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
+	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
 
 	_, err := repo.FindByShortCode(ctx, "nonexistent")
 	assert.Error(t, err)
@@ -158,11 +161,12 @@ func TestRepository_FindByLongURL_CacheHit(t *testing.T) {
 	}
 
 	// Create a mock StringCmd with cached data
-	data := []byte(`{"short_code":"test123","long_url":"https://example.com","created_at":1234567890}`)
+	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
+	data := []byte(`{"short_code":"test123","long_url":"https://example.com","created_at":"` + createdAt.Format(time.RFC3339Nano) + `"}`)
 	cmd := redis.NewStringCmd(ctx)
 	cmd.SetVal(string(data))
 
-	mockCache.EXPECT().Get(ctx, "https://example.com").Return(cmd)
+	mockCache.EXPECT().Get(gomock.Any(), "https://example.com").Return(cmd)
 
 	result, err := repo.FindByLongURL(ctx, "https://example.com")
 	assert.NoError(t, err)
@@ -183,21 +187,22 @@ func TestRepository_FindByLongURL_CacheMiss_DBHit(t *testing.T) {
 	// Cache miss
 	cacheCmd := redis.NewStringCmd(ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(ctx, "https://example.com").Return(cacheCmd)
+	mockCache.EXPECT().Get(gomock.Any(), "https://example.com").Return(cacheCmd)
 
 	// DB hit
+	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	expectedRecord := &dto.URLRecord{
 		ShortCode: "test123",
 		LongURL:   "https://example.com",
-		CreatedAt: 1234567890,
+		CreatedAt: createdAt,
 	}
 
-	mockDB.EXPECT().GetContext(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
+	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
 		*dest = *expectedRecord
 	}).Return(nil)
 
 	// Expect cache to be populated
-	mockCache.EXPECT().Set(ctx, "https://example.com", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(ctx))
+	mockCache.EXPECT().Set(gomock.Any(), "https://example.com", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(ctx))
 
 	result, err := repo.FindByLongURL(ctx, "https://example.com")
 	assert.NoError(t, err)
@@ -218,10 +223,10 @@ func TestRepository_FindByLongURL_NotFound(t *testing.T) {
 	// Cache miss
 	cacheCmd := redis.NewStringCmd(ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(ctx, "https://example.com/notfound").Return(cacheCmd)
+	mockCache.EXPECT().Get(gomock.Any(), "https://example.com/notfound").Return(cacheCmd)
 
 	// DB miss
-	mockDB.EXPECT().GetContext(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
+	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
 
 	_, err := repo.FindByLongURL(ctx, "https://example.com/notfound")
 	assert.Error(t, err)

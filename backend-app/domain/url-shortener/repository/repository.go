@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	tableName = "url_mappings"
+	tableName = "url_shortener"
 )
 
 // Repository defines the interface for URL persistence operations
@@ -58,11 +58,11 @@ func (r *repository) Save(ctx context.Context, shortCode, longURL string) error 
 	defer span.End()
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (short_code, long_url)
+		INSERT INTO %s (short, long)
 		VALUES ($1, $2)
 	`, tableName)
 	span.AddEvent("executing_sql", trace.WithAttributes(
-		attribute.String("db.statement", "INSERT INTO url_mappings"),
+		attribute.String("db.statement", fmt.Sprintf("INSERT INTO %s", tableName)),
 	))
 	_, err := r.db.ExecContext(ctx, query, shortCode, longURL)
 	if err != nil {
@@ -116,10 +116,10 @@ func (r *repository) FindByShortCode(ctx context.Context, shortCode string) (*dt
 	// 2. Cache miss, query database
 	span.AddEvent("database_lookup", trace.WithAttributes(
 		attribute.String("db.operation", "SELECT"),
-		attribute.String("db.statement", fmt.Sprintf("SELECT FROM %s WHERE short_code = ?", tableName)),
+		attribute.String("db.statement", fmt.Sprintf("SELECT FROM %s WHERE short = ?", tableName)),
 	))
 	var mapping dto.URLRecord
-	query := fmt.Sprintf(`SELECT short_code, long_url, created_at FROM %s WHERE short_code = $1`, tableName)
+	query := fmt.Sprintf(`SELECT short, long, created_at FROM %s WHERE short = $1`, tableName)
 	err = r.db.GetContext(ctx, &mapping, query, shortCode)
 	if err != nil {
 		span.RecordError(err)
@@ -166,10 +166,10 @@ func (r *repository) FindByLongURL(ctx context.Context, longURL string) (*dto.UR
 	// Query database
 	span.AddEvent("database_lookup", trace.WithAttributes(
 		attribute.String("db.operation", "SELECT"),
-		attribute.String("db.statement", fmt.Sprintf("SELECT FROM %s WHERE long_url = ?", tableName)),
+		attribute.String("db.statement", fmt.Sprintf("SELECT FROM %s WHERE long = ?", tableName)),
 	))
 	var mapping dto.URLRecord
-	query := fmt.Sprintf(`SELECT short_code, long_url, created_at FROM %s WHERE long_url = $1`, tableName)
+	query := fmt.Sprintf(`SELECT short, long, created_at FROM %s WHERE long = $1`, tableName)
 	err = r.db.GetContext(ctx, &mapping, query, longURL)
 	if err != nil {
 		span.RecordError(err)

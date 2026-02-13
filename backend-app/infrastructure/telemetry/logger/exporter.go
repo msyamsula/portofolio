@@ -51,10 +51,10 @@ var newLogExporter = func(ctx context.Context, endpoint string, insecure bool) (
 // Note: Batching is not configured by default. Logs are exported immediately.
 // For production use, add: sdklog.WithBatcher(exporter)
 var newLoggerProvider = func(exporter sdklog.Exporter, res *resource.Resource) *sdklog.LoggerProvider {
-	// Exporter is reserved for future batching configuration
-	_ = exporter
+	processor := sdklog.NewBatchProcessor(exporter)
 	return sdklog.NewLoggerProvider(
 		sdklog.WithResource(res),
+		sdklog.WithProcessor(processor),
 	)
 }
 
