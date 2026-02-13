@@ -845,6 +845,174 @@ span.SetAttributes(attribute.String("data", fmt.Sprintf("%#v", user)))
 
 ## Architecture
 
+## Telemetry Flow Diagrams
+
+### End-to-End (Single Collector, Multi-Signal)
+
+```mermaid
+flowchart LR
+    subgraph App[Your Service]
+        L[logger/] -->|formatted log| C[stdout/console]
+        L -->|OTLP logs| OLP1[OTLP gRPC exporter]
+        M[metrics/] -->|Counter/Histogram/Gauge| OLP2[OTLP gRPC exporter]
+        T[span/] -->|Spans + context| OLP3[OTLP gRPC exporter]
+    end
+
+    OLP1 --> COL[OpenTelemetry Collector :4317]
+    OLP2 --> COL
+    OLP3 --> COL
+
+    subgraph CollectorPipelines[Collector Pipelines]
+        COL --> PL[Logs Pipeline]
+        COL --> PM[Metrics Pipeline]
+        COL --> PT[Traces Pipeline]
+    end
+
+    PL --> LOGS[(Log Backend)]
+    PM --> MET[(Metrics Backend)]
+    PT --> TRACE[(Trace Backend)]
+```
+
+### Metrics Flow
+
+```mermaid
+flowchart LR
+    A[Request handling] --> B[metrics.Instruments]
+    B --> C[MeterProvider + PeriodicReader]
+    C --> D[OTLP Metric Exporter]
+    D --> E[OTel Collector Metrics Pipeline]
+    E --> F[(Prometheus / Mimir / Cloud Metrics)]
+```
+
+### Logs Flow
+
+```mermaid
+flowchart LR
+    A["logger.Info/Warn/Error"] --> B["Format (Text | JSON)"]
+    B --> C["Console stdout"]
+    B --> D["OTLP Log Exporter"]
+    D --> E["OTel Collector Logs Pipeline"]
+    E --> F["Log Backend (Elastic/ClickHouse/Loki/Cloud Logs)"]
+```
+
+### Traces (Spans) Flow
+
+```mermaid
+flowchart LR
+    A[ctx + Tracer.Start] --> B[Span lifecycle]
+    B --> C[TracerProvider + Batch Processor]
+    C --> D[OTLP Trace Exporter]
+    D --> E[OTel Collector Traces Pipeline]
+    E --> F[(Jaeger/Tempo/Cloud Tracing)]
+```
+
+## Metrics, Logs, and Spans Usage Reference
+
+### Metrics (Instruments Defined in `metrics/instrument.go`)
+
+| Instrument | Type | Attributes | How to Record | Notes |
+|------------|------|------------|---------------|-------|
+| `http_requests_total` | Counter | `method`, `path`, `status` | `Instruments.RecordRequest(...)` or `IncrementRequestCounter(...)` | Counts requests; monotonically increasing. |
+| `http_request_duration_seconds` | Histogram | `method`, `path`, `status` | `Instruments.RecordRequest(...)` or `RecordDuration(...)` | Records request duration in seconds. |
+| `ActiveUsersGauge` | Observable Gauge | (not registered) | N/A | Declared in struct but not created by `NewInstruments`. Add a callback to enable. |
+
+#### Typical Usage
+
+```go
+meter := metricsClient.Meter("my-service")
+instruments, _ := metrics.NewInstruments(meter)
+
+// Per-request
+instruments.RecordRequest(ctx, "GET", "/api/users", 200, 0.042)
+
+// Custom duration (e.g., DB)
+instruments.RecordDuration(ctx, "db_query", 0.125,
+        attribute.String("table", "users"),
+        attribute.String("operation", "select"),
+)
+```
+
+### Logs (Functions in `logger/logger.go`)
+
+| Function | Level | Metadata | Error Included | Output |
+|----------|-------|----------|----------------|--------|
+| `Debug(...)` | DEBUG | `map[string]any` | No | Console + optional OTLP |
+| `Info(...)` | INFO | `map[string]any` | No | Console + optional OTLP |
+| `Warn(...)` | WARN | `map[string]any` | No | Console + optional OTLP |
+| `Error(...)` | ERROR | `map[string]any` | No | Console + optional OTLP |
+| `DebugError(...)` | DEBUG | `map[string]any` | Yes | Console + optional OTLP |
+| `InfoError(...)` | INFO | `map[string]any` | Yes | Console + optional OTLP |
+| `WarnError(...)` | WARN | `map[string]any` | Yes | Console + optional OTLP |
+| `ErrorError(...)` | ERROR | `map[string]any` | Yes | Console + optional OTLP |
+
+#### Log Body and OTLP Export
+
+- The OTLP log exporter sends the **formatted string** as the log body.
+- Console output always happens; OTLP export happens only when `LogsEnabled: true`.
+
+```go
+loggerClient.Logger.Info("User logged in", map[string]any{
+        "user_id": "12345",
+        "plan":    "pro",
+})
+
+loggerClient.Logger.WarnError("Payment failed", err, map[string]any{
+        "order_id": "o-789",
+})
+```
+
+### Spans (Tracing in `span/span.go`)
+
+| Action | API | Notes |
+|--------|-----|-------|
+| Start a span | `tracer.Start(ctx, "operation")` | Always call `defer span.End()` |
+| Add attributes | `span.SetAttributes(...)` | Use semantic attributes where possible |
+| Add event | `span.AddEvent("event")` | Use for significant moments |
+| Record error | `span.RecordError(err)` | Pair with status error |
+| Set status | `span.SetStatus(codes.Error, "message")` | Indicates success/failure |
+
+```go
+tracer := spanClient.Tracer("order-service")
+ctx, span := tracer.Start(ctx, "process-order")
+defer span.End()
+
+span.SetAttributes(
+        attribute.String("order.id", "order-123"),
+        attribute.String("user.id", "user-456"),
+)
+
+if err := processPayment(ctx); err != nil {
+        span.RecordError(err)
+        span.SetStatus(codes.Error, "payment failed")
+        return err
+}
+
+span.SetStatus(codes.Ok, "ok")
+```
+
+## OTel Collector: One or Many?
+
+**Short answer:** the collector can be the **same** for logs, metrics, and traces.
+
+- **Same collector, multiple pipelines (recommended):** Use a single collector endpoint (e.g., `:4317`) and configure separate pipelines for logs/metrics/traces. This reduces operational overhead and keeps config consistent.
+- **Different collectors (optional):** Use separate collectors when you need isolation (security/compliance), different scaling profiles, or different exporters per signal.
+
+### Example Collector Pipeline Layout (Single Instance)
+
+```mermaid
+flowchart LR
+    subgraph OTelCollector[OTel Collector]
+        R[OTLP Receiver :4317]
+        R --> L[Logs Pipeline]
+        R --> M[Metrics Pipeline]
+        R --> T[Traces Pipeline]
+
+        L --> LX[Logs Exporter]
+        M --> MX[Metrics Exporter]
+        T --> TX[Traces Exporter]
+    end
+```
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Your Application                           │
