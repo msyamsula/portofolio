@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.0
 	github.com/aws/aws-sdk-go-v2/service/sns v1.39.6
 	github.com/elastic/go-elasticsearch/v8 v8.19.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/mock v1.1.1
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
@@ -29,6 +30,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.16.0
 	go.opentelemetry.io/otel/sdk/metric v1.40.0
 	go.opentelemetry.io/otel/trace v1.40.0
+	golang.org/x/oauth2 v0.34.0
 )
 
 require (
@@ -83,7 +85,6 @@ require (
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect

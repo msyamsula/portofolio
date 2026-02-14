@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 
+	"github.com/gorilla/mux"
 	healthService "github.com/msyamsula/portofolio/backend-app/domain/healthcheck/service"
 	infraHandler "github.com/msyamsula/portofolio/backend-app/infrastructure/http/handler"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/logger"
@@ -62,4 +63,9 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 	)
 
 	_ = infraHandler.OK(w, resp)
+}
+
+// RegisterRoutes registers all healthcheck handler routes
+func (h *Handler) RegisterRoutes(r *mux.Router) {
+	r.HandleFunc("/health", h.Check).Methods("GET")
 }

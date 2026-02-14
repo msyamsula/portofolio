@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 
+	"github.com/gorilla/mux"
 	"github.com/msyamsula/portofolio/backend-app/domain/url-shortener/service"
 	infraHandler "github.com/msyamsula/portofolio/backend-app/infrastructure/http/handler"
 	"github.com/msyamsula/portofolio/backend-app/infrastructure/telemetry/logger"
@@ -189,4 +190,10 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		"long_url_length": len(longURL),
 		"duration_ms":     time.Since(start).Milliseconds(),
 	})
+}
+
+// RegisterRoutes registers all url shortener handler routes
+func (h *Handler) RegisterRoutes(r *mux.Router) {
+	r.HandleFunc("/url/shorten", h.Shorten).Methods("POST")
+	r.HandleFunc("/{shortCode}", h.Redirect).Methods("GET")
 }

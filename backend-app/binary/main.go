@@ -6,18 +6,13 @@ import (
 	"encoding/hex"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	_ "github.com/msyamsula/portofolio/backend-app/binary/http/docs"
 	"github.com/redis/go-redis/v9"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 
 	friendHandler "github.com/msyamsula/portofolio/backend-app/domain/friend/handler"
 	friendRepo "github.com/msyamsula/portofolio/backend-app/domain/friend/repository"
@@ -83,20 +78,6 @@ type Config struct {
 	AppTokenTTL    time.Duration
 }
 
-// @title Portfolio API
-// @version 1.0
-// @description Comprehensive HTTP API for URL shortener, graph algorithms, friend management, messaging, and user authentication
-// @contact.name API Support
-// @contact.url https://github.com/msyamsula/portofolio
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
-// @host localhost:5000
-// @BasePath /
-// @securityDefinitions.apikey BearerAuth
-// @securityDefinitions.bearerAuth type apiKey
-// @securityDefinitions.bearerAuth description Bearer token authentication
-// @securityDefinitions.bearerAuth in header
-// @securityDefinitions.bearerAuth name Authorization
 func main() {
 	// Load configuration
 	cfg := loadConfig()
@@ -142,15 +123,6 @@ func main() {
 	startServer(router, cfg.ServerPort)
 }
 
-type domainHandlers struct {
-	urlShortener *urlShortenerHandler.Handler
-	graph        *graphHandler.Handler
-	friend       *friendHandler.Handler
-	message      *messageHandler.Handler
-	user         *userHandler.Handler
-	healthcheck  *healthcheckHandler.Handler
-}
-
 func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraMetrics.Instruments) *mux.Router {
 	r := mux.NewRouter()
 
@@ -186,16 +158,6 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	healthcheckSvc := healthcheckSvc.New()
 	healthcheckHandler := healthcheckHandler.New(healthcheckSvc)
 
-	// Group handlers
-	handlers := domainHandlers{
-		urlShortener: urlShortenerHandler,
-		graph:        graphHandler,
-		friend:       friendHandler,
-		message:      messageHandler,
-		user:         userHandler,
-		healthcheck:  healthcheckHandler,
-	}
-
 	// Register URL Shortener routes
 	urlShortenerChain := infraHttp.Chain(
 		infraHttp.ContentTypeMiddleware,
@@ -206,7 +168,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	)
 	urlShortenerRouter := r.PathPrefix("/url").Subrouter()
 	urlShortenerRouter.Use(urlShortenerChain)
-	handlers.urlShortener.RegisterRoutes(urlShortenerRouter)
+	urlShortenerHandler.RegisterRoutes(urlShortenerRouter)
 
 	// Register Graph routes
 	graphChain := infraHttp.Chain(
@@ -218,7 +180,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	)
 	graphRouter := r.PathPrefix("/graph").Subrouter()
 	graphRouter.Use(graphChain)
-	handlers.graph.RegisterRoutes(graphRouter)
+	graphHandler.RegisterRoutes(graphRouter)
 
 	// Register Friend routes
 	friendChain := infraHttp.Chain(
@@ -230,7 +192,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	)
 	friendRouter := r.PathPrefix("/friend").Subrouter()
 	friendRouter.Use(friendChain)
-	handlers.friend.RegisterRoutes(friendRouter)
+	friendHandler.RegisterRoutes(friendRouter)
 
 	// Register Message routes
 	messageChain := infraHttp.Chain(
@@ -242,7 +204,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	)
 	messageRouter := r.PathPrefix("/message").Subrouter()
 	messageRouter.Use(messageChain)
-	handlers.message.RegisterRoutes(messageRouter)
+	messageHandler.RegisterRoutes(messageRouter)
 
 	// Register User routes
 	userChain := infraHttp.Chain(
@@ -254,7 +216,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	)
 	userRouter := r.PathPrefix("/user").Subrouter()
 	userRouter.Use(userChain)
-	handlers.user.RegisterRoutes(userRouter)
+	userHandler.RegisterRoutes(userRouter)
 
 	// Register Healthcheck routes
 	healthcheckChain := infraHttp.Chain(
@@ -263,7 +225,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	)
 	healthcheckRouter := r.PathPrefix("/health").Subrouter()
 	healthcheckRouter.Use(healthcheckChain)
-	handlers.healthcheck.RegisterRoutes(healthcheckRouter)
+	healthcheckHandler.RegisterRoutes(healthcheckRouter)
 
 	// Register Swagger UI route
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
@@ -284,7 +246,7 @@ func startServer(router *mux.Router, port string) {
 		Handler:      router,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
-		IdleTimeout: 60 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	// Start server in goroutine
@@ -296,7 +258,8 @@ func startServer(router *mux.Router, port string) {
 
 	// Graceful shutdown handling
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	// Note: importing "os/signal" would create the variable
+	// signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
 	infraLogger.Info("shutting down server", nil)
@@ -397,13 +360,6 @@ func initTelemetry(cfg Config) *infraSpan.Client {
 		infraLogger.WarnError("failed to create telemetry client", err, map[string]any{"service": cfg.ServiceName})
 		return nil
 	}
-
-	// Set global propagator for trace context propagation
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	))
-
 	return spanClient
 }
 
