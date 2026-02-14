@@ -16,6 +16,114 @@ themeToggle.addEventListener('click', () => {
     const currentTheme = document.body.dataset.theme;
     setTheme(currentTheme === 'dark' ? 'light' : 'dark');
 });
+
+function loadReadme() {
+    const readmeEl = document.getElementById('readmeContent');
+    const readmeZoomEl = document.getElementById('readmeZoom');
+    if (!readmeEl || !readmeZoomEl) {
+        return;
+    }
+
+    if (window.mermaid) {
+        window.mermaid.initialize({ startOnLoad: false });
+    }
+
+    fetch('./README.md')
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Failed to load README');
+            }
+            return response.text();
+        })
+        .then((text) => {
+            if (window.marked) {
+                readmeZoomEl.innerHTML = window.marked.parse(text);
+            } else {
+                readmeZoomEl.textContent = text;
+            }
+
+            const mermaidBlocks = readmeZoomEl.querySelectorAll('pre code.language-mermaid');
+            mermaidBlocks.forEach((block) => {
+                const mermaidContainer = document.createElement('div');
+                mermaidContainer.className = 'mermaid';
+                mermaidContainer.textContent = block.textContent;
+                const pre = block.parentElement;
+                if (pre) {
+                    pre.replaceWith(mermaidContainer);
+                }
+            });
+
+            if (window.mermaid) {
+                window.mermaid.run({ nodes: readmeZoomEl.querySelectorAll('.mermaid') });
+            }
+        })
+        .catch(() => {
+            readmeZoomEl.textContent = 'README not available.';
+        });
+}
+
+loadReadme();
+
+const readmeZoomEl = document.getElementById('readmeZoom');
+const readmeContentEl = document.getElementById('readmeContent');
+
+let zoomLevel = 1;
+let baseDistance = null;
+let baseZoom = 1;
+const activePointers = new Map();
+
+function applyZoom() {
+    if (!readmeZoomEl) {
+        return;
+    }
+    readmeZoomEl.style.transform = `scale(${zoomLevel})`;
+}
+
+function getDistance(a, b) {
+    const dx = a.clientX - b.clientX;
+    const dy = a.clientY - b.clientY;
+    return Math.hypot(dx, dy);
+}
+
+if (readmeContentEl && readmeZoomEl) {
+    readmeContentEl.addEventListener('pointerdown', (event) => {
+        readmeContentEl.setPointerCapture(event.pointerId);
+        activePointers.set(event.pointerId, event);
+        if (activePointers.size === 2) {
+            const [p1, p2] = Array.from(activePointers.values());
+            baseDistance = getDistance(p1, p2);
+            baseZoom = zoomLevel;
+        }
+    });
+
+    readmeContentEl.addEventListener('pointermove', (event) => {
+        if (!activePointers.has(event.pointerId)) {
+            return;
+        }
+        activePointers.set(event.pointerId, event);
+        if (activePointers.size === 2 && baseDistance) {
+            const [p1, p2] = Array.from(activePointers.values());
+            const currentDistance = getDistance(p1, p2);
+            const scale = currentDistance / baseDistance;
+            zoomLevel = Math.min(Math.max(baseZoom * scale, 0.6), 2.5);
+            applyZoom();
+        }
+    });
+
+    const endPointer = (event) => {
+        if (activePointers.has(event.pointerId)) {
+            activePointers.delete(event.pointerId);
+        }
+        if (activePointers.size < 2) {
+            baseDistance = null;
+        }
+    };
+
+    readmeContentEl.addEventListener('pointerup', endPointer);
+    readmeContentEl.addEventListener('pointercancel', endPointer);
+    readmeContentEl.addEventListener('pointerleave', endPointer);
+}
+
 function shortenURL() {
     const url = document.getElementById('urlInput').value;
     if (url === '') {

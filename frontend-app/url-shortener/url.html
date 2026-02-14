@@ -40,9 +40,10 @@
             color: var(--text);
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            align-items: flex-start;
+            min-height: 100vh;
             margin: 0;
+            padding: 32px 0;
             transition: background-color 0.4s ease, color 0.4s ease;
         }
 
@@ -152,6 +153,64 @@
         .observability .obs-btn:hover {
             background-color: var(--accent-soft);
             border-color: var(--accent);
+        }
+
+        .readme {
+            margin-top: 18px;
+            text-align: left;
+        }
+
+        .readme summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            padding: 8px 0;
+        }
+
+        .readme-content {
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text);
+            max-height: 360px;
+            overflow: auto;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+            touch-action: pan-x pan-y;
+        }
+
+        .readme-zoom {
+            transform-origin: top left;
+        }
+
+        .readme-content h1,
+        .readme-content h2,
+        .readme-content h3 {
+            margin: 12px 0 8px;
+        }
+
+        .readme-content pre {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            overflow: auto;
+        }
+
+        .readme-content code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 12px;
+        }
+
+        .readme-content ul {
+            padding-left: 18px;
+        }
+
+        .readme-content a {
+            color: var(--link);
         }
 
         /* button:hover {
@@ -264,6 +323,10 @@
                 font-size: 16px;
                 padding: 10px;
             }
+
+            .readme-content {
+                max-height: 300px;
+            }
         }
     </style>
 </head>
@@ -289,8 +352,17 @@
             <a href="http://localhost:9090" target="_blank" rel="noreferrer"><button class="obs-btn">Prometheus</button></a>
             <a href="http://localhost:3000" target="_blank" rel="noreferrer"><button class="obs-btn">Grafana</button></a>
         </div>
+
+        <details class="readme">
+            <summary>Readme</summary>
+            <div class="readme-content" id="readmeContent">
+                <div class="readme-zoom" id="readmeZoom">Loading README...</div>
+            </div>
+        </details>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script src="./url.js"></script>
 
 </body>
