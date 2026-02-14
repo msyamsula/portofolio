@@ -67,5 +67,6 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all healthcheck handler routes
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/health", h.Check).Methods("GET")
+	r.HandleFunc("", h.Check).Methods("GET")
+	r.HandleFunc("/", h.Check).Methods("GET")
 }

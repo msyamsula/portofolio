@@ -32,7 +32,6 @@ func New(svc service.Service) *Handler {
 // @Tags url
 // @Accept json
 // @Produce json
-// @Param x-portofolio header string false "x-portofolio"
 // @Param body body handler.ShortenRequest true "Shorten request"
 // @Success 201 {object} handler.ShortenResponse
 // @Failure 400 {object} map[string]any
@@ -121,12 +120,11 @@ func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
 // @Summary Redirect short URL
 // @Description Redirects to original long URL
 // @Tags url
-// @Param x-portofolio header string true "x-portofolio"
 // @Param shortCode path string true "Short code"
 // @Success 301 {string} string "redirect"
 // @Failure 400 {object} map[string]any
 // @Failure 404 {object} map[string]any
-// @Router /{shortCode} [get]
+// @Router /url/{shortCode} [get]
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	start := time.Now()
@@ -194,6 +192,6 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all url shortener handler routes
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/url/shorten", h.Shorten).Methods("POST")
+	r.HandleFunc("/shorten", h.Shorten).Methods("POST")
 	r.HandleFunc("/{shortCode}", h.Redirect).Methods("GET")
 }

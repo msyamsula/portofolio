@@ -26,7 +26,7 @@ build:
 	docker build -f Dockerfile -t $(IMAGE) ../../..
 
 swagger:
-	go run github.com/swaggo/swag/cmd/swag@latest init -g backend-app/binary/http/main.go -o docs -d ../../.. --parseDependency --parseInternal
+	go run github.com/swaggo/swag/cmd/swag@latest init -g binary/http/main.go -o docs -d ../.. --parseDependency --parseInternal
 
 up: swagger build start
 

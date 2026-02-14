@@ -80,7 +80,7 @@ func (h *Handler) GoogleRedirectURL(w http.ResponseWriter, r *http.Request) {
 		Name:     oauthStateCookieName,
 		Value:    state,
 		Path:     "/",
-		Secure:    false, // Set to true in production with HTTPS
+		Secure:   false, // Set to true in production with HTTPS
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   5 * 60, // 5 minutes
@@ -102,10 +102,10 @@ func (h *Handler) GoogleRedirectURL(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect to OAuth provider
 	infraLogger.Info("redirecting to oauth provider", map[string]any{
-		"method":        r.Method,
-		"path":          r.URL.Path,
-		"redirect_url":  redirectURL,
-		"duration_ms":   time.Since(start).Milliseconds(),
+		"method":       r.Method,
+		"path":         r.URL.Path,
+		"redirect_url": redirectURL,
+		"duration_ms":  time.Since(start).Milliseconds(),
 	})
 	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
@@ -117,7 +117,7 @@ func (h *Handler) GoogleRedirectURL(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param code query string true "OAuth authorization code"
 // @Param state query string true "OAuth state parameter"
-// @Success 200 {object} handler.TokenResponse
+// @Success 200 {object} dto.TokenResponse
 // @Failure 400 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /user/google/callback [get]
@@ -206,7 +206,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 // @Tags user
 // @Produce json
 // @Param Authorization header string true "Bearer token"
-// @Success 200 {object} handler.ValidateTokenResponse
+// @Success 200 {object} dto.ValidateTokenResponse
 // @Failure 401 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /user/validate [get]

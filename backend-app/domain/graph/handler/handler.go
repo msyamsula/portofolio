@@ -35,8 +35,8 @@ func New(svc service.Service) *Handler {
 // @Produce json
 // @Param algo path string true "Algorithm name (dfs, bfs, cycle, dag, scc, ap, ep)"
 // @Param isDirected query string false "Is graph directed"
-// @Param body body handler.SolveRequest true "Graph notation"
-// @Success 200 {object} handler.SolveResponse
+// @Param body body dto.SolveRequest true "Graph notation"
+// @Success 200 {object} dto.SolveResponse
 // @Failure 400 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /graph/solve/{algo} [post]
@@ -140,13 +140,13 @@ func (h *Handler) Solve(w http.ResponseWriter, r *http.Request) {
 	_ = infraHandler.OK(w, resp)
 
 	infraLogger.Info("graph solve request completed", map[string]any{
-		"method":        r.Method,
-		"path":          r.URL.Path,
-		"algorithm":     algo,
-		"is_directed":   isDirected,
-		"node_count":    len(req.Graph.Nodes),
-		"edge_count":    len(req.Graph.Edges),
-		"duration_ms":   time.Since(start).Milliseconds(),
+		"method":      r.Method,
+		"path":        r.URL.Path,
+		"algorithm":   algo,
+		"is_directed": isDirected,
+		"node_count":  len(req.Graph.Nodes),
+		"edge_count":  len(req.Graph.Edges),
+		"duration_ms": time.Since(start).Milliseconds(),
 	})
 }
 

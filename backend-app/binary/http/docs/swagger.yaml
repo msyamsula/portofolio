@@ -1,37 +1,389 @@
 basePath: /
 definitions:
-  backend-app_domain_healthcheck_handler.HealthResponse:
+  domain_healthcheck_handler.HealthResponse:
     properties:
       status:
         type: string
       uptime_seconds:
         type: number
     type: object
-  backend-app_domain_url-shortener_handler.ShortenRequest:
+  domain_url-shortener_handler.ShortenRequest:
     properties:
       long_url:
         type: string
     type: object
-  backend-app_domain_url-shortener_handler.ShortenResponse:
+  domain_url-shortener_handler.ShortenResponse:
     properties:
       short_url:
         type: string
     type: object
+  github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendRequest:
+    properties:
+      big_id:
+        type: integer
+      small_id:
+        type: integer
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_friend_dto.GetFriendsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.User'
+        type: array
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_friend_dto.User:
+    properties:
+      id:
+        type: integer
+      online:
+        type: boolean
+      unread:
+        type: integer
+      username:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_graph_dto.Edge:
+    properties:
+      from:
+        type: string
+      to:
+        type: string
+      weight:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_graph_dto.GraphNotation:
+    properties:
+      edges:
+        items:
+          $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.Edge'
+        type: array
+      nodes:
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveRequest:
+    properties:
+      graph:
+        $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.GraphNotation'
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveResponse:
+    properties:
+      acyclic:
+        type: boolean
+      ap:
+        items:
+          type: string
+        type: array
+      bridge:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      cycles:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      log:
+        items:
+          type: string
+        type: array
+      path:
+        items:
+          type: string
+        type: array
+      scc:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_message_dto.ConversationResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.Message'
+        type: array
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageRequest:
+    properties:
+      conversation_id:
+        type: string
+      data:
+        type: string
+      receiver_id:
+        type: integer
+      sender_id:
+        type: integer
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageResponse:
+    properties:
+      data:
+        $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.Message'
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_message_dto.Message:
+    properties:
+      conversation_id:
+        type: string
+      create_time:
+        type: string
+      data:
+        type: string
+      id:
+        type: string
+      receiver_id:
+        type: integer
+      sender_id:
+        type: integer
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_user_dto.TokenResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      token:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_user_dto.UserData:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_msyamsula_portofolio_backend-app_domain_user_dto.ValidateTokenResponse:
+    properties:
+      data:
+        $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_user_dto.UserData'
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+host: localhost:5000
 info:
-  contact: {}
-  description: HTTP API for URL shortener
-  title: URL Shortener API
+  contact:
+    name: API Support
+    url: https://github.com/msyamsula/portofolio
+  description: Comprehensive HTTP API for URL shortener, graph algorithms, friend
+    management, messaging, and user authentication
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Portfolio API
   version: "1.0"
 paths:
-  /{shortCode}:
+  /friend/add:
+    post:
+      consumes:
+      - application/json
+      description: Adds a friendship relationship between two users
+      parameters:
+      - description: Add friend request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Add friend
+      tags:
+      - friend
+  /friend/get:
+    get:
+      description: Retrieves all friends for a given user
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.GetFriendsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get friends
+      tags:
+      - friend
+  /graph/solve/{algo}:
+    post:
+      consumes:
+      - application/json
+      description: Executes the specified graph algorithm on the provided graph
+      parameters:
+      - description: Algorithm name (dfs, bfs, cycle, dag, scc, ap, ep)
+        in: path
+        name: algo
+        required: true
+        type: string
+      - description: Is graph directed
+        in: query
+        name: isDirected
+        type: string
+      - description: Graph notation
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Solve graph algorithm
+      tags:
+      - graph
+  /health:
+    get:
+      description: Returns service health status and uptime
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain_healthcheck_handler.HealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /message/conversation:
+    get:
+      description: Retrieves all messages for a conversation
+      parameters:
+      - description: Conversation ID
+        in: query
+        name: conversation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.ConversationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get conversation
+      tags:
+      - message
+  /message/insert:
+    post:
+      consumes:
+      - application/json
+      description: Inserts a new message into the conversation
+      parameters:
+      - description: Insert message request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Insert message
+      tags:
+      - message
+  /url/{shortCode}:
     get:
       description: Redirects to original long URL
       parameters:
-      - description: x-portofolio
-        in: header
-        name: x-portofolio
-        required: true
-        type: string
       - description: Short code
         in: path
         name: shortCode
@@ -55,47 +407,25 @@ paths:
       summary: Redirect short URL
       tags:
       - url
-  /health:
-    get:
-      description: Returns service health status and uptime
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/backend-app_domain_healthcheck_handler.HealthResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Health check
-      tags:
-      - health
   /url/shorten:
     post:
       consumes:
       - application/json
       description: Creates a short URL from a long URL
       parameters:
-      - description: x-portofolio
-        in: header
-        name: x-portofolio
-        type: string
       - description: Shorten request
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/backend-app_domain_url-shortener_handler.ShortenRequest'
+          $ref: '#/definitions/domain_url-shortener_handler.ShortenRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/backend-app_domain_url-shortener_handler.ShortenResponse'
+            $ref: '#/definitions/domain_url-shortener_handler.ShortenResponse'
         "400":
           description: Bad Request
           schema:
@@ -109,4 +439,91 @@ paths:
       summary: Shorten URL
       tags:
       - url
+  /user/google/callback:
+    get:
+      description: Processes the OAuth callback from Google
+      parameters:
+      - description: OAuth authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: OAuth state parameter
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_user_dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Handle Google OAuth callback
+      tags:
+      - user
+  /user/google/redirect:
+    get:
+      description: Generates the OAuth redirect URL for Google authentication
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: redirect
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Google OAuth redirect URL
+      tags:
+      - user
+  /user/validate:
+    get:
+      description: Validates an app token and returns user data
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_msyamsula_portofolio_backend-app_domain_user_dto.ValidateTokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Validate token
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    description: Bearer token authentication
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

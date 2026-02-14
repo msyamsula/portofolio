@@ -33,8 +33,8 @@ func New(svc service.Service) *Handler {
 // @Tags message
 // @Accept json
 // @Produce json
-// @Param body body handler.InsertMessageRequest true "Insert message request"
-// @Success 200 {object} handler.InsertMessageResponse
+// @Param body body dto.InsertMessageRequest true "Insert message request"
+// @Success 200 {object} dto.InsertMessageResponse
 // @Failure 400 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /message/insert [post]
@@ -85,12 +85,12 @@ func (h *Handler) InsertMessage(w http.ResponseWriter, r *http.Request) {
 	result, err := h.messageService.InsertMessage(ctx, msg)
 	if err != nil {
 		infraLogger.WarnError("insert message request failed", err, map[string]any{
-			"method":         r.Method,
-			"path":           r.URL.Path,
-			"sender_id":      req.SenderID,
-			"receiver_id":    req.ReceiverID,
+			"method":          r.Method,
+			"path":            r.URL.Path,
+			"sender_id":       req.SenderID,
+			"receiver_id":     req.ReceiverID,
 			"conversation_id": req.ConversationID,
-			"duration_ms":    time.Since(start).Milliseconds(),
+			"duration_ms":     time.Since(start).Milliseconds(),
 		})
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to insert message")
@@ -106,12 +106,12 @@ func (h *Handler) InsertMessage(w http.ResponseWriter, r *http.Request) {
 	_ = infraHandler.OK(w, resp)
 
 	infraLogger.Info("insert message request completed", map[string]any{
-		"method":         r.Method,
-		"path":           r.URL.Path,
-		"sender_id":      req.SenderID,
-		"receiver_id":    req.ReceiverID,
+		"method":          r.Method,
+		"path":            r.URL.Path,
+		"sender_id":       req.SenderID,
+		"receiver_id":     req.ReceiverID,
 		"conversation_id": req.ConversationID,
-		"duration_ms":    time.Since(start).Milliseconds(),
+		"duration_ms":     time.Since(start).Milliseconds(),
 	})
 }
 
@@ -121,7 +121,7 @@ func (h *Handler) InsertMessage(w http.ResponseWriter, r *http.Request) {
 // @Tags message
 // @Produce json
 // @Param conversation_id query string true "Conversation ID"
-// @Success 200 {object} handler.ConversationResponse
+// @Success 200 {object} dto.ConversationResponse
 // @Failure 400 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /message/conversation [get]
@@ -162,10 +162,10 @@ func (h *Handler) GetConversation(w http.ResponseWriter, r *http.Request) {
 	messages, err := h.messageService.GetConversation(ctx, conversationID)
 	if err != nil {
 		infraLogger.WarnError("get conversation request failed", err, map[string]any{
-			"method":         r.Method,
-			"path":           r.URL.Path,
+			"method":          r.Method,
+			"path":            r.URL.Path,
 			"conversation_id": conversationID,
-			"duration_ms":    time.Since(start).Milliseconds(),
+			"duration_ms":     time.Since(start).Milliseconds(),
 		})
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to get conversation")
@@ -181,11 +181,11 @@ func (h *Handler) GetConversation(w http.ResponseWriter, r *http.Request) {
 	_ = infraHandler.OK(w, resp)
 
 	infraLogger.Info("get conversation request completed", map[string]any{
-		"method":         r.Method,
-		"path":           r.URL.Path,
+		"method":          r.Method,
+		"path":            r.URL.Path,
 		"conversation_id": conversationID,
 		"message_count":   len(messages),
-		"duration_ms":    time.Since(start).Milliseconds(),
+		"duration_ms":     time.Since(start).Milliseconds(),
 	})
 }
 

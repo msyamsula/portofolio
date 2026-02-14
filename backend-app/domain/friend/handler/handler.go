@@ -34,8 +34,8 @@ func New(svc service.Service) *Handler {
 // @Tags friend
 // @Accept json
 // @Produce json
-// @Param body body handler.AddFriendRequest true "Add friend request"
-// @Success 200 {object} handler.AddFriendResponse
+// @Param body body dto.AddFriendRequest true "Add friend request"
+// @Success 200 {object} dto.AddFriendResponse
 // @Failure 400 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /friend/add [post]
@@ -112,7 +112,7 @@ func (h *Handler) AddFriend(w http.ResponseWriter, r *http.Request) {
 // @Tags friend
 // @Produce json
 // @Param id query int true "User ID"
-// @Success 200 {object} handler.GetFriendsResponse
+// @Success 200 {object} dto.GetFriendsResponse
 // @Failure 400 {object} map[string]any
 // @Failure 500 {object} map[string]any
 // @Router /friend/get [get]
@@ -190,11 +190,11 @@ func (h *Handler) GetFriends(w http.ResponseWriter, r *http.Request) {
 	_ = infraHandler.OK(w, resp)
 
 	infraLogger.Info("get friends request completed", map[string]any{
-		"method":      r.Method,
-		"path":        r.URL.Path,
-		"user_id":     id,
+		"method":       r.Method,
+		"path":         r.URL.Path,
+		"user_id":      id,
 		"friend_count": len(users),
-		"duration_ms": time.Since(start).Milliseconds(),
+		"duration_ms":  time.Since(start).Milliseconds(),
 	})
 }
 

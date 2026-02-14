@@ -1,13 +1,173 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "HTTP API for URL shortener",
-        "title": "URL Shortener API",
-        "contact": {},
+        "description": "Comprehensive HTTP API for URL shortener, graph algorithms, friend management, messaging, and user authentication",
+        "title": "Portfolio API",
+        "contact": {
+            "name": "API Support",
+            "url": "https://github.com/msyamsula/portofolio"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
         "version": "1.0"
     },
+    "host": "localhost:5000",
     "basePath": "/",
     "paths": {
+        "/friend/add": {
+            "post": {
+                "description": "Adds a friendship relationship between two users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "friend"
+                ],
+                "summary": "Add friend",
+                "parameters": [
+                    {
+                        "description": "Add friend request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/friend/get": {
+            "get": {
+                "description": "Retrieves all friends for a given user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "friend"
+                ],
+                "summary": "Get friends",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.GetFriendsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/graph/solve/{algo}": {
+            "post": {
+                "description": "Executes the specified graph algorithm on the provided graph",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "graph"
+                ],
+                "summary": "Solve graph algorithm",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Algorithm name (dfs, bfs, cycle, dag, scc, ap, ep)",
+                        "name": "algo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Is graph directed",
+                        "name": "isDirected",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Graph notation",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns service health status and uptime",
@@ -22,7 +182,98 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/backend-app_domain_healthcheck_handler.HealthResponse"
+                            "$ref": "#/definitions/domain_healthcheck_handler.HealthResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/message/conversation": {
+            "get": {
+                "description": "Retrieves all messages for a conversation",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "message"
+                ],
+                "summary": "Get conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Conversation ID",
+                        "name": "conversation_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.ConversationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/message/insert": {
+            "post": {
+                "description": "Inserts a new message into the conversation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "message"
+                ],
+                "summary": "Insert message",
+                "parameters": [
+                    {
+                        "description": "Insert message request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
@@ -50,18 +301,12 @@
                 "summary": "Shorten URL",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "x-portofolio",
-                        "name": "x-portofolio",
-                        "in": "header"
-                    },
-                    {
                         "description": "Shorten request",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/backend-app_domain_url-shortener_handler.ShortenRequest"
+                            "$ref": "#/definitions/domain_url-shortener_handler.ShortenRequest"
                         }
                     }
                 ],
@@ -69,7 +314,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/backend-app_domain_url-shortener_handler.ShortenResponse"
+                            "$ref": "#/definitions/domain_url-shortener_handler.ShortenResponse"
                         }
                     },
                     "400": {
@@ -89,7 +334,7 @@
                 }
             }
         },
-        "/{shortCode}": {
+        "/url/{shortCode}": {
             "get": {
                 "description": "Redirects to original long URL",
                 "tags": [
@@ -97,13 +342,6 @@
                 ],
                 "summary": "Redirect short URL",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "x-portofolio",
-                        "name": "x-portofolio",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Short code",
@@ -135,10 +373,130 @@
                     }
                 }
             }
+        },
+        "/user/google/callback": {
+            "get": {
+                "description": "Processes the OAuth callback from Google",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Handle Google OAuth callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth state parameter",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_user_dto.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/user/google/redirect": {
+            "get": {
+                "description": "Generates the OAuth redirect URL for Google authentication",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get Google OAuth redirect URL",
+                "responses": {
+                    "307": {
+                        "description": "redirect",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/user/validate": {
+            "get": {
+                "description": "Validates an app token and returns user data",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Validate token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_user_dto.ValidateTokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "backend-app_domain_healthcheck_handler.HealthResponse": {
+        "domain_healthcheck_handler.HealthResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -149,7 +507,7 @@
                 }
             }
         },
-        "backend-app_domain_url-shortener_handler.ShortenRequest": {
+        "domain_url-shortener_handler.ShortenRequest": {
             "type": "object",
             "properties": {
                 "long_url": {
@@ -157,13 +515,282 @@
                 }
             }
         },
-        "backend-app_domain_url-shortener_handler.ShortenResponse": {
+        "domain_url-shortener_handler.ShortenResponse": {
             "type": "object",
             "properties": {
                 "short_url": {
                     "type": "string"
                 }
             }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendRequest": {
+            "type": "object",
+            "properties": {
+                "big_id": {
+                    "type": "integer"
+                },
+                "small_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_friend_dto.AddFriendResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_friend_dto.GetFriendsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_friend_dto.User"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_friend_dto.User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "online": {
+                    "type": "boolean"
+                },
+                "unread": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_graph_dto.Edge": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_graph_dto.GraphNotation": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.Edge"
+                    }
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveRequest": {
+            "type": "object",
+            "properties": {
+                "graph": {
+                    "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_graph_dto.GraphNotation"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_graph_dto.SolveResponse": {
+            "type": "object",
+            "properties": {
+                "acyclic": {
+                    "type": "boolean"
+                },
+                "ap": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "bridge": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "cycles": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "log": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "path": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scc": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_message_dto.ConversationResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.Message"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageRequest": {
+            "type": "object",
+            "properties": {
+                "conversation_id": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "string"
+                },
+                "receiver_id": {
+                    "type": "integer"
+                },
+                "sender_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_message_dto.InsertMessageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_message_dto.Message"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_message_dto.Message": {
+            "type": "object",
+            "properties": {
+                "conversation_id": {
+                    "type": "string"
+                },
+                "create_time": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "receiver_id": {
+                    "type": "integer"
+                },
+                "sender_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_user_dto.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_user_dto.UserData": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_msyamsula_portofolio_backend-app_domain_user_dto.ValidateTokenResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_msyamsula_portofolio_backend-app_domain_user_dto.UserData"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Bearer token authentication",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

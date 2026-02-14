@@ -93,10 +93,9 @@ type Config struct {
 // @host localhost:5000
 // @BasePath /
 // @securityDefinitions.apikey BearerAuth
-// @securityDefinitions.bearerAuth type apiKey
-// @securityDefinitions.bearerAuth description Bearer token authentication
-// @securityDefinitions.bearerAuth in header
-// @securityDefinitions.bearerAuth name Authorization
+// @in header
+// @name Authorization
+// @description Bearer token authentication
 func main() {
 	// Load configuration
 	cfg := loadConfig()
@@ -284,7 +283,7 @@ func startServer(router *mux.Router, port string) {
 		Handler:      router,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
-		IdleTimeout: 60 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	// Start server in goroutine
