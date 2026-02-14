@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   loki:
-    image: ${LOKI_IMAGE:-grafana/loki:2.9.6}
+    image: ${LOKI_IMAGE:-grafana/loki:3.0.0}
     container_name: local-loki
     command: -config.file=/etc/loki/config.yaml
     ports:

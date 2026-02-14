@@ -37,8 +37,6 @@ exporters:
   # Logs to Loki via OTLP HTTP
   otlphttp/loki:
     endpoint: http://loki:3100/otlp
-    tls:
-      insecure: true
 
 service:
   telemetry:
