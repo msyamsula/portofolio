@@ -156,6 +156,12 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 	// Apply common middleware to all routes
 	r.Use(infraHttp.MetricsMiddleware(instruments))
 	r.Use(infraHttp.TracingMiddleware(cfg.ServiceName))
+	r.Use(infraHttp.CORSMiddleware)
+
+	// Handle CORS preflight globally
+	r.PathPrefix("/").Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 
 	// Initialize URL Shortener domain
 	urlShortenerRepo := urlShortenerRepo.NewRepository(db, rdb)
