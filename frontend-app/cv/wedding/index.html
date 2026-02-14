@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Wedding Invitation - Forest Green</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&amp;family=Montserrat:wght@300;400;500;600&amp;family=Great+Vibes&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1b3022",
+                        gold: "#d4a017",
+                        "gold-light": "#f0c846",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#121212",
+                    },
+                    fontFamily: {
+                        display: ["Playfair Display", "serif"],
+                        sans: ["Montserrat", "sans-serif"],
+                        script: ["Great Vibes", "cursive"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        /* Ensure proper box-sizing */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        :root {
+            --primary: #1b3022;
+            --gold: #d4a017;
+            --gold-light: #f0c846;
+            --bg-white: #ffffff;
+            --bg-cream: #f8f7f5;
+        }
+
+        .marble-bg {
+            background-color: #f8f7f5;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(25, 16%, 95%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 90%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 90%, 1) 0, transparent 50%);
+        }
+
+        .dark .marble-bg {
+            background-color: #121212;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(25, 10%, 15%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 10%, 10%, 1) 0, transparent 50%);
+        }
+
+        .envelope {
+            position: relative;
+            width: 90vw;
+            max-width: 600px;
+            height: 60vw;
+            max-height: 400px;
+            background-color: #132218 !important;
+            background-image: none !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            transition: transform 0.3s ease;
+            opacity: 1 !important;
+        }
+
+        @media (min-width: 640px) {
+            .envelope {
+                width: 600px;
+                height: 400px;
+            }
+        }
+
+        .envelope:hover {
+            transform: translateY(-5px);
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 45vw solid transparent;
+            border-right: 45vw solid transparent;
+            border-top: 33vw solid #1a3a2a;
+            z-index: 10;
+        }
+
+        @media (min-width: 640px) {
+            .envelope-flap {
+                border-left: 300px solid transparent;
+                border-right: 300px solid transparent;
+                border-top: 220px solid #1a3a2a;
+            }
+        }
+
+        /* Realistic Wax Seal Styles */
+        .wax-seal {
+            position: absolute;
+            top: 58%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 18vw;
+            height: 18vw;
+            max-width: 100px;
+            max-height: 100px;
+            min-width: 70px;
+            min-height: 70px;
+            z-index: 20;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wax-seal .wax-seal-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Envelope names positioned at top */
+        .envelope-names {
+            top: 12vh;
+            bottom: auto;
+        }
+
+        @media (min-width: 640px) {
+            .envelope-names {
+                top: 15vh;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .envelope-names {
+                top: 18vh;
+            }
+        }
+
+        .pampas-grass {
+            position: absolute;
+            right: -60px;
+            bottom: -40px;
+            width: 200px;
+            opacity: 0.8;
+            filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.1));
+            pointer-events: none;
+            z-index: 5;
+            max-width: 50vw;
+        }
+
+        @media (min-width: 640px) {
+            .pampas-grass {
+                right: -80px;
+                bottom: -50px;
+                width: 400px;
+                max-width: none;
+            }
+        }
+
+        .ring {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #d4af37;
+            border-radius: 50%;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 5;
+        }
+
+        .ring-1 {
+            left: 40px;
+            bottom: 60px;
+            transform: rotate(-15deg);
+        }
+
+        .ring-2 {
+            left: 65px;
+            bottom: 50px;
+            transform: rotate(10deg);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .envelope-names {
+            z-index: 15;
+        }
+
+        .z-15 {
+            z-index: 15;
+        }
+
+        .envelope.opened .envelope-flap {
+            transform-origin: top center;
+            animation: flapOpen 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes flapOpen {
+            0% {
+                transform: rotateX(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: rotateX(180deg);
+                opacity: 0;
+            }
+        }
+
+        .wax-seal.fading {
+            animation: sealFade 0.5s ease-out forwards;
+        }
+
+        @keyframes sealFade {
+            0% {
+                transform: translateX(-50%) scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translateX(-50%) scale(1.3);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: translateX(-50%) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .envelope.opened {
+            animation: none;
+        }
+
+        .bottom-text.fading {
+            animation: textFade 0.5s ease-out forwards;
+        }
+
+        @keyframes textFade {
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Envelope intro fade out */
+        .envelope-intro.fade-out {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease-out;
+        }
+
+        /* Invitation content styles */
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .font-script {
+            font-family: 'Great Vibes', cursive;
+        }
+
+        .font-sans {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .section-padding {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .section-padding {
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .section-padding {
+                padding-left: 3rem;
+                padding-right: 3rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .section-padding {
+                padding-left: 6rem;
+                padding-right: 6rem;
+            }
+        }
+
+        .gold-border {
+            border: 1px solid var(--gold);
+        }
+
+        .nav-link {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--gold);
+        }
+
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+        }
+
+        .rsvp-input {
+            width: 100%;
+            border-top: 0;
+            border-left: 0;
+            border-right: 0;
+            border-bottom: 1px solid var(--primary);
+            background: transparent;
+            transition: border-color 0.3s;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .rsvp-input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+        /* Page entrance animation */
+        .page-enter {
+            animation: pageFadeIn 1s ease-out forwards;
+        }
+
+        @keyframes pageFadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .hero-content {
+            animation: heroSlideUp 1.2s ease-out 0.3s forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        @keyframes heroSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ==================== SCROLL ANIMATIONS ==================== */
+
+        /* Base animation states */
+        .scroll-animate {
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scroll-animate.animated {
+            opacity: 1;
+        }
+
+        .scroll-animate.animating-out {
+            opacity: 0;
+        }
+
+        /* ==================== SECTION LEVEL ANIMATIONS ==================== */
+
+        /* Section fade in with scale */
+        .section-fade-in {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-fade-in.animated {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .section-fade-in.animating-out {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        /* Section fade in from bottom with blur */
+        .section-blur-in {
+            opacity: 0;
+            transform: translateY(80px);
+            filter: blur(10px);
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-blur-in.animated {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+
+        .section-blur-in.animating-out {
+            opacity: 0;
+            transform: translateY(-80px);
+            filter: blur(10px);
+        }
+
+        /* Section reveal from center */
+        .section-reveal {
+            opacity: 0;
+            transform: scale(0.8) translateY(40px);
+            transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .section-reveal.animated {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .section-reveal.animating-out {
+            opacity: 0;
+            transform: scale(0.8) translateY(-40px);
+        }
+
+        /* Section slide from sides */
+        .section-slide-in {
+            opacity: 0;
+            transform: translateX(-100px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-slide-in.animated {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .section-slide-in.animating-out {
+            opacity: 0;
+            transform: translateX(100px);
+        }
+
+        /* Section gradient reveal */
+        .section-gradient-reveal {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-gradient-reveal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(27, 48, 34, 0.1) 100%);
+            transform: translateX(-100%);
+            transition: transform 1s ease-out;
+            z-index: 0;
+        }
+
+        .section-gradient-reveal.animated::before {
+            transform: translateX(100%);
+        }
+
+        .section-gradient-reveal>* {
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out 0.3s;
+        }
+
+        .section-gradient-reveal.animated>* {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Fade In Up */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in-up.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .fade-in-up.animating-out {
+            opacity: 0;
+            transform: translateY(-60px);
+        }
+
+        /* Fade In Down */
+        .fade-in-down {
+            opacity: 0;
+            transform: translateY(-60px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in-down.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .fade-in-down.animating-out {
+            opacity: 0;
+            transform: translateY(60px);
+        }
+
+        /* Fade In Left */
+        .fade-in-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in-left.animated {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .fade-in-left.animating-out {
+            opacity: 0;
+            transform: translateX(60px);
+        }
+
+        /* Fade In Right */
+        .fade-in-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in-right.animated {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .fade-in-right.animating-out {
+            opacity: 0;
+            transform: translateX(-60px);
+        }
+
+        /* Zoom In */
+        .zoom-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .zoom-in.animated {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .zoom-in.animating-out {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        /* Zoom Out (from larger to normal) */
+        .zoom-out {
+            opacity: 0;
+            transform: scale(1.2);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .zoom-out.animated {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .zoom-out.animating-out {
+            opacity: 0;
+            transform: scale(1.2);
+        }
+
+        /* Scale Rotate */
+        .scale-rotate {
+            opacity: 0;
+            transform: scale(0.5) rotate(-10deg);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scale-rotate.animated {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+
+        .scale-rotate.animating-out {
+            opacity: 0;
+            transform: scale(0.5) rotate(10deg);
+        }
+
+        /* Flip In */
+        .flip-in {
+            opacity: 0;
+            transform: perspective(1000px) rotateY(-90deg);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .flip-in.animated {
+            opacity: 1;
+            transform: perspective(1000px) rotateY(0deg);
+        }
+
+        .flip-in.animating-out {
+            opacity: 0;
+            transform: perspective(1000px) rotateY(90deg);
+        }
+
+        /* Slide In From Top */
+        .slide-in-top {
+            opacity: 0;
+            transform: translateY(-100%) scale(0.9);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-in-top.animated {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .slide-in-top.animating-out {
+            opacity: 0;
+            transform: translateY(-100%) scale(0.9);
+        }
+
+        /* Slide In From Bottom */
+        .slide-in-bottom {
+            opacity: 0;
+            transform: translateY(100%) scale(0.9);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-in-bottom.animated {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .slide-in-bottom.animating-out {
+            opacity: 0;
+            transform: translateY(100%) scale(0.9);
+        }
+
+        /* Stagger children animations */
+        .stagger-children>* {
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stagger-children.animated>*:nth-child(1) {
+            transition-delay: 0s;
+        }
+
+        .stagger-children.animated>*:nth-child(2) {
+            transition-delay: 0.1s;
+        }
+
+        .stagger-children.animated>*:nth-child(3) {
+            transition-delay: 0.2s;
+        }
+
+        .stagger-children.animated>*:nth-child(4) {
+            transition-delay: 0.3s;
+        }
+
+        .stagger-children.animated>*:nth-child(5) {
+            transition-delay: 0.4s;
+        }
+
+        .stagger-children.animated>*:nth-child(6) {
+            transition-delay: 0.5s;
+        }
+
+        .stagger-children.animated>* {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .stagger-children.animating-out>* {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .stagger-children.animating-out>*:nth-child(1) {
+            transition-delay: 0.5s;
+        }
+
+        .stagger-children.animating-out>*:nth-child(2) {
+            transition-delay: 0.4s;
+        }
+
+        .stagger-children.animating-out>*:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .stagger-children.animating-out>*:nth-child(4) {
+            transition-delay: 0.2s;
+        }
+
+        .stagger-children.animating-out>*:nth-child(5) {
+            transition-delay: 0.1s;
+        }
+
+        .stagger-children.animating-out>*:nth-child(6) {
+            transition-delay: 0s;
+        }
+
+        /* Stagger from sides */
+        .stagger-sides>*:nth-child(odd) {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stagger-sides>*:nth-child(even) {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stagger-sides.animated>* {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .stagger-sides.animating-out>*:nth-child(odd) {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        .stagger-sides.animating-out>*:nth-child(even) {
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+
+        /* Stagger sides with delay */
+        .stagger-sides.animated>*:nth-child(1) {
+            transition-delay: 0s;
+        }
+
+        .stagger-sides.animated>*:nth-child(2) {
+            transition-delay: 0.15s;
+        }
+
+        .stagger-sides.animated>*:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .stagger-sides.animated>*:nth-child(4) {
+            transition-delay: 0.45s;
+        }
+
+        .stagger-sides.animated>*:nth-child(5) {
+            transition-delay: 0.6s;
+        }
+
+        .stagger-sides.animated>*:nth-child(6) {
+            transition-delay: 0.75s;
+        }
+
+        .stagger-sides.animating-out>*:nth-child(1) {
+            transition-delay: 0.75s;
+        }
+
+        .stagger-sides.animating-out>*:nth-child(2) {
+            transition-delay: 0.6s;
+        }
+
+        .stagger-sides.animating-out>*:nth-child(3) {
+            transition-delay: 0.45s;
+        }
+
+        .stagger-sides.animating-out>*:nth-child(4) {
+            transition-delay: 0.3s;
+        }
+
+        .stagger-sides.animating-out>*:nth-child(5) {
+            transition-delay: 0.15s;
+        }
+
+        .stagger-sides.animating-out>*:nth-child(6) {
+            transition-delay: 0s;
+        }
+
+        /* ==================== ADDITIONAL ENGAGING ANIMATIONS ==================== */
+
+        /* Fade in with scale */
+        .fade-scale-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .fade-scale-in.animated {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .fade-scale-in.animating-out {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        /* Rotate and fade in */
+        .rotate-fade-in {
+            opacity: 0;
+            transform: rotate(-10deg) scale(0.9);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .rotate-fade-in.animated {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+        }
+
+        .rotate-fade-in.animating-out {
+            opacity: 0;
+            transform: rotate(10deg) scale(0.9);
+        }
+
+        /* Glow reveal */
+        .glow-reveal {
+            opacity: 0;
+            filter: blur(20px);
+            transform: scale(1.1);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glow-reveal.animated {
+            opacity: 1;
+            filter: blur(0);
+            transform: scale(1);
+        }
+
+        .glow-reveal.animating-out {
+            opacity: 0;
+            filter: blur(20px);
+            transform: scale(1.1);
+        }
+
+        /* Text reveal character by character effect */
+        .text-reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease-out;
+        }
+
+        .text-reveal.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .text-reveal.animating-out {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        /* Sequential paragraph fade */
+        .fade-sequential p {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease-out;
+        }
+
+        .fade-sequential.animated p:nth-child(1) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0s;
+        }
+
+        .fade-sequential.animated p:nth-child(2) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.2s;
+        }
+
+        .fade-sequential.animated p:nth-child(3) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.4s;
+        }
+
+        .fade-sequential.animated p:nth-child(4) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.6s;
+        }
+
+        .fade-sequential.animating-out p {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .fade-sequential.animating-out p:nth-child(1) {
+            transition-delay: 0.6s;
+        }
+
+        .fade-sequential.animating-out p:nth-child(2) {
+            transition-delay: 0.4s;
+        }
+
+        .fade-sequential.animating-out p:nth-child(3) {
+            transition-delay: 0.2s;
+        }
+
+        .fade-sequential.animating-out p:nth-child(4) {
+            transition-delay: 0s;
+        }
+
+        /* Border reveal animation */
+        .border-reveal {
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.6s ease-out;
+        }
+
+        .border-reveal::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid var(--gold);
+            opacity: 0;
+            transform: scale(1.1);
+            transition: all 0.8s ease-out;
+        }
+
+        .border-reveal.animated {
+            opacity: 1;
+        }
+
+        .border-reveal.animated::before {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .border-reveal.animating-out {
+            opacity: 0;
+        }
+
+        .border-reveal.animating-out::before {
+            opacity: 0;
+            transform: scale(1.1);
+        }
+
+        /* Parallax effect */
+        .parallax-slow {
+            transition: transform 0.1s linear;
+        }
+
+        /* Floating animation for continuous motion */
+        .float-continuous {
+            animation: floatContinuous 3s ease-in-out infinite;
+        }
+
+        @keyframes floatContinuous {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Pulse glow effect */
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 5px var(--gold), 0 0 10px var(--gold);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--gold), 0 0 30px var(--gold-light);
+            }
+        }
+
+        /* Rotate animation for decorative elements */
+        .rotate-slow {
+            animation: rotateSlow 20s linear infinite;
+        }
+
+        @keyframes rotateSlow {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Bounce in animation */
+        .bounce-in {
+            opacity: 0;
+            transform: scale(0.3);
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .bounce-in.animated {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bounce-in.animating-out {
+            opacity: 0;
+            transform: scale(0.3);
+            transition: all 0.6s cubic-bezier(0.265, 1.55, 0.68, -0.55);
+        }
+
+        /* Shine effect */
+        .shine-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shine-effect::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(212, 175, 55, 0.3) 50%,
+                    rgba(255, 255, 255, 0) 100%);
+            transform: rotate(30deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) rotate(30deg);
+            }
+
+            100% {
+                transform: translateX(100%) rotate(30deg);
+            }
+        }
+
+        /* Wave animation for text */
+        .wave-text span {
+            display: inline-block;
+            animation: wave 2s ease-in-out infinite;
+        }
+
+        .wave-text span:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .wave-text span:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .wave-text span:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .wave-text span:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        .wave-text span:nth-child(6) {
+            animation-delay: 0.5s;
+        }
+
+        @keyframes wave {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Gallery Carousel Scroll Animation - Seamless infinite scroll */
+        .animate-scroll {
+            animation: scrollCarousel 30s linear infinite;
+        }
+
+        @keyframes scrollCarousel {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Pause animation on hover */
+        .gallery-photos:hover .animate-scroll {
+            animation-play-state: paused;
+        }
+
+        /* Ensure smooth scrolling for gallery */
+        .gallery-photos {
+            overflow: hidden;
+        }
+
+        .gallery-photos .flex {
+            display: flex;
+            width: max-content;
+        }
+
+        /* Hidden invitation content initially */
+        #invitationContent {
+            display: none;
+            opacity: 0;
+        }
+
+        #invitationContent.visible {
+            display: block;
+            animation: pageFadeIn 0.8s ease-out forwards;
+        }
+
+        /* Body overflow control */
+        body.intro-mode {
+            overflow: hidden;
+        }
+
+        body.invitation-mode {
+            overflow: auto;
+        }
+
+        /* Additional responsive improvements */
+        @media (max-width: 640px) {
+            .ring {
+                width: 30px;
+                height: 30px;
+                border-width: 3px;
+            }
+
+            .ring-1 {
+                left: 25px;
+                bottom: 40px;
+            }
+
+            .ring-2 {
+                left: 45px;
+                bottom: 35px;
+            }
+        }
+
+        /* Touch-friendly tap targets */
+        @media (hover: none) and (pointer: coarse) {
+            .wax-seal {
+                min-width: 55px;
+                min-height: 55px;
+            }
+
+            input[type="radio"] {
+                min-width: 20px;
+                min-height: 20px;
+            }
+
+            button,
+            a {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Prevent text zoom on iOS */
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            font-size: 16px;
+        }
+
+        /* Mobile-specific optimizations */
+        @media (max-width: 640px) {
+
+            /* Prevent horizontal scroll */
+            body {
+                overflow-x: hidden;
+            }
+
+            #invitationContent {
+                overflow-x: hidden;
+            }
+
+            /* Ensure names don't overflow */
+            .break-words {
+                word-break: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
+            }
+        }
+
+        /* ==================== HERO HEADER - Complete Rewrite ==================== */
+
+        /* BASE STYLES - All screen sizes */
+        #wedding-header .hero-content {
+            padding: 10vh 20vw !important;
+        }
+
+        /* DESKTOP/TABLET (768px+) */
+        @media (min-width: 768px) {
+            #wedding-header .hero-content {
+                padding: 10vh 20vw !important;
+            }
+
+            #wedding-header .hero-content>p:first-child {
+                font-size: 1.5vw !important;
+            }
+
+            #wedding-header .hero-content h1 {
+                font-size: 3vw !important;
+            }
+
+            #wedding-header .hero-content .flex.items-center.justify-center span {
+                font-size: 1vw !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 1.3vw !important;
+            }
+
+            #wedding-header .hero-content>div.font-serif {
+                font-size: 3.5vw !important;
+            }
+
+            #wedding-header .hero-content .material-symbols-outlined {
+                font-size: 2vw !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.2vw !important;
+            }
+        }
+
+        /* TABLETS (768px - 1024px) - Larger text for better readability */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            #wedding-header .hero-content>p:first-child {
+                font-size: 2vw !important;
+            }
+
+            #wedding-header .hero-content h1 {
+                font-size: 4vw !important;
+            }
+
+            #wedding-header .hero-content .flex.items-center.justify-center span {
+                font-size: 1.5vw !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 1.8vw !important;
+            }
+
+            #wedding-header .hero-content>div.font-serif {
+                font-size: 4.5vw !important;
+            }
+
+            #wedding-header .hero-content .material-symbols-outlined {
+                font-size: 2.5vw !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.6vw !important;
+            }
+        }
+
+        /* ==================== MOBILE (up to 767px) ==================== */
+        /* Mobile: 10% top/bottom padding, 20% left/right padding */
+
+        @media (max-width: 767px) {
+
+            /* Hero content - consistent spacing */
+            #wedding-header .hero-content {
+                padding: 10vh 20vw !important;
+            }
+
+            /* Flowers */
+            #wedding-header .flower-top-right {
+                top: 10vh !important;
+                right: 15vw !important;
+            }
+
+            #wedding-header .flower-bottom-left {
+                bottom: 10vh !important;
+                left: 15vw !important;
+            }
+
+            #wedding-header .flower-top-right svg,
+            #wedding-header .flower-bottom-left svg {
+                width: 14vh !important;
+                height: 14vh !important;
+            }
+
+            /* Text sizes - proportional to viewport height */
+            #wedding-header .hero-content>p:first-child {
+                font-size: 2.5vh !important;
+                margin-bottom: 2.5vh !important;
+            }
+
+            #wedding-header .hero-content h1 {
+                font-size: 3.8vh !important;
+                line-height: 1.2 !important;
+                margin-bottom: 0.5vh !important;
+            }
+
+            #wedding-header .hero-content .flex.items-center.justify-center span {
+                font-size: 1.8vh !important;
+                margin-bottom: 0.3vh !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 2.2vh !important;
+                line-height: 1.3 !important;
+                margin-top: 0 !important;
+            }
+
+            #wedding-header .hero-content>div.mb-\[2vh\] {
+                margin-bottom: 2vh !important;
+            }
+
+            #wedding-header .hero-content>div.font-serif {
+                font-size: 2.8vh !important;
+                margin: 2vh 0 !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\] {
+                gap: 1.5vh !important;
+                margin-top: 2vh !important;
+            }
+
+            #wedding-header .hero-content .h-px {
+                width: 10vw !important;
+            }
+
+            #wedding-header .hero-content .material-symbols-outlined {
+                font-size: 2vh !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.7vh !important;
+            }
+        }
+
+        /* Small phones (up to 375px) - iPhone SE */
+        @media (max-width: 375px) {
+            #wedding-header .hero-content h1 {
+                font-size: 4.2vh !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 2.4vh !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.5vh !important;
+            }
+        }
+
+        /* Medium phones (376px - 428px) - iPhone 14, 15, etc. */
+        @media (min-width: 376px) and (max-width: 428px) {
+            #wedding-header .hero-content h1 {
+                font-size: 3.6vh !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 2.1vh !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.6vh !important;
+            }
+        }
+
+        /* Large phones (429px - 480px) - iPhone 14 Pro Max, Pixel Pro */
+        @media (min-width: 429px) and (max-width: 480px) {
+            #wedding-header .hero-content h1 {
+                font-size: 3.4vh !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 2vh !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.6vh !important;
+            }
+        }
+
+        /* Extra large phones (481px - 767px) - Galaxy Ultra, iPhone Plus */
+        @media (min-width: 481px) and (max-width: 767px) {
+            #wedding-header .hero-content h1 {
+                font-size: 3.2vh !important;
+            }
+
+            #wedding-header .hero-content .flex.flex-col p {
+                font-size: 1.9vh !important;
+            }
+
+            #wedding-header .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 1.2 vh !important;
+            }
+        }
+
+        /* Desktop and Tablet views (768px and above) - Based on desktop.png composition */
+        @media (min-width: 768px) {
+
+            /* Move flowers closer to center (5-6% from edges) */
+            .flower-top-right {
+                top: 5vh !important;
+                right: 6vw !important;
+            }
+
+            .flower-bottom-left {
+                bottom: 5vh !important;
+                left: 6vw !important;
+            }
+
+            /* Make flowers slightly larger for desktop/tablet */
+            .flower-top-right svg,
+            .flower-bottom-left svg {
+                width: 150px !important;
+                height: 150px !important;
+            }
+
+            /* Note: padding is set by universal rule above */
+
+            /* "The Wedding Of" - smallest (~12-14pt equivalent) */
+            .hero-content>p:first-child {
+                font-size: 1vw !important;
+                margin-bottom: 2vh !important;
+            }
+
+            /* Names - largest focal point (~24-28pt equivalent) */
+            .hero-content h1 {
+                font-size: 2.2vw !important;
+            }
+
+            /* "Putra pertama dari" / "Putri pertama dari" */
+            .hero-content .flex.items-center.justify-center span {
+                font-size: 0.75vw !important;
+            }
+
+            /* Parent names - medium size (~14-16pt equivalent) */
+            .hero-content .flex.flex-col p {
+                font-size: 0.9vw !important;
+                padding: 0 1vw !important;
+            }
+
+            /* Ampersand - slightly larger than parent names (~16-18pt equivalent) */
+            .hero-content>div.font-serif {
+                font-size: 2.5vw !important;
+                margin-bottom: 2.5vh !important;
+            }
+
+            /* Section margins between names and ampersand */
+            .hero-content>div.mb-\[2vh\] {
+                margin-bottom: 2.5vh !important;
+            }
+
+            /* Date section spacing */
+            .hero-content>div.gap-\[1vh\] {
+                gap: 1.2vh !important;
+            }
+
+            /* Divider lines - proportional width */
+            .hero-content .h-px {
+                width: 5vw !important;
+            }
+
+            /* Favorite icon */
+            .hero-content .material-symbols-outlined {
+                font-size: 1.5vw !important;
+            }
+
+            /* Date - smallest matching header (~12-14pt equivalent) */
+            .hero-content>div.gap-\[1vh\]>p:last-child {
+                font-size: 0.85vw !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="marble-bg min-h-screen flex flex-col items-center justify-center transition-colors duration-500 intro-mode">
+
+    <!-- ==================== ENVELOPE INTRO SECTION ==================== -->
+    <div id="envelopeIntro"
+        class="envelope-intro w-full h-screen flex flex-col items-center justify-center fixed inset-0 bg-[var(--bg-white)] dark:bg-[var(--background-dark)] transition-opacity duration-800 z-40">
+        <button
+            class="fixed top-4 right-4 sm:top-6 sm:right-6 p-1.5 sm:p-2 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-sm shadow-lg z-50 hover:bg-white dark:hover:bg-black transition-all"
+            onclick="document.documentElement.classList.toggle('dark')">
+            <span class="material-symbols-outlined text-[var(--primary)] dark:text-[var(--gold)]">
+                dark_mode
+            </span>
+        </button>
+
+        <div class="relative scale-65 sm:scale-70 md:scale-80 lg:scale-100 transition-transform duration-500">
+            <div class="ring ring-1 border-[var(--gold)]"></div>
+            <div class="ring ring-2 border-[var(--gold)]"></div>
+            <div class="envelope group cursor-pointer floating" id="envelope"
+                style="background-color: #1b3022 !important;">
+                <div class="envelope-flap" id="envelopeFlap"></div>
+                <div class="wax-seal" id="waxSeal">
+                    <img src="images/wax.png" alt="SR Wax Seal" class="wax-seal-image">
+                </div>
+            </div>
+            <div class="absolute inset-0 opacity-0 pointer-events-none rounded-sm"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzPLmPZN-Jc4RiBOYEMvnkSESDGWT3OGHT8SUulQe_BxlodbVKtrW_TFu9oGk4wH6uI0xCzQHXN05T4aaupm6ijZbIfUalwRlCzZFn-OLsTmK_shzS6c_jce5cB9bypn91Qpku0AmsmZ7rjVRfrpF5PGY6ZuGoxss_F2Co_I3I6afUk32JcPZYQkU43mgcnhkpdKbGXbql4Wxjvm_fB1DCUzBtnIVU2MrJovHgcPLq5wk1AiM17gS1DwSAfHpcN7WT5jhb2f_cGDY')">
+            </div>
+
+        </div>
+        <img alt="Dried pampas grass top left"
+            class="pampas-grass -rotate-12 mix-blend-multiply dark:mix-blend-normal dark:opacity-40"
+            src="gallery/4.jpeg" style="top: -50px; left: -50px; bottom: auto; right: auto;" />
+        <img alt="Dried pampas grass"
+            class="pampas-grass rotate-12 mix-blend-multiply dark:mix-blend-normal dark:opacity-40"
+            src="gallery/test.jpeg" />
+    </div>
+    <div class="mt-8 sm:mt-12 md:mt-16 text-center space-y-3 sm:space-y-4 z-20" id="bottomText">
+        <h2 class="font-serif text-xl sm:text-2xl md:text-3xl text-[var(--gold)] tracking-wide">
+            August 29, 2026
+        </h2>
+        <p
+            class="font-sans text-[10px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-gray-500 dark:text-gray-400 px-4">
+            Click seal to
+            open</p>
+    </div>
+    <!-- <div
+        class="fixed bottom-6 sm:bottom-8 flex gap-4 sm:gap-8 items-center justify-center w-full px-3 sm:px-6 max-w-full overflow-hidden">
+        <div class="h-px bg-[var(--gold)]/30 flex-1 max-w-[100px]"></div>
+        <div class="text-[10px] font-sans uppercase tracking-widest text-gray-400 dark:text-gray-500 text-center">
+            Variant 1 of 3: The Invitation
+        </div>
+        <div class="h-px bg-[var(--gold)]/30 flex-1 max-w-[100px]"></div>
+    </div> -->
+    </div>
+
+    <!-- ==================== INVITATION CONTENT ==================== -->
+    <div id="invitationContent" class="overflow-x-hidden w-full">
+        <header id="wedding-header" class="relative h-screen w-screen flex items-center justify-center overflow-hidden"
+            style="background: linear-gradient(135deg, #1b3022 0%, #24412e 50%, #1b3022 100%);">
+            <!-- Top Right Flower Motif -->
+            <div class="flower-top-right absolute top-[8vh] right-[8vw] z-20 opacity-60 float-continuous"
+                style="animation-delay: 0s;">
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Main flower center -->
+                    <circle cx="60" cy="60" r="12" fill="var(--gold)" opacity="0.8" />
+                    <!-- Petals -->
+                    <ellipse cx="60" cy="25" rx="10" ry="18" fill="var(--gold)" opacity="0.4" />
+                    <ellipse cx="85" cy="40" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(60 85 40)" />
+                    <ellipse cx="95" cy="60" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(120 95 60)" />
+                    <ellipse cx="85" cy="80" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(180 85 80)" />
+                    <ellipse cx="60" cy="95" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(240 60 95)" />
+                    <ellipse cx="35" cy="80" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(300 35 80)" />
+                    <ellipse cx="25" cy="60" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(360 25 60)" />
+                    <ellipse cx="35" cy="40" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(420 35 40)" />
+                    <!-- Decorative leaves -->
+                    <path d="M60 15 Q75 5 90 15 Q75 10 60 15" fill="var(--gold)" opacity="0.5" />
+                    <path d="M105 60 Q115 45 115 30 Q110 45 105 60" fill="var(--gold)" opacity="0.5" />
+                    <path d="M60 105 Q45 115 30 105 Q45 110 60 105" fill="var(--gold)" opacity="0.5" />
+                    <path d="M15 60 Q5 75 15 90 Q10 75 15 60" fill="var(--gold)" opacity="0.5" />
+                    <!-- Small accent flowers -->
+                    <circle cx="95" cy="25" r="5" fill="var(--gold-light)" opacity="0.6" />
+                    <circle cx="100" cy="35" r="3" fill="var(--gold)" opacity="0.5" />
+                    <circle cx="25" cy="95" r="5" fill="var(--gold-light)" opacity="0.6" />
+                    <circle cx="20" cy="85" r="3" fill="var(--gold)" opacity="0.5" />
+                </svg>
+            </div>
+
+            <!-- Bottom Left Flower Motif -->
+            <div class="flower-bottom-left absolute bottom-[8vh] left-[8vw] z-20 opacity-60 float-continuous"
+                style="animation-delay: 1.5s;">
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Main flower center -->
+                    <circle cx="60" cy="60" r="12" fill="var(--gold)" opacity="0.8" />
+                    <!-- Petals -->
+                    <ellipse cx="60" cy="25" rx="10" ry="18" fill="var(--gold)" opacity="0.4" />
+                    <ellipse cx="85" cy="40" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(60 85 40)" />
+                    <ellipse cx="95" cy="60" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(120 95 60)" />
+                    <ellipse cx="85" cy="80" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(180 85 80)" />
+                    <ellipse cx="60" cy="95" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(240 60 95)" />
+                    <ellipse cx="35" cy="80" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(300 35 80)" />
+                    <ellipse cx="25" cy="60" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(360 25 60)" />
+                    <ellipse cx="35" cy="40" rx="10" ry="18" fill="var(--gold)" opacity="0.4"
+                        transform="rotate(420 35 40)" />
+                    <!-- Decorative leaves -->
+                    <path d="M60 15 Q75 5 90 15 Q75 10 60 15" fill="var(--gold)" opacity="0.5" />
+                    <path d="M105 60 Q115 45 115 30 Q110 45 105 60" fill="var(--gold)" opacity="0.5" />
+                    <path d="M60 105 Q45 115 30 105 Q45 110 60 105" fill="var(--gold)" opacity="0.5" />
+                    <path d="M15 60 Q5 75 15 90 Q10 75 15 60" fill="var(--gold)" opacity="0.5" />
+                    <!-- Small accent flowers -->
+                    <circle cx="25" cy="25" r="5" fill="var(--gold-light)" opacity="0.6" />
+                    <circle cx="30" cy="35" r="3" fill="var(--gold)" opacity="0.5" />
+                    <circle cx="95" cy="95" r="5" fill="var(--gold-light)" opacity="0.6" />
+                    <circle cx="90" cy="85" r="3" fill="var(--gold)" opacity="0.5" />
+                </svg>
+            </div>
+
+            <div class="relative z-10 text-center hero-content w-full h-full flex flex-col items-center justify-center">
+                <p
+                    class="font-serif text-[1.2vw] tracking-[0.15em] uppercase text-[var(--gold-light)] drop-shadow-sm opacity-80 mb-[2vh]">
+                    The Wedding Of
+                </p>
+
+                <div class="flex flex-col items-center justify-center mb-[2vh]">
+                    <h1 class="font-serif text-[2.8vw] text-[var(--gold)] leading-tight font-normal tracking-tight break-words"
+                        style="filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));">
+                        Muhammad Syamsul Arifin
+                    </h1>
+                </div>
+
+                <div class="font-serif text-[3.2vw] text-[var(--gold)] font-light italic mb-[2vh]"
+                    style="filter: drop-shadow(2px 2px 6px rgba(0,0,0,0.4));">&amp;</div>
+
+                <div class="flex flex-col items-center justify-center mb-[2vh]">
+                    <h1 class="font-serif text-[2.8vw] text-[var(--gold)] leading-tight font-normal tracking-tight break-words"
+                        style="filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));">
+                        Regina Maya Anggraeni
+                    </h1>
+                </div>
+
+                <div class="flex flex-col items-center gap-[1vh]">
+                    <!-- <div class="flex items-center gap-[1.5vw]">
+                        <div class="h-px w-[6vw] bg-[var(--gold)]/60"></div>
+                        <span class="material-symbols-outlined text-[var(--gold)] text-[1.8vw]">favorite</span>
+                        <div class="h-px w-[6vw] bg-[var(--gold)]/60"></div>
+                    </div> -->
+                    <p class="font-serif text-[1vw] uppercase tracking-[0.2em] font-normal text-[var(--gold-light)]">
+                        August 29, 2026 - JGC Clubhouse
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Groom Section -->
+        <section class="section-fade-in relative w-screen overflow-hidden" id="groom">
+            <!-- Mobile: Background Photo -->
+            <div class="absolute inset-0 md:hidden">
+                <img alt="Muhammad Syamsul Arifin" class="w-full h-full object-cover object-center"
+                    src="gallery/test.jpeg" />
+            </div>
+
+            <!-- Mobile Content -->
+            <div class="relative z-10 h-screen md:h-auto flex flex-col justify-between text-white py-10 px-6 md:hidden">
+                <!-- Top: Title and Info -->
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg p-6 fade-in-top">
+                    <h2 class="font-serif text-3xl sm:text-4xl md:text-5xl text-[var(--gold)]">The Groom</h2>
+                    <p class="font-script text-2xl sm:text-3xl md:text-4xl text-[var(--primary)] mb-4">Muhammad Syamsul
+                        Arifin</p>
+                    <!-- Parents info -->
+                    <div class="text-left fade-in">
+                        <div
+                            class="bg-[var(--primary)] font-serif font-bold italic text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg text-white leading-relaxed tracking-wide px-4 py-2 rounded">
+                            <p>Putra pertama dari Bpk. H. Ahmad Fauzi & Ibu Hj. Siti Aminah.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop/Web: Two-column layout -->
+            <div class="hidden md:flex md:items-center md:justify-center md:py-16 md:px-8 lg:px-16">
+                <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12 lg:gap-16 max-w-6xl mx-auto">
+                    <!-- Photo -->
+                    <div class="w-full md:w-1/2 aspect-[3/4] md:aspect-[4/5] overflow-hidden rounded-lg shadow-2xl">
+                        <img alt="Muhammad Syamsul Arifin" class="w-full h-full object-cover object-center"
+                            src="gallery/test.jpeg" />
+                    </div>
+
+                    <!-- Content -->
+                    <div class="w-full md:w-1/2 text-center md:text-left">
+                        <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl text-[var(--gold)] mb-3">The Groom</h2>
+                        <p class="font-script text-2xl sm:text-3xl lg:text-4xl text-[var(--primary)] mb-6">Muhammad
+                            Syamsul Arifin</p>
+                        <div class="bg-[var(--primary)] py-4 px-6 lg:py-5 lg:px-8 rounded shadow-lg">
+                            <p
+                                class="font-serif font-bold italic text-sm lg:text-base text-white leading-relaxed tracking-wide">
+                                Putra pertama dari Bpk. H. Ahmad Fauzi & Ibu Hj. Siti Aminah.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bride Section -->
+        <section class="section-fade-in relative w-screen overflow-hidden" id="bride">
+            <!-- Mobile: Background Photo -->
+            <div class="absolute inset-0 md:hidden">
+                <img alt="Regina Maya Anggraeni" class="w-full h-full object-cover" src="gallery/1.jpeg" />
+            </div>
+
+            <!-- Mobile Content -->
+            <div class="relative z-10 h-screen md:h-auto flex flex-col justify-between text-white py-10 px-6 md:hidden">
+                <!-- Top: Title and Info -->
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg p-6 fade-in-top">
+                    <h2 class="font-serif text-3xl sm:text-4xl md:text-5xl text-[var(--gold)]">The Bride</h2>
+                    <p class="font-script text-2xl sm:text-3xl md:text-4xl text-[var(--primary)] mb-4">Regina Maya
+                        Anggraeni</p>
+                    <!-- Parents info -->
+                    <div class="text-left fade-in">
+                        <div
+                            class="bg-[var(--primary)] font-serif font-bold italic text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg text-white leading-relaxed tracking-wide px-4 py-2 rounded">
+                            <p>Putri pertama dari Bpk. Bambang Sutrisno & Ibu Dewi Kartika.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop/Web: Two-column layout -->
+            <div class="hidden md:flex md:items-center md:justify-center md:py-16 md:px-8 lg:px-16">
+                <div class="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-12 lg:gap-16 max-w-6xl mx-auto">
+                    <!-- Photo -->
+                    <div class="w-full md:w-1/2 aspect-[3/4] md:aspect-[4/5] overflow-hidden rounded-lg shadow-2xl">
+                        <img alt="Regina Maya Anggraeni" class="w-full h-full object-cover" src="gallery/1.jpeg" />
+                    </div>
+
+                    <!-- Content -->
+                    <div class="w-full md:w-1/2 text-center md:text-left">
+                        <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl text-[var(--gold)] mb-3">The Bride</h2>
+                        <p class="font-script text-2xl sm:text-3xl lg:text-4xl text-[var(--primary)] mb-6">Regina Maya
+                            Anggraeni</p>
+                        <div class="bg-[var(--primary)] py-4 px-6 lg:py-5 lg:px-8 rounded shadow-lg">
+                            <p
+                                class="font-serif font-bold italic text-sm lg:text-base text-white leading-relaxed tracking-wide">
+                                Putri pertama dari Bpk. Bambang Sutrisno & Ibu Dewi Kartika.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-fade-in section-padding max-w-7xl mx-auto w-full overflow-x-hidden" id="story">
+            <div class="flex flex-col md:flex-row items-stretch gap-6 md:gap-10 lg:gap-12">
+                <!-- Photo (Left) -->
+                <div class="relative p-2 border border-[var(--primary)] flex-shrink-0 fade-in">
+                    <div class="w-full h-80 md:h-96 lg:h-[28rem] xl:h-[32rem] overflow-hidden">
+                        <img alt="Couple's Story"
+                            class="w-full h-full object-cover grayscale-[20%] hover:scale-105 transition-transform duration-700"
+                            src="gallery/test.jpeg" />
+                    </div>
+                    <div
+                        class="absolute -bottom-4 -right-4 w-16 h-16 sm:w-20 sm:h-20 border-[var(--gold)] border-b-2 border-r-2 -z-10">
+                    </div>
+                </div>
+
+                <!-- 3 Lines Content (Right) -->
+                <div class="flex-1 flex flex-col justify-between py-2 fade-in">
+                    <!-- Line 1: Our Story Heading -->
+                    <h2
+                        class="font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[var(--gold)] fade-in-top text-center">
+                        Our Story
+                    </h2>
+
+                    <!-- Line 2: Story Text -->
+                    <div
+                        class="space-y-3 sm:space-y-4 text-gray-600 leading-relaxed font-light text-sm sm:text-base lg:text-lg text-justify flex-1 my-4 md:my-6 px-2">
+                        <p>Semuanya bermula dari cinta yang sama pada hutan pinus dan perjalanan panjang menapaki
+                            bukit-bukit berkabut. Pertemuan tak sengaja di sebuah kafe kecil di tepi pantai tumbuh
+                            menjadi kisah sepuluh tahun penuh petualangan, pertumbuhan, dan dukungan tanpa syarat.</p>
+                        <p>Setelah lima tahun membangun kehidupan bersama di kota, Syamsul melamar saat matahari terbit
+                            di tempat yang pertama kali kami daki bersama. Kini, kami tak sabar memulai petualangan
+                            terbesar kami, ditemani keluarga dan sahabat tercinta.</p>
+                    </div>
+
+                    <!-- Line 3: Syamsul & Regina -->
+                    <span
+                        class="glow-reveal font-script text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[var(--primary)] text-center block">
+                        Syamsul &amp; Regina
+                    </span>
+                </div>
+            </div>
+        </section>
+        <section class="section-fade-in section-padding overflow-x-hidden w-full" id="countdown">
+            <div class="max-w-6xl mx-auto w-full">
+                <div
+                    class="bg-white border border-[var(--primary)] shadow-md rounded-md p-3 sm:p-4 md:p-5 lg:p-4 text-center">
+                    <h2 class="font-serif text-lg sm:text-xl md:text-2xl lg:text-2xl text-[var(--gold)] mb-1">Countdown
+                        to Our Night</h2>
+                    <p class="text-gray-500 font-light italic text-[11px] sm:text-xs md:text-sm lg:text-sm mb-3">29
+                        August 2026 • 19.00 WIB</p>
+                    <div class="flex w-full justify-between gap-1">
+                        <div class="bg-[var(--bg-cream)]/70 rounded-md p-2 sm:p-2 md:p-2 lg:p-2 flex-1 min-w-0">
+                            <p class="text-xl sm:text-2xl md:text-2xl lg:text-2xl font-semibold text-[var(--primary)]"
+                                id="countdownDays">0</p>
+                            <p class="text-[9px] uppercase tracking-widest text-gray-500">Days</p>
+                        </div>
+                        <div class="bg-[var(--bg-cream)]/70 rounded-md p-2 sm:p-2 md:p-2 lg:p-2 flex-1 min-w-0">
+                            <p class="text-xl sm:text-2xl md:text-2xl lg:text-2xl font-semibold text-[var(--primary)]"
+                                id="countdownHours">0</p>
+                            <p class="text-[9px] uppercase tracking-widest text-gray-500">Hours</p>
+                        </div>
+                        <div class="bg-[var(--bg-cream)]/70 rounded-md p-2 sm:p-2 md:p-2 lg:p-2 flex-1 min-w-0">
+                            <p class="text-xl sm:text-2xl md:text-2xl lg:text-2xl font-semibold text-[var(--primary)]"
+                                id="countdownMinutes">0</p>
+                            <p class="text-[9px] uppercase tracking-widest text-gray-500">Minutes</p>
+                        </div>
+                        <div class="bg-[var(--bg-cream)]/70 rounded-md p-2 sm:p-2 md:p-2 lg:p-2 flex-1 min-w-0">
+                            <p class="text-xl sm:text-2xl md:text-2xl lg:text-2xl font-semibold text-[var(--primary)]"
+                                id="countdownSeconds">0</p>
+                            <p class="text-[9px] uppercase tracking-widest text-gray-500">Seconds</p>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-2" id="countdownNote">Counting down to the celebration.</p>
+                </div>
+            </div>
+        </section>
+        <section class="section-blur-in bg-[var(--bg-cream)] section-padding overflow-x-hidden" id="details">
+            <div class="max-w-7xl mx-auto w-full">
+                <div class="text-center mb-8 md:mb-10 fade-in-up">
+                    <div class="text-[var(--gold)] mb-2">
+                        <span class="material-symbols-outlined text-2xl sm:text-3xl">celebration</span>
+                    </div>
+                    <h2 class="font-script text-3xl sm:text-4xl md:text-5xl text-[var(--primary)] mb-3 md:mb-4">The
+                        Celebration</h2>
+                    <p
+                        class="text-[var(--primary)] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-xs sm:text-sm font-medium">
+                        Where &amp; When</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 stagger-children">
+                    <a href="https://share.google/PMRotR0Zrtnjx9kIZ" target="_blank" rel="noopener"
+                        class="block bg-white p-6 sm:p-8 text-center shadow-sm border border-gray-100 group hover:border-[var(--gold)] transition-colors duration-500 zoom-in cursor-pointer">
+                        <div
+                            class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-6 sm:mb-8 flex items-center justify-center rounded-full bg-[var(--bg-cream)] group-hover:bg-[var(--primary)] transition-colors duration-500">
+                            <span
+                                class="material-symbols-outlined text-[var(--gold)] text-2xl sm:text-3xl">church</span>
+                        </div>
+                        <h3 class="font-serif text-xl sm:text-2xl mb-3 md:mb-4 text-[var(--primary)]">The Ceremony</h3>
+                        <div
+                            class="space-y-1 md:space-y-2 text-gray-600 font-light text-sm sm:text-base fade-sequential">
+                            <p class="font-medium text-[var(--primary)]">16.00 WIB</p>
+                            <p>Jakarta Garden City Clubhouse</p>
+                            <p>Jl. Cassia Utama, Cakung Timur, 13910</p>
+                        </div>
+                    </a>
+                    <a href="https://www.google.com/maps/dir//Clubhouse+JGC+Jakarta+Garden+City,+Jl.+Cassia+Utama,+East+Cakung,+Cakung,+East+Jakarta+City,+Jakarta+13910/@-6.181865,106.8339182,31236m/data=!3m1!1e3!4m8!4m7!1m0!1m5!1m1!1s0x2e698bb3b4d5bea1:0x790676149f947835!2m2!1d106.9569128!2d-6.1771845?entry=ttu&g_ep=EgoyMDI2MDIxMS4wIKXMDSoASAFQAw%3D%3D"
+                        target="_blank" rel="noopener"
+                        class="block bg-white p-6 sm:p-8 text-center shadow-sm border border-gray-100 group hover:border-[var(--gold)] transition-colors duration-500 zoom-in cursor-pointer">
+                        <div
+                            class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-6 sm:mb-8 flex items-center justify-center rounded-full bg-[var(--bg-cream)] group-hover:bg-[var(--primary)] transition-colors duration-500">
+                            <span
+                                class="material-symbols-outlined text-[var(--gold)] text-2xl sm:text-3xl">local_bar</span>
+                        </div>
+                        <h3 class="font-serif text-xl sm:text-2xl mb-3 md:mb-4 text-[var(--primary)]">The Reception</h3>
+                        <div
+                            class="space-y-1 md:space-y-2 text-gray-600 font-light text-sm sm:text-base fade-sequential">
+                            <p class="font-medium text-[var(--primary)]">19.00 - 21.00 WIB</p>
+                            <p>Jakarta Garden City Clubhouse</p>
+                            <p>Jl. Cassia Utama, Cakung Timur, 13910</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Photo Gallery Section -->
+        <section class="section-reveal py-8 sm:py-12 lg:py-16 px-3 sm:px-4 md:px-6 overflow-hidden w-full">
+            <div class="max-w-6xl mx-auto w-full">
+                <div class="text-center mb-6 sm:mb-8 lg:mb-10 scale-rotate">
+                    <div class="text-[var(--gold)] mb-2">
+                        <span class="material-symbols-outlined text-2xl sm:text-3xl">photo_library</span>
+                    </div>
+                    <h2 class="glow-reveal font-script text-3xl sm:text-4xl md:text-5xl text-[var(--primary)]">
+                        Our Moments</h2>
+                </div>
+
+                <!-- Carousel Container -->
+                <div class="relative gallery-photos pulse-glow shine-effect">
+                    <!-- Carousel Track -->
+                    <div class="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 animate-scroll">
+                        <!-- First Set -->
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/1.jpeg" data-alt="Gallery Photo 1">
+                            <img src="gallery/1.jpeg" alt="Gallery Photo 1" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/2.jpeg" data-alt="Gallery Photo 2">
+                            <img src="gallery/2.jpeg" alt="Gallery Photo 2" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/3.jpeg" data-alt="Gallery Photo 3">
+                            <img src="gallery/3.jpeg" alt="Gallery Photo 3" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/4.jpeg" data-alt="Gallery Photo 4">
+                            <img src="gallery/4.jpeg" alt="Gallery Photo 4" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/5.jpeg" data-alt="Gallery Photo 5">
+                            <img src="gallery/5.jpeg" alt="Gallery Photo 5" class="w-full h-full object-cover">
+                        </div>
+                        <!-- Duplicate Set for Infinite Loop -->
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/1.jpeg" data-alt="Gallery Photo 1">
+                            <img src="gallery/1.jpeg" alt="Gallery Photo 1" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/2.jpeg" data-alt="Gallery Photo 2">
+                            <img src="gallery/2.jpeg" alt="Gallery Photo 2" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/3.jpeg" data-alt="Gallery Photo 3">
+                            <img src="gallery/3.jpeg" alt="Gallery Photo 3" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/4.jpeg" data-alt="Gallery Photo 4">
+                            <img src="gallery/4.jpeg" alt="Gallery Photo 4" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-shrink-0 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 border-2 border-[var(--gold)] rounded-lg overflow-hidden shadow-xl zoom-in cursor-pointer gallery-image hover:shadow-2xl hover:brightness-105 transition-all duration-300"
+                            data-src="gallery/5.jpeg" data-alt="Gallery Photo 5">
+                            <img src="gallery/5.jpeg" alt="Gallery Photo 5" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-slide-in section-padding overflow-x-hidden w-full" id="rsvp">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 w-full">
+                <div
+                    class="bg-white shadow-xl border-2 border-[var(--primary)] p-6 sm:p-8 md:p-12 lg:p-16 rounded-sm w-full flip-in hidden">
+                    <div class="text-center mb-6 md:mb-8 fade-in-up">
+                        <h2
+                            class="glow-reveal font-serif text-2xl sm:text-3xl md:text-4xl mb-3 md:mb-4 text-[var(--gold)]">
+                            Kindly Respond</h2>
+                        <p class="text-gray-500 font-light italic text-sm md:text-base">Please RSVP by September 1st,
+                            2024
+                        </p>
+                    </div>
+                    <form class="space-y-6 md:space-y-8 stagger-children">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                            <div class="space-y-1">
+                                <label class="text-[10px] uppercase tracking-widest text-gray-400">Full Name</label>
+                                <input class="rsvp-input" placeholder="Your name" type="text" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] uppercase tracking-widest text-gray-400">Email Address</label>
+                                <input class="rsvp-input" placeholder="hello@example.com" type="email" />
+                            </div>
+                        </div>
+                        <div class="space-y-3 md:space-y-4">
+                            <p class="text-sm font-medium text-[var(--primary)] mb-2">Will you be attending?</p>
+                            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8">
+                                <label class="flex items-center gap-2 md:gap-3 cursor-pointer group">
+                                    <input class="w-5 h-5 sm:w-4 sm:h-4 text-[var(--primary)] focus:ring-[var(--gold)]"
+                                        name="attendance" type="radio" />
+                                    <span
+                                        class="text-sm font-light group-hover:text-[var(--gold)] transition-colors">Joyfully
+                                        Accept</span>
+                                </label>
+                                <label class="flex items-center gap-2 md:gap-3 cursor-pointer group">
+                                    <input class="w-5 h-5 sm:w-4 sm:h-4 text-[var(--primary)] focus:ring-[var(--gold)]"
+                                        name="attendance" type="radio" />
+                                    <span
+                                        class="text-sm font-light group-hover:text-[var(--gold)] transition-colors">Regretfully
+                                        Decline</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase tracking-widest text-gray-400">Dietary
+                                Restrictions</label>
+                            <textarea class="rsvp-input" placeholder="Please let us know..." rows="2"></textarea>
+                        </div>
+                        <button
+                            class="w-full bg-[var(--primary)] text-white py-3 md:py-4 uppercase tracking-[0.3em] text-xs font-semibold hover:bg-[var(--gold)] transition-all duration-300 shadow-lg shine-effect"
+                            type="submit">
+                            Send Response
+                        </button>
+                    </form>
+                </div>
+                <div
+                    class="bg-white shadow-xl border-2 border-[var(--primary)] p-6 sm:p-8 md:p-12 lg:p-16 rounded-sm w-full flip-in lg:col-span-2">
+                    <div class="text-center mb-6 md:mb-8 fade-in-up">
+                        <div class="text-[var(--gold)] mb-2">
+                            <span class="material-symbols-outlined text-2xl sm:text-3xl">favorite</span>
+                        </div>
+                        <h2
+                            class="glow-reveal font-script text-3xl sm:text-4xl md:text-5xl text-[var(--primary)] mb-3 md:mb-4">
+                            Wedding Wishes</h2>
+                        <p class="text-gray-500 font-light italic text-sm md:text-base">Leave a sweet message for the
+                            couple</p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-stretch min-h-0">
+                        <form class="space-y-6 md:space-y-8 stagger-children h-full flex flex-col min-h-0"
+                            id="wishesForm">
+                            <div class="space-y-1">
+                                <label class="text-[10px] uppercase tracking-widest text-gray-400">Your Name</label>
+                                <input class="rsvp-input" placeholder="Your name" type="text" id="wishesName" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] uppercase tracking-widest text-gray-400">Message</label>
+                                <textarea class="rsvp-input" placeholder="Write your message..." rows="4"
+                                    id="wishesMessage"></textarea>
+                            </div>
+                            <button
+                                class="w-full bg-[var(--primary)] text-white py-3 md:py-4 uppercase tracking-[0.3em] text-xs font-semibold hover:bg-[var(--gold)] transition-all duration-300 shadow-lg shine-effect"
+                                type="submit">
+                                Post Message
+                            </button>
+                        </form>
+                        <div
+                            class="border-t border-gray-100 pt-6 lg:border-t-0 lg:pt-0 lg:border-l lg:pl-6 h-full flex min-h-0 overflow-hidden">
+                            <div
+                                class="border-2 border-[var(--gold)] shadow-md rounded-md p-4 flex flex-col h-full w-full min-h-0">
+                                <div class="max-h-[420px] overflow-y-auto pr-2 space-y-4 flex-1 min-h-0"
+                                    id="wishesList">
+                                    <div class="text-sm text-gray-500">Loading wishes...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gift / Angpao Section -->
+        <section
+            class="section-fade-in bg-gradient-to-b from-white to-green-50/30 py-12 sm:py-16 px-3 sm:px-4 md:px-6 overflow-x-hidden w-full">
+            <div class="max-w-5xl mx-auto w-full fade-in-up">
+                <!-- Section Header -->
+                <div class="text-center space-y-4 mb-10 sm:mb-12">
+                    <div class="text-[var(--gold)]">
+                        <span class="material-symbols-outlined text-2xl sm:text-3xl">card_giftcard</span>
+                    </div>
+                    <h2 class="font-script text-3xl sm:text-4xl md:text-5xl text-[var(--primary)]">Wedding Gift</h2>
+                    <p class="text-xs sm:text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
+                        Your presence is the greatest gift. However, if you wish to send a wedding gift, you may send it
+                        through:
+                    </p>
+                    <div class="flex items-center justify-center gap-3">
+                        <div class="h-px w-8 sm:w-12 bg-[var(--gold)]/30"></div>
+                        <span class="material-symbols-outlined text-[var(--gold)] text-lg">favorite</span>
+                        <div class="h-px w-8 sm:w-12 bg-[var(--gold)]/30"></div>
+                    </div>
+                </div>
+
+                <!-- Gift Cards Container -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 w-full">
+                    <!-- Groom's Gift Card -->
+                    <div
+                        class="bg-white rounded-xl shadow-lg border border-[var(--gold)]/20 overflow-hidden group hover:shadow-xl transition-all duration-300">
+                        <div class="bg-gradient-to-r from-[var(--primary)] to-green-700 px-4 py-3 sm:px-6 sm:py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-white text-xl">person</span>
+                                <h3 class="text-white font-serif text-base sm:text-lg tracking-wide">Groom's Family</h3>
+                            </div>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-4">
+                            <!-- QRIS Section -->
+                            <div class="text-center space-y-2">
+                                <p class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Scan QRIS</p>
+                                <div
+                                    class="bg-gray-50 border-2 border-dashed border-[var(--gold)]/30 rounded-lg p-3 sm:p-4 inline-block">
+                                    <div
+                                        class="w-28 h-28 sm:w-32 sm:h-32 bg-white rounded-lg flex items-center justify-center">
+                                        <div class="text-center space-y-1">
+                                            <span
+                                                class="material-symbols-outlined text-gray-300 text-3xl sm:text-4xl">qr_code_2</span>
+                                            <p class="text-[8px] sm:text-[10px] text-gray-400">QRIS Image</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bank Transfer Section -->
+                            <div class="space-y-3">
+                                <p class="text-[10px] uppercase tracking-widest text-gray-500 font-medium text-center">
+                                    Bank Transfer</p>
+                                <div class="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg shadow-sm flex items-center justify-center border border-gray-200 p-1">
+                                            <!-- BNI Logo -->
+                                            <img src="images/bni.png" alt="BNI Logo" class="w-full h-full object-contain">
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-[10px] uppercase tracking-wide text-gray-500">Bank Name</p>
+                                            <p class="font-serif text-sm sm:text-base text-[var(--primary)] truncate">
+                                                BNI</p>
+                                        </div>
+                                    </div>
+                                    <div class="pt-2 border-t border-gray-200">
+                                        <p class="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Account Number
+                                        </p>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <p class="font-mono text-base sm:text-lg text-gray-800">4136 0109 4</p>
+                                            <button onclick="copyToClipboard('413601094')"
+                                                class="p-2 hover:bg-[var(--gold)]/10 rounded-lg transition-colors"
+                                                title="Copy">
+                                                <span
+                                                    class="material-symbols-outlined text-[var(--gold)] text-lg">content_copy</span>
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">a.n Syamsul</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bride's Gift Card -->
+                    <div
+                        class="bg-white rounded-xl shadow-lg border border-[var(--gold)]/20 overflow-hidden group hover:shadow-xl transition-all duration-300">
+                        <div class="bg-gradient-to-r from-[var(--primary)] to-green-700 px-4 py-3 sm:px-6 sm:py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-white text-xl">person</span>
+                                <h3 class="text-white font-serif text-base sm:text-lg tracking-wide">Bride's Family</h3>
+                            </div>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-4">
+                            <!-- QRIS Section -->
+                            <div class="text-center space-y-2">
+                                <p class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Scan QRIS</p>
+                                <div
+                                    class="bg-gray-50 border-2 border-dashed border-[var(--gold)]/30 rounded-lg p-3 sm:p-4 inline-block">
+                                    <div
+                                        class="w-28 h-28 sm:w-32 sm:h-32 bg-white rounded-lg flex items-center justify-center">
+                                        <div class="text-center space-y-1">
+                                            <span
+                                                class="material-symbols-outlined text-gray-300 text-3xl sm:text-4xl">qr_code_2</span>
+                                            <p class="text-[8px] sm:text-[10px] text-gray-400">QRIS Image</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bank Transfer Section -->
+                            <div class="space-y-3">
+                                <p class="text-[10px] uppercase tracking-widest text-gray-500 font-medium text-center">
+                                    Bank Transfer</p>
+                                <div class="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg shadow-sm flex items-center justify-center border border-gray-200 p-1">
+                                            <!-- BCA Logo -->
+                                            <img src="images/bca.png" alt="BCA Logo" class="w-full h-full object-contain">
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-[10px] uppercase tracking-wide text-gray-500">Bank Name</p>
+                                            <p class="font-serif text-sm sm:text-base text-[var(--primary)] truncate">
+                                                BCA</p>
+                                        </div>
+                                    </div>
+                                    <div class="pt-2 border-t border-gray-200">
+                                        <p class="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Account Number
+                                        </p>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <p class="font-mono text-base sm:text-lg text-gray-800">XXXX XXXX XXX</p>
+                                            <button onclick="copyToClipboard('XXXXXXXXXX')"
+                                                class="p-2 hover:bg-[var(--gold)]/10 rounded-lg transition-colors"
+                                                title="Copy">
+                                                <span
+                                                    class="material-symbols-outlined text-[var(--gold)] text-lg">content_copy</span>
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">a.n Regina</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thank You Note -->
+                <div class="text-center mt-8 sm:mt-10 space-y-2">
+                    <p class="text-xs text-gray-500 italic">Thank you for your love and blessings</p>
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[var(--gold)] text-sm">favorite</span>
+                        <span class="material-symbols-outlined text-[var(--gold)] text-sm">favorite</span>
+                        <span class="material-symbols-outlined text-[var(--gold)] text-sm">favorite</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer
+            class="section-fade-in bg-white border-t border-gray-100 py-8 sm:py-12 px-3 sm:px-4 md:px-6 overflow-x-hidden w-full">
+            <div class="max-w-7xl mx-auto text-center space-y-6 sm:space-y-8 w-full fade-in-up">
+                <div class="text-[var(--gold)] float-continuous">
+                    <span class="material-symbols-outlined text-3xl sm:text-4xl">eco</span>
+                </div>
+                <h3 class="font-script text-4xl sm:text-5xl md:text-6xl text-[var(--primary)]">S &amp; R</h3>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-12">
+                    <div class="h-px w-12 sm:w-16 bg-[var(--gold)]/30 hidden md:block"></div>
+                    <p
+                        class="text-[10px] sm:text-xs uppercase tracking-[0.3em] sm:tracking-[0.4em] font-medium text-[var(--primary)] opacity-70">
+                        See
+                        you in JGC Clubhouse</p>
+                    <div class="h-px w-12 sm:w-16 bg-[var(--gold)]/30 hidden md:block"></div>
+                </div>
+                <p class="text-[10px] uppercase tracking-widest text-gray-400 pt-6 sm:pt-12">
+                    © 2024 • Made with love for S&amp;R
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hidden background audio -->
+    <audio id="weddingAudio" autoplay loop playsinline style="display: none;">
+        <source src="audio/cb2.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const seal = document.getElementById('waxSeal');
+        const weddingAudio = document.getElementById('weddingAudio');
+        const envelope = document.getElementById('envelope');
+        const flap = document.getElementById('envelopeFlap');
+        const bottomText = document.getElementById('bottomText');
+        const envelopeIntro = document.getElementById('envelopeIntro');
+        const invitationContent = document.getElementById('invitationContent');
+        let shouldInitScrollAnimations = false;
+
+        const revealInvitation = (skipAnimation) => {
+            if (skipAnimation) {
+                bottomText.style.display = 'none';
+                envelopeIntro.style.display = 'none';
+                document.body.classList.remove('intro-mode');
+                document.body.classList.add('invitation-mode');
+                invitationContent.classList.add('visible');
+                shouldInitScrollAnimations = true;
+                // Play audio for returning visitors too
+                weddingAudio?.play().catch(() => { });
+                return;
+            }
+
+            setTimeout(() => {
+                envelopeIntro.classList.add('fade-out');
+                bottomText.style.display = 'none';
+                document.body.classList.remove('intro-mode');
+                document.body.classList.add('invitation-mode');
+
+                setTimeout(() => {
+                    invitationContent.classList.add('visible');
+                    setTimeout(() => {
+                        envelopeIntro.style.display = 'none';
+                    }, 800);
+                }, 300);
+            }, 800);
+        };
+
+        envelope.addEventListener('click', () => {
+            envelope.classList.remove('floating');
+            envelope.classList.add('opened');
+
+            // Fade out the wax seal
+            seal.classList.add('fading');
+
+            // Open the flap
+            flap.classList.add('opened');
+
+            // Fade out bottom text
+            bottomText.classList.add('fading');
+
+            // Play audio on user interaction
+            weddingAudio?.play().catch(() => { });
+
+            // After envelope animation, transition to invitation
+            revealInvitation(false);
+        });
+
+        // ==================== GALLERY VIEWER ====================
+
+        const galleryImages = document.querySelectorAll('.gallery-image');
+        const uniqueGalleryImages = ['gallery/1.jpeg', 'gallery/2.jpeg', 'gallery/3.jpeg', 'gallery/4.jpeg', 'gallery/5.jpeg'];
+
+        galleryImages.forEach((img) => {
+            img.addEventListener('click', () => {
+                const src = img.getAttribute('data-src');
+                const index = Math.max(0, uniqueGalleryImages.indexOf(src));
+                const url = `gallery-viewer.html?index=${index}`;
+                window.open(url, '_blank', 'noopener');
+            });
+        });
+
+        // ==================== SCROLL ANIMATIONS ====================
+
+        // ==================== COUNTDOWN ====================
+
+        const countdownDays = document.getElementById('countdownDays');
+        const countdownHours = document.getElementById('countdownHours');
+        const countdownMinutes = document.getElementById('countdownMinutes');
+        const countdownSeconds = document.getElementById('countdownSeconds');
+        const countdownNote = document.getElementById('countdownNote');
+
+        const updateCountdown = () => {
+            if (!countdownDays || !countdownHours || !countdownMinutes || !countdownSeconds) return;
+            const targetUtc = Date.UTC(2026, 7, 29, 12, 0, 0);
+            const now = Date.now();
+            const remaining = Math.max(0, targetUtc - now);
+
+            const totalSeconds = Math.floor(remaining / 1000);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            countdownDays.textContent = String(days);
+            countdownHours.textContent = String(hours).padStart(2, '0');
+            countdownMinutes.textContent = String(minutes).padStart(2, '0');
+            countdownSeconds.textContent = String(seconds).padStart(2, '0');
+
+            if (remaining === 0 && countdownNote) {
+                countdownNote.textContent = 'The celebration is here.';
+            }
+        };
+
+        // Initialize scroll animations when invitation content is visible
+        const initScrollAnimations = () => {
+            // All animation classes to observe
+            const animationClasses = [
+                '.fade-in-up',
+                '.fade-in-down',
+                '.fade-in-left',
+                '.fade-in-right',
+                '.zoom-in',
+                '.zoom-out',
+                '.scale-rotate',
+                '.flip-in',
+                '.slide-in-top',
+                '.slide-in-bottom',
+                '.stagger-children',
+                '.stagger-sides',
+                '.section-fade-in',
+                '.section-blur-in',
+                '.section-reveal',
+                '.section-slide-in',
+                '.section-gradient-reveal',
+                '.fade-scale-in',
+                '.rotate-fade-in',
+                '.glow-reveal',
+                '.text-reveal',
+                '.fade-sequential',
+                '.border-reveal',
+                '.bounce-in'
+            ];
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Element is IN view - animate in
+                        entry.target.classList.remove('animating-out');
+                        entry.target.classList.add('animated');
+                    } else {
+                        // Element is OUT of view - animate out
+                        entry.target.classList.remove('animated');
+                        entry.target.classList.add('animating-out');
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            });
+
+            // Observe all elements with animation classes
+            animationClasses.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => observer.observe(el));
+            });
+        };
+
+        // Initialize animations when invitation content becomes visible
+        const contentObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.target.classList.contains('visible')) {
+                    initScrollAnimations();
+                    contentObserver.disconnect();
+                }
+            });
+        });
+
+        if (invitationContent) {
+            contentObserver.observe(invitationContent, { attributes: true });
+        }
+
+        if (shouldInitScrollAnimations) {
+            initScrollAnimations();
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+
+        // Parallax effect on scroll
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrolled = window.pageYOffset;
+                    const parallaxElements = document.querySelectorAll('.parallax-slow');
+
+                    parallaxElements.forEach(el => {
+                        const speed = 0.5;
+                        el.style.transform = `translateY(${scrolled * speed}px)`;
+                    });
+
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // ==================== WEDDING WISHES ====================
+
+        const wishesList = document.getElementById('wishesList');
+        const wishesForm = document.getElementById('wishesForm');
+        const wishesName = document.getElementById('wishesName');
+        const wishesMessage = document.getElementById('wishesMessage');
+
+        const escapeHtml = (value) => value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        const renderWishes = (wishes) => {
+            if (!wishesList) return;
+            if (!Array.isArray(wishes) || wishes.length === 0) {
+                wishesList.innerHTML = '<div class="text-sm text-gray-500">Be the first to leave a wish.</div>';
+                wishesList.scrollTop = 0;
+                return;
+            }
+
+            wishesList.innerHTML = wishes.map((wish) => {
+                const name = escapeHtml(wish.name || 'Anonymous');
+                const message = escapeHtml(wish.message || '');
+                return `
+                    <div class="p-4 bg-[var(--bg-cream)]/60 rounded-md border-b border-black last:border-b-0">
+                        <p class="text-sm font-medium text-[var(--primary)]">${name}</p>
+                        <p class="text-sm text-gray-600 font-light">${message}</p>
+                    </div>
+                `;
+            }).join('');
+            wishesList.scrollTop = 0;
+        };
+
+        const loadWishes = async () => {
+            if (!wishesList) return;
+            try {
+                const response = await fetch('/api/wishes');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch wishes');
+                }
+                const data = await response.json();
+                renderWishes(data.wishes || []);
+            } catch (error) {
+                wishesList.innerHTML = '<div class="text-sm text-red-500">Failed to load wishes.</div>';
+            }
+        };
+
+        if (wishesForm) {
+            wishesForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const name = (wishesName?.value || '').trim();
+                const message = (wishesMessage?.value || '').trim();
+
+                if (!name || !message) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/wishes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name, message })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to post wish');
+                    }
+
+                    const data = await response.json();
+                    wishesName.value = '';
+                    wishesMessage.value = '';
+                    renderWishes(data.wishes || []);
+                } catch (error) {
+                    // Keep current list if posting fails
+                }
+            });
+        }
+
+        loadWishes();
+    </script>
+
+    <!-- Copy to Clipboard Functions - Global Scope -->
+    <script>
+        // Make functions global for onclick handlers
+        window.copyToClipboard = function (text) {
+            // Remove spaces from account number for copying
+            const cleanText = text.replace(/\s/g, '');
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(cleanText)
+                    .then(() => {
+                        showCopyNotification();
+                    })
+                    .catch(err => {
+                        console.error('Clipboard copy failed:', err);
+                        fallbackCopy(cleanText);
+                    });
+            } else {
+                fallbackCopy(cleanText);
+            }
+        };
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showCopyNotification();
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                alert('Failed to copy. Please copy manually: ' + text);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showCopyNotification() {
+            // Remove existing notification if any
+            const existing = document.getElementById('copyNotification');
+            if (existing) {
+                existing.remove();
+            }
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.id = 'copyNotification';
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: var(--primary);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                z-index: 9999;
+                font-family: 'Montserrat', sans-serif;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                animation: slideUpFade 0.3s ease-out;
+            `;
+            notification.innerHTML = '<span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span><span>Account number copied!</span>';
+
+            // Add animation keyframes if not exists
+            if (!document.getElementById('copyNotificationStyles')) {
+                const style = document.createElement('style');
+                style.id = 'copyNotificationStyles';
+                style.textContent = `
+                    @keyframes slideUpFade {
+                        from {
+                            opacity: 0;
+                            transform: translateX(-50%) translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(-50%) translateY(0);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(notification);
+
+            // Remove after 2 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideUpFade 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 2000);
+        }
+    </script>
+
+</body>
+
+</html>

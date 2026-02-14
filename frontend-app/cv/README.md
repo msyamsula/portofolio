@@ -45,9 +45,21 @@ cv/
 - Smooth fade-in animations
 - Serif display fonts with clean sans-serif body text
 
-## Local Development
+## Running Locally
 
-Simply open `index.html` in a browser, or use a local server:
+```bash
+# Install dependencies
+npm install
+
+# Start the server
+npm start
+```
+
+Visit http://localhost:2501 to view the CV.
+
+### Alternative Development Servers
+
+You can also use other local servers:
 
 ```bash
 # Python 3

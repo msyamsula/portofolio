@@ -18,3 +18,5 @@ venv
 working
 google.json
 syamsul.pem
+node_modules
+.wedding.pid

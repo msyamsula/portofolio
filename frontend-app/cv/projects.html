@@ -287,6 +287,22 @@
                 display: none;
             }
         }
+        .project-embed {
+            position: relative;
+            width: 100%;
+            padding-top: 62.5%;
+            overflow: hidden;
+            background: #f9f8f6;
+        }
+        .project-embed iframe {
+            position: absolute;
+            inset: 0;
+            width: 125%;
+            height: 125%;
+            transform: scale(0.8);
+            transform-origin: top left;
+            border: 0;
+        }
     </style>
 </head>
 
@@ -372,7 +388,35 @@
             </div>
             <div class="horizontal-rule w-full mt-3 sm:mt-4"></div>
         </header>
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] md:text-[11px] uppercase tracking-widest text-news-gray mb-6 sm:mb-8 fade-in">
+            <span>API Docs</span>
+            <span class="text-news-gray/60">•</span>
+            <a class="hover:underline" href="http://localhost:5000/swagger/index.html" target="_blank" rel="noreferrer">Swagger UI</a>
+        </div>
         <main class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-10">
+            <a class="project-card group transition-all duration-500 hover:scale-105 fade-in block overflow-hidden min-w-0"
+                href="../url-shortener/url.html" target="_blank" rel="noreferrer">
+                <div class="mb-3 sm:mb-4 md:mb-6 overflow-hidden bg-gray-50 border border-news-border">
+                    <div class="project-embed">
+                        <iframe title="URL Shortener UI" src="../url-shortener/url.html"
+                            class="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 transition-all duration-700 opacity-90 group-hover:opacity-100 pointer-events-none"
+                            loading="lazy"></iframe>
+                    </div>
+                </div>
+                <h3 class="text-base sm:text-lg md:text-xl lg:text-2xl font-light mb-2 sm:mb-3 md:mb-4 leading-tight">URL Shortener</h3>
+                <p class="text-news-gray font-sans text-[10px] sm:text-[11px] md:text-xs leading-relaxed font-light mb-3 sm:mb-4">
+                    URL shortener UI backed by a Go service with clean request flow, stateful caching,
+                    structured logging, tracing, and OpenTelemetry metrics. Includes Swagger-documented APIs.
+                </p>
+                <div
+                    class="flex flex-wrap gap-2 sm:gap-3 md:gap-4 font-sans text-[7px] sm:text-[8px] md:text-[9px] uppercase tracking-widest text-news-gray pt-3 sm:pt-4 border-t border-news-border">
+                    <span>Go</span>
+                    <span>Redis + Postgres</span>
+                    <span>State &amp; Caching</span>
+                    <span>Tracing + Logging</span>
+                    <span>OpenTelemetry</span>
+                </div>
+            </a>
             <article class="project-card group cursor-pointer transition-all duration-500 hover:scale-105 fade-in">
                 <div class="mb-3 sm:mb-4 md:mb-6 overflow-hidden bg-gray-50 border border-news-border">
                     <img alt="Distributed Cache System"

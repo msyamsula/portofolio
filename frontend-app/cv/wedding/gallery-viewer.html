@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Our Moments Viewer</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;500;600&family=Great+Vibes&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #1b3022;
+            --gold: #d4af37;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            background: #0b0b0b;
+        }
+
+        .viewer {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .viewer-backdrop {
+            position: absolute;
+            inset: -10%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(28px) brightness(0.7);
+            transform: scale(1.05);
+        }
+
+        .viewer-image {
+            position: relative;
+            z-index: 10;
+            width: 50vw;
+            height: auto;
+            max-height: 70vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            object-fit: contain;
+        }
+
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .nav-prev {
+            left: 24px;
+        }
+
+        .nav-next {
+            right: 24px;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            transition: background 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="viewer">
+        <div id="backdrop" class="viewer-backdrop" aria-hidden="true"></div>
+        <a class="back-button" href="index.html">Back to Invitation</a>
+        <button class="nav-button nav-prev" id="prevButton" aria-label="Previous photo">
+            <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <img id="viewerImage" class="viewer-image" src="" alt="Gallery photo" />
+        <button class="nav-button nav-next" id="nextButton" aria-label="Next photo">
+            <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+    </div>
+
+    <script>
+        const images = [
+            'gallery/1.jpeg',
+            'gallery/2.jpeg',
+            'gallery/3.jpeg',
+            'gallery/4.jpeg',
+            'gallery/5.jpeg'
+        ];
+
+        const params = new URLSearchParams(window.location.search);
+        const startIndex = parseInt(params.get('index'), 10);
+        let currentIndex = Number.isFinite(startIndex) ? startIndex : 0;
+
+        const viewerImage = document.getElementById('viewerImage');
+        const backdrop = document.getElementById('backdrop');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+
+        function updateImage() {
+            const src = images[(currentIndex + images.length) % images.length];
+            viewerImage.src = src;
+            backdrop.style.backgroundImage = `url('${src}')`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            updateImage();
+        });
+
+        nextButton.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % images.length;
+            updateImage();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') prevButton.click();
+            if (event.key === 'ArrowRight') nextButton.click();
+        });
+
+        updateImage();
+    </script>
+</body>
+
+</html>
