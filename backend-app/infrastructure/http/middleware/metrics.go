@@ -41,7 +41,6 @@ func MetricsMiddleware(instruments *metrics.Instruments) func(next http.Handler)
 			}
 
 			instruments.RecordRequest(ctx, method, path, status, duration)
-			instruments.SetResponseTime(duration)
 
 			logger.Debug("request metrics recorded", map[string]any{
 				"method":   method,

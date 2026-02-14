@@ -59,6 +59,7 @@ type Config struct {
 func main() {
 	// Load configuration
 	cfg := loadConfig()
+	logger.Error("config", map[string]any{"a": cfg})
 
 	// Initialize logger (must be first for proper logging)
 	if err := initLogger(cfg); err != nil {

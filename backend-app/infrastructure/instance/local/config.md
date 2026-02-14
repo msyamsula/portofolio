@@ -2,6 +2,53 @@
 
 This document defines a **single, app-level configuration** that drives logs, metrics, and traces for services using the telemetry package.
 
+## Local Instance: Spawn OTel Collector
+
+Use the local instance in this folder to run only the OTel Collector with OTLP receivers enabled.
+
+### Files
+
+- `otel-collector.yaml` — collector configuration (receivers, processors, exporters).
+- `docker-compose.yaml` — local runner for the collector.
+
+### Start / Stop
+
+```zsh
+cd /Users/m.syamsularifin/go/portofolio/backend-app/infrastructure/instance/local/otel-collector
+make start
+```
+
+```zsh
+make stop
+```
+
+### Network Test (Inside Compose)
+
+This compose file includes a `network-test` service that checks:
+
+- OTLP gRPC `otel-collector:4317`
+- OTLP HTTP `otel-collector:4318`
+- Prometheus scrape `otel-collector:9464/metrics`
+
+View output:
+
+```zsh
+docker compose logs -f network-test
+```
+
+### Exposed Ports
+
+- `4317` — OTLP gRPC receiver (apps export here)
+- `4318` — OTLP HTTP receiver
+- `9464` — Prometheus scrape endpoint (collector)
+
+### Quick Verify
+
+```zsh
+nc -zv localhost 4317
+curl -sS http://localhost:9464/metrics | head -n 20
+```
+
 ## Goals
 
 - One place to set **service identity**, **collector endpoint**, and **environment**.
