@@ -64,8 +64,12 @@ func (w *bufferedResponseWriter) Write(b []byte) (int, error) {
 
 func writeBufferedResponse(w http.ResponseWriter, buffered *bufferedResponseWriter) {
 	for key, values := range buffered.header {
-		for _, value := range values {
-			w.Header().Add(key, value)
+		if len(values) == 0 {
+			continue
+		}
+		w.Header().Set(key, values[0])
+		for i := 1; i < len(values); i++ {
+			w.Header().Add(key, values[i])
 		}
 	}
 

@@ -203,6 +203,7 @@ func setupRouter(cfg Config, db *sqlx.DB, rdb *redis.Client, instruments *infraM
 
 	// Register URL Shortener routes
 	urlShortenerChain := infraHttp.Chain(
+		infraHttp.ResponseTimeMiddleware,
 		infraHttp.ContentTypeMiddleware,
 		infraHttp.RecoveryMiddleware,
 		infraHttp.LoggingMiddleware,
