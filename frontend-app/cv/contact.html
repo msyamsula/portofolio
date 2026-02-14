@@ -437,7 +437,7 @@
                 <div class="bg-gray-50 p-4 sm:p-5 md:p-6 rounded-sm fade-in">
                     <h3 class="headline text-lg sm:text-xl font-bold mb-3 sm:mb-4">Direct Contact</h3>
                     <div class="space-y-3 sm:space-y-4">
-                        <a href="mailto:hello@johndoe.dev" class="block text-sm hover:text-gray-500 transition-colors">
+                        <a href="mailto:msyamsula1995@gmail.com" class="block text-sm hover:text-gray-500 transition-colors">
                             msyamsula1995@gmail.com
                         </a>
                         <p class="text-sm text-gray-600">
@@ -486,9 +486,6 @@
             </div>
         </footer>
     </div>
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script src="handle.js"></script>
     <script>
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
@@ -661,10 +658,16 @@
                 sendMessageBtn.disabled = true;
 
                 try {
-                    // Call submitInquiry from handle.js
-                    const result = await submitInquiry(name, email, message, subject);
+                    // Call contact API endpoint
+                    const response = await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, message, subject })
+                    });
 
-                    if (result.success) {
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
                         showModal('Message sent successfully!\nKindly do not spam, I will be back to you in no time\nThank you');
 
                         // Clear form on success
@@ -673,7 +676,7 @@
                         document.getElementById('contact-subject').value = '';
                         document.getElementById('contact-message').value = '';
                     } else {
-                        showModal(result.message || 'Failed to send message', true);
+                        showModal(result.error || 'Failed to send message', true);
                     }
 
                 } catch (error) {

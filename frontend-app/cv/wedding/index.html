@@ -2294,6 +2294,16 @@
         const invitationContent = document.getElementById('invitationContent');
         let shouldInitScrollAnimations = false;
 
+        // Check for mute parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const isMuted = urlParams.get('mute') === 'true';
+
+        // Disable audio if muted
+        if (isMuted && weddingAudio) {
+            weddingAudio.removeAttribute('autoplay');
+            weddingAudio.pause();
+        }
+
         const revealInvitation = (skipAnimation) => {
             if (skipAnimation) {
                 bottomText.style.display = 'none';
