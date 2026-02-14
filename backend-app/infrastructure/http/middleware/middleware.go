@@ -49,8 +49,8 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 
 		logger.Info("request completed", map[string]any{
-			"method":    r.Method,
-			"path":      r.URL.Path,
+			"method":   r.Method,
+			"path":     r.URL.Path,
 			"duration": time.Since(start).Milliseconds(),
 		})
 	})
@@ -59,9 +59,14 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 // CORSMiddleware handles CORS headers
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		allowedOrigin := "http://127.0.0.1:5500"
+		origin := r.Header.Get("Origin")
+		if origin == allowedOrigin {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Vary", "Origin")
+		}
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
