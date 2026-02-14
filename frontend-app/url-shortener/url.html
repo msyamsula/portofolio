@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <style>
+        :root {
+            --bg: #f7f4f1;
+            --surface: #ffffff;
+            --text: #2b211b;
+            --muted: #6f5f54;
+            --border: #e6ded7;
+            --accent: #8b5e3c;
+            --accent-strong: #7a4f31;
+            --accent-soft: #f0e7df;
+            --link: #7a4f31;
+            --shadow: 0 10px 24px rgba(43, 33, 27, 0.12);
+        }
+
+        body[data-theme="dark"] {
+            --bg: #171310;
+            --surface: #221b17;
+            --text: #f6efe9;
+            --muted: #cbbbae;
+            --border: #3b2e27;
+            --accent: #d4a373;
+            --accent-strong: #c68a4f;
+            --accent-soft: #2d231d;
+            --link: #e2b98a;
+            --shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        body {
+            font-family: "Inter", "Segoe UI", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .container {
+            background-color: var(--surface);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            width: min(80vw, 760px);
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: background-color 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        h1 {
+            color: var(--text);
+            font-size: 26px;
+            letter-spacing: 0.4px;
+            margin: 0;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 12px 14px;
+            margin: 12px 0 8px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--text);
+            background-color: var(--accent-soft);
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--muted);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: var(--accent);
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 18px rgba(139, 94, 60, 0.2);
+        }
+
+        button:hover {
+            background-color: var(--accent-strong);
+            transform: translateY(-1px);
+        }
+
+        .theme-toggle {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            letter-spacing: 0.2px;
+            box-shadow: none;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--accent-soft);
+            transform: none;
+        }
+
+        .observability {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .observability a {
+            text-decoration: none;
+        }
+
+        .observability .obs-btn {
+            padding: 8px 14px;
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .observability .obs-btn:hover {
+            background-color: var(--accent-soft);
+            border-color: var(--accent);
+        }
+
+        /* button:hover {
+            background-color: #0056b3;
+        } */
+        .result {
+            margin-top: 16px;
+            opacity: 0;
+            transform: translateY(8px);
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 120px;
+        }
+
+        .result p {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .response-time {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--accent);
+            margin-left: 10px;
+        }
+
+        .result a {
+            color: var(--link);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .result a:hover {
+            text-decoration: underline;
+        }
+
+        /* .copy-btn:hover {
+            color: #0056b3;
+        } */
+
+        /* Media Queries for Phones */
+        @media screen and (max-width: 600px) {
+            .container {
+                width: 90vw;
+                /* Increase width on smaller screens */
+                padding: 18px;
+            }
+
+            h1 {
+                font-size: 22px;
+                /* Smaller heading size for mobile */
+            }
+
+            input[type="text"] {
+                width: 100%;
+                /* Full width input field on mobile */
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            button {
+                width: 100%;
+                /* Full width button on mobile */
+                padding: 12px;
+                font-size: 18px;
+            }
+
+            .theme-toggle {
+                width: auto;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .copy-btn {
+                font-size: 18px;
+                /* Smaller copy button for mobile */
+            }
+
+            /* Hide "Your shortened URL" and copy button on mobile */
+            .result p {
+                display: block;
+                /* Ensures that the link text is displayed normally */
+            }
+
+            .result button {
+                display: none;
+                /* Hide the copy button on mobile */
+            }
+
+            .observability {
+                gap: 8px;
+            }
+
+            .observability .obs-btn {
+                width: 100%;
+                font-size: 16px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>URL Shortener</h1>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">Dark mode</button>
+        </div>
+        <input type="text" id="urlInput" placeholder="Enter your URL here" />
+        <button onclick="shortenURL()">Shorten URL</button>
+
+        <div class="result" id="shortenedResult">
+            <p><a href="#" id="shortenedLink" target="_blank"></a><button class="copy-btn"
+                    onclick="copyToClipboard()"><i class="fas fa-clipboard"></i></button></p>
+            <div class="response-time" id="responseTime"></div>
+        </div>
+
+        <div class="observability">
+            <a href="http://localhost:16686" target="_blank" rel="noreferrer"><button class="obs-btn">Jaeger</button></a>
+            <a href="http://localhost:9090" target="_blank" rel="noreferrer"><button class="obs-btn">Prometheus</button></a>
+            <a href="http://localhost:3000" target="_blank" rel="noreferrer"><button class="obs-btn">Grafana</button></a>
+        </div>
+    </div>
+
+    <script src="./url.js"></script>
+
+</body>
+
+</html>
