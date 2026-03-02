@@ -31,14 +31,14 @@ mindmap
 
 Each domain represents a bounded context:
 
-| Domain | Context | Language |
-|--------|----------|----------|
-| URL Shortener | URL management | `ShortCode`, `LongURL`, `Mapping` |
-| Friend | Relationships | `FriendConnection`, `Friendship` |
-| Message | Conversations | `Message`, `Conversation` |
-| User | Authentication | `OAuth`, `Token`, `User` |
-| Graph | Algorithms | `Graph`, `Vertex`, `Edge`, `DFS`, `BFS` |
-| Healthcheck | Monitoring | `Health`, `Probe`, `Liveness` |
+| Domain        | Context        | Language                                |
+| ------------- | -------------- | --------------------------------------- |
+| URL Shortener | URL management | `ShortCode`, `LongURL`, `Mapping`       |
+| Friend        | Relationships  | `FriendConnection`, `Friendship`        |
+| Message       | Conversations  | `Message`, `Conversation`               |
+| User          | Authentication | `OAuth`, `Token`, `User`                |
+| Graph         | Algorithms     | `Graph`, `Vertex`, `Edge`, `DFS`, `BFS` |
+| Healthcheck   | Monitoring     | `Health`, `Probe`, `Liveness`           |
 
 ## Ubiquitous Language
 

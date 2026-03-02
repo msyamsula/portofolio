@@ -58,11 +58,17 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 // CORSMiddleware handles CORS headers
 func CORSMiddleware(next http.Handler) http.Handler {
+	allowedOrigins := map[string]bool{
+		"http://127.0.0.1:5500": true,
+		"http://127.0.0.1:2501": true,
+		"http://localhost:5500": true,
+		"http://localhost:2501": true,
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		allowedOrigin := "http://127.0.0.1:5500"
 		origin := r.Header.Get("Origin")
-		if origin == allowedOrigin {
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
