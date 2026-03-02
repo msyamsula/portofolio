@@ -59,7 +59,7 @@ func (h *Handler) GoogleRedirectURL(w http.ResponseWriter, r *http.Request) {
 	// Generate random state for OAuth flow
 	state, err := h.generateRandomState()
 	if err != nil {
-		infraLogger.Error("failed to generate random state", map[string]any{
+		infraLogger.Error("failed to generate random state", err, map[string]any{
 			"method":      r.Method,
 			"path":        r.URL.Path,
 			"duration_ms": time.Since(start).Milliseconds(),
@@ -89,7 +89,7 @@ func (h *Handler) GoogleRedirectURL(w http.ResponseWriter, r *http.Request) {
 	// Get OAuth redirect URL from service
 	redirectURL, err := h.userService.GetRedirectURLGoogle(ctx, state)
 	if err != nil {
-		infraLogger.Error("failed to get redirect url", map[string]any{
+		infraLogger.Error("failed to get redirect url", err, map[string]any{
 			"method":      r.Method,
 			"path":        r.URL.Path,
 			"duration_ms": time.Since(start).Milliseconds(),
@@ -137,7 +137,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
-			infraLogger.Error("google callback request failed", map[string]any{
+			infraLogger.Error("google callback request failed", err, map[string]any{
 				"method":      r.Method,
 				"path":        r.URL.Path,
 				"duration_ms": time.Since(start).Milliseconds(),
@@ -225,7 +225,7 @@ func (h *Handler) ValidateToken(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
-			infraLogger.Error("validate token request failed", map[string]any{
+			infraLogger.Error("validate token request failed", err, map[string]any{
 				"method":      r.Method,
 				"path":        r.URL.Path,
 				"duration_ms": time.Since(start).Milliseconds(),

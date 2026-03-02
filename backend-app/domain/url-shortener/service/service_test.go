@@ -8,129 +8,137 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/msyamsula/portofolio/backend-app/domain/url-shortener/dto"
 	"github.com/msyamsula/portofolio/backend-app/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestService_Shorten_NewURL(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mock.NewMockRepository(ctrl)
-	service := New("https://short.est", mockRepo)
-
-	ctx := context.Background()
-	longURL := "https://example.com/very/long/url"
-
-	// Expect FindByLongURL to return not found
-	mockRepo.EXPECT().FindByLongURL(ctx, longURL).Return(nil, errors.New("not found"))
-
-	// Expect Save to be called
-	mockRepo.EXPECT().Save(ctx, gomock.Any(), longURL).Return(nil)
-
-	result, err := service.Shorten(ctx, longURL)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if result == "" {
-		t.Error("expected short URL, got empty string")
-	}
+// URLShortenerServiceTestSuite defines the test suite for URL shortener service
+type URLShortenerServiceTestSuite struct {
+	suite.Suite
+	ctrl     *gomock.Controller
+	mockRepo *mock.MockURLShortenerRepository
+	svc      Service
+	ctx      context.Context
 }
 
-func TestService_Shorten_ExistingURL(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (s *URLShortenerServiceTestSuite) SetupTest() {
+	s.ctrl = gomock.NewController(s.T())
+	s.mockRepo = mock.NewMockURLShortenerRepository(s.ctrl)
+	s.svc = New("https://short.est", s.mockRepo)
+	s.ctx = context.Background()
+}
 
-	mockRepo := mock.NewMockRepository(ctrl)
-	service := New("https://short.est", mockRepo)
+func (s *URLShortenerServiceTestSuite) TearDownTest() {
+	s.ctrl.Finish()
+}
 
-	ctx := context.Background()
+// --- Shorten tests ---
+
+func (s *URLShortenerServiceTestSuite) TestShorten_NewURL_Success() {
+	longURL := "https://example.com/very/long/url"
+
+	// FindByLongURL returns not found → new URL
+	s.mockRepo.EXPECT().FindByLongURL(gomock.Any(), longURL).Return(nil, errors.New("not found"))
+	// Save should be called
+	s.mockRepo.EXPECT().Save(gomock.Any(), gomock.Any(), longURL).Return(nil)
+
+	result, err := s.svc.Shorten(s.ctx, longURL)
+	s.NoError(err)
+	s.NotEmpty(result)
+	s.Contains(result, "https://short.est/")
+}
+
+func (s *URLShortenerServiceTestSuite) TestShorten_ExistingURL_ReturnsCached() {
 	longURL := "https://example.com/very/long/url"
 	existingRecord := &dto.URLRecord{
 		ShortCode: "existing",
 		LongURL:   longURL,
 	}
 
-	// Expect FindByLongURL to return existing record
-	mockRepo.EXPECT().FindByLongURL(ctx, longURL).Return(existingRecord, nil)
+	s.mockRepo.EXPECT().FindByLongURL(gomock.Any(), longURL).Return(existingRecord, nil)
+	// Save should NOT be called
 
-	result, err := service.Shorten(ctx, longURL)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	expected := "https://short.est/existing"
-	if result != expected {
-		t.Errorf("expected %s, got %s", expected, result)
-	}
+	result, err := s.svc.Shorten(s.ctx, longURL)
+	s.NoError(err)
+	s.Equal("https://short.est/existing", result)
 }
 
-func TestService_Shorten_SaveError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mock.NewMockRepository(ctrl)
-	service := New("https://short.est", mockRepo)
-
-	ctx := context.Background()
+func (s *URLShortenerServiceTestSuite) TestShorten_SaveError() {
 	longURL := "https://example.com/very/long/url"
 
-	// Expect FindByLongURL to return not found
-	mockRepo.EXPECT().FindByLongURL(ctx, longURL).Return(nil, errors.New("not found"))
+	s.mockRepo.EXPECT().FindByLongURL(gomock.Any(), longURL).Return(nil, errors.New("not found"))
+	s.mockRepo.EXPECT().Save(gomock.Any(), gomock.Any(), longURL).Return(errors.New("database error"))
 
-	// Expect Save to return error
-	mockRepo.EXPECT().Save(ctx, gomock.Any(), longURL).Return(errors.New("database error"))
-
-	_, err := service.Shorten(ctx, longURL)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-
-	if err.Error() != "database error" {
-		t.Errorf("expected 'database error', got %v", err)
-	}
+	_, err := s.svc.Shorten(s.ctx, longURL)
+	s.Error(err)
+	s.Equal("database error", err.Error())
 }
 
-func TestService_Expand_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (s *URLShortenerServiceTestSuite) TestShorten_BaseURLTrailingSlash() {
+	// Verify trailing slash is trimmed
+	svc := New("https://short.est/", s.mockRepo)
+	longURL := "https://example.com"
+	existingRecord := &dto.URLRecord{ShortCode: "abc", LongURL: longURL}
 
-	mockRepo := mock.NewMockRepository(ctrl)
-	service := New("https://short.est", mockRepo)
+	s.mockRepo.EXPECT().FindByLongURL(gomock.Any(), longURL).Return(existingRecord, nil)
 
-	ctx := context.Background()
+	result, err := svc.Shorten(s.ctx, longURL)
+	s.NoError(err)
+	s.Equal("https://short.est/abc", result)
+}
+
+// --- Expand tests ---
+
+func (s *URLShortenerServiceTestSuite) TestExpand_Success() {
 	shortCode := "abc12345"
 	longURL := "https://example.com/very/long/url"
-	record := &dto.URLRecord{
-		ShortCode: shortCode,
-		LongURL:   longURL,
-	}
+	record := &dto.URLRecord{ShortCode: shortCode, LongURL: longURL}
 
-	mockRepo.EXPECT().FindByShortCode(ctx, shortCode).Return(record, nil)
+	s.mockRepo.EXPECT().FindByShortCode(gomock.Any(), shortCode).Return(record, nil)
 
-	result, err := service.Expand(ctx, shortCode)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if result != longURL {
-		t.Errorf("expected %s, got %s", longURL, result)
-	}
+	result, err := s.svc.Expand(s.ctx, shortCode)
+	s.NoError(err)
+	s.Equal(longURL, result)
 }
 
-func TestService_Expand_NotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mock.NewMockRepository(ctrl)
-	service := New("https://short.est", mockRepo)
-
-	ctx := context.Background()
+func (s *URLShortenerServiceTestSuite) TestExpand_NotFound() {
 	shortCode := "nonexistent"
 
-	mockRepo.EXPECT().FindByShortCode(ctx, shortCode).Return(nil, errors.New("not found"))
+	s.mockRepo.EXPECT().FindByShortCode(gomock.Any(), shortCode).Return(nil, errors.New("not found"))
 
-	_, err := service.Expand(ctx, shortCode)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+	_, err := s.svc.Expand(s.ctx, shortCode)
+	s.Error(err)
+}
+
+// --- Internal method tests ---
+
+func (s *URLShortenerServiceTestSuite) TestGenerateShortCode_Deterministic() {
+	svcImpl := s.svc.(*service)
+	code1 := svcImpl.generateShortCode("https://example.com")
+	code2 := svcImpl.generateShortCode("https://example.com")
+	s.Equal(code1, code2)
+}
+
+func (s *URLShortenerServiceTestSuite) TestGenerateShortCode_DifferentInputs() {
+	svcImpl := s.svc.(*service)
+	code1 := svcImpl.generateShortCode("https://example.com/a")
+	code2 := svcImpl.generateShortCode("https://example.com/b")
+	s.NotEqual(code1, code2)
+}
+
+func (s *URLShortenerServiceTestSuite) TestGenerateShortCode_Length() {
+	svcImpl := s.svc.(*service)
+	code := svcImpl.generateShortCode("https://example.com")
+	s.Len(code, 8)
+}
+
+// --- Constructor test ---
+
+func (s *URLShortenerServiceTestSuite) TestNew_ReturnsServiceInstance() {
+	svc := New("https://short.est", s.mockRepo)
+	s.NotNil(svc)
+}
+
+// Run the test suite
+func TestURLShortenerServiceSuite(t *testing.T) {
+	suite.Run(t, new(URLShortenerServiceTestSuite))
 }

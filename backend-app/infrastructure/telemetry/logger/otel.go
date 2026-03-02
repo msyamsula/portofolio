@@ -12,35 +12,56 @@ type otelWriter struct {
 	logger otellog.Logger
 }
 
-// SetOTELLogger sets an OpenTelemetry logger as the output destination
-// This allows formatted logs to be exported via OTLP while preserving console output
-func SetOTELLogger(otelLog otellog.Logger) {
-	w := &otelWriter{logger: otelLog}
-
-	// First reset to get the clean console function
-	ResetToStdout()
-	originalLogFunc := logFunc
-
-	// Replace logFunc with dual-output version that sends to both console and OTLP
-	logFunc = func(format string, args ...any) {
-		// 1. Send to console (preserves stdout)
-		originalLogFunc(format, args...)
-		// 2. Send to OTLP
-		msg := fmt.Sprintf(format, args...)
-		w.emit(msg)
+// otelSeverity maps internal log level to OTLP severity
+func otelSeverity(level Level) otellog.Severity {
+	switch level {
+	case DebugLevel:
+		return otellog.SeverityDebug
+	case InfoLevel:
+		return otellog.SeverityInfo
+	case WarnLevel:
+		return otellog.SeverityWarn
+	case ErrorLevel:
+		return otellog.SeverityError
+	default:
+		return otellog.SeverityInfo
 	}
 }
 
-// emit sends a log record via OpenTelemetry
-func (w *otelWriter) emit(formattedLog string) {
-	// Create a new log record
-	var r otellog.Record
-	r.SetBody(otellog.StringValue(formattedLog))
-	w.logger.Emit(context.Background(), r)
+// SetOTELLogger sets an OpenTelemetry logger as the output destination
+// This allows formatted logs to be exported via OTLP while preserving console output
+func SetOTELLogger(otelLog otellog.Logger) {
+	otelLogWriter = &otelWriter{logger: otelLog}
 }
 
-// ResetToStdout resets the log output back to stdout
+// emitStructured sends a structured log record via OpenTelemetry
+func (w *otelWriter) emitStructured(ctx context.Context, level Level, msg string, file string, line int, metadata map[string]any, err error) {
+	var r otellog.Record
+	r.SetBody(otellog.StringValue(msg))
+	r.SetSeverity(otelSeverity(level))
+	r.SetSeverityText(level.String())
+
+	// Add structured attributes
+	attrs := []otellog.KeyValue{
+		otellog.String("code.filepath", file),
+		otellog.Int("code.lineno", line),
+	}
+
+	for k, v := range metadata {
+		attrs = append(attrs, otellog.String(k, fmt.Sprintf("%v", v)))
+	}
+
+	if err != nil {
+		attrs = append(attrs, otellog.String("error.message", err.Error()))
+	}
+
+	r.AddAttributes(attrs...)
+	w.logger.Emit(ctx, r)
+}
+
+// ResetToStdout resets the log output back to stdout (used for testing)
 func ResetToStdout() {
+	otelLogWriter = nil
 	logFunc = func(format string, args ...any) {
 		fmt.Printf(format+"\n", args...)
 	}

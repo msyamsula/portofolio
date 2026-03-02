@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"runtime"
 	"time"
-
-	otellog "go.opentelemetry.io/otel/log"
 )
 
 // Level represents log level
@@ -54,9 +52,9 @@ const (
 type Config struct {
 	ServiceName       string
 	CollectorEndpoint string
-	Insecure         bool
-	Environment      string
-	LogsEnabled      bool
+	Insecure          bool
+	Environment       string
+	LogsEnabled       bool
 
 	// Console settings
 	Level      Level
@@ -66,8 +64,8 @@ type Config struct {
 
 var (
 	cfg            Config
-	otelLogger     otellog.Logger
 	exporterClient *ExporterClient
+	otelLogWriter  *otelWriter
 )
 
 // Init initializes the logger with the given configuration
@@ -82,16 +80,15 @@ func Init(ctx context.Context, c Config) error {
 		exporterCfg := ExporterConfig{
 			ServiceName:       c.ServiceName,
 			CollectorEndpoint: c.CollectorEndpoint,
-			Insecure:         c.Insecure,
-			Environment:      c.Environment,
+			Insecure:          c.Insecure,
+			Environment:       c.Environment,
 		}
 		client, err := NewExporterClient(ctx, exporterCfg)
 		if err != nil {
 			return fmt.Errorf("failed to initialize logs exporter: %w", err)
 		}
 		exporterClient = client
-		otelLogger = client.OTELLogger(c.ServiceName)
-		SetOTELLogger(otelLogger)
+		SetOTELLogger(client.OTELLogger(c.ServiceName))
 	}
 
 	return nil
@@ -177,6 +174,26 @@ func log(level Level, msg string, metadata map[string]any, err error) {
 	file, line := getCaller(3) // Skip: log, level function, caller
 	formatted := formatMessage(level, file, line, msg, metadata, err)
 	logFunc("%s", formatted)
+
+	// Send structured log to OTLP (separate from console)
+	if otelLogWriter != nil {
+		otelLogWriter.emitStructured(context.Background(), level, msg, file, line, metadata, err)
+	}
+}
+
+// logWithContext writes a log message with the given level and context for trace correlation
+func logWithContext(ctx context.Context, level Level, msg string, metadata map[string]any, err error) {
+	if !shouldLog(level) {
+		return
+	}
+
+	file, line := getCaller(3)
+	formatted := formatMessage(level, file, line, msg, metadata, err)
+	logFunc("%s", formatted)
+
+	if otelLogWriter != nil {
+		otelLogWriter.emitStructured(ctx, level, msg, file, line, metadata, err)
+	}
 }
 
 // Debug logs a debug message
@@ -209,12 +226,29 @@ func WarnError(msg string, err error, metadata map[string]any) {
 	log(WarnLevel, msg, metadata, err)
 }
 
-// Error logs an error message
-func Error(msg string, metadata map[string]any) {
-	log(ErrorLevel, msg, metadata, nil)
+// Error logs an error message with an optional error
+func Error(msg string, err error, metadata map[string]any) {
+	log(ErrorLevel, msg, metadata, err)
 }
 
-// ErrorError logs an error message with an error
-func ErrorError(msg string, err error, metadata map[string]any) {
-	log(ErrorLevel, msg, metadata, err)
+// Context-aware logging functions (for trace correlation in Loki/Grafana)
+
+// InfoCtx logs an info message with context for trace correlation
+func InfoCtx(ctx context.Context, msg string, metadata map[string]any) {
+	logWithContext(ctx, InfoLevel, msg, metadata, nil)
+}
+
+// ErrorCtx logs an error message with context for trace correlation
+func ErrorCtx(ctx context.Context, msg string, err error, metadata map[string]any) {
+	logWithContext(ctx, ErrorLevel, msg, metadata, err)
+}
+
+// WarnCtx logs a warning message with context for trace correlation
+func WarnCtx(ctx context.Context, msg string, metadata map[string]any) {
+	logWithContext(ctx, WarnLevel, msg, metadata, nil)
+}
+
+// DebugCtx logs a debug message with context for trace correlation
+func DebugCtx(ctx context.Context, msg string, metadata map[string]any) {
+	logWithContext(ctx, DebugLevel, msg, metadata, nil)
 }

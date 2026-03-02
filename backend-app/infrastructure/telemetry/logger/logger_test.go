@@ -37,12 +37,12 @@ func TestInit(t *testing.T) {
 	cfg := Config{
 		ServiceName:       "test-service",
 		CollectorEndpoint: "localhost:4317",
-		Insecure:         true,
-		Environment:      "test",
-		LogsEnabled:      false, // Don't try to connect to OTLP in tests
-		Level:            InfoLevel,
-		Format:           TextFormat,
-		TimeFormat:       "2006-01-02T15:04:05Z",
+		Insecure:          true,
+		Environment:       "test",
+		LogsEnabled:       false, // Don't try to connect to OTLP in tests
+		Level:             InfoLevel,
+		Format:            TextFormat,
+		TimeFormat:        "2006-01-02T15:04:05Z",
 	}
 
 	err := Init(ctx, cfg)
@@ -54,7 +54,7 @@ func TestShutdown(t *testing.T) {
 	ctx := context.Background()
 
 	cfg := Config{
-		ServiceName:  "test-service",
+		ServiceName: "test-service",
 		LogsEnabled: false,
 		Level:       InfoLevel,
 	}
@@ -151,7 +151,7 @@ func TestError(t *testing.T) {
 	cfg := Config{Level: InfoLevel, Format: TextFormat}
 	_ = Init(context.Background(), cfg)
 
-	Error("operation failed", map[string]any{"user_id": 123, "error": testErr})
+	Error("operation failed", nil, map[string]any{"user_id": 123, "error": testErr})
 
 	assert.Contains(t, capturedOutput, "[2024-01-01T12:00:00Z]")
 	assert.Contains(t, capturedOutput, "[ERROR]")
@@ -161,7 +161,7 @@ func TestError(t *testing.T) {
 	assert.Contains(t, capturedOutput, `"user_id":123`)
 }
 
-func TestErrorError(t *testing.T) {
+func TestErrorWithErr(t *testing.T) {
 	resetLoggerState()
 	originalLogFunc := logFunc
 	originalFormatTime := formatTime
@@ -189,7 +189,7 @@ func TestErrorError(t *testing.T) {
 	cfg := Config{Level: InfoLevel, Format: TextFormat}
 	_ = Init(context.Background(), cfg)
 
-	ErrorError("database query failed", testErr, map[string]any{"query": "SELECT * FROM users"})
+	Error("database query failed", testErr, map[string]any{"query": "SELECT * FROM users"})
 
 	assert.Contains(t, capturedOutput, "[2024-01-01T12:00:00Z]")
 	assert.Contains(t, capturedOutput, "[ERROR]")
@@ -403,7 +403,7 @@ func TestLevelFiltering(t *testing.T) {
 	Debug("debug", nil)
 	Info("info", nil)
 	Warn("warn", nil)
-	Error("error", nil)
+	Error("error", nil, nil)
 
 	assert.Len(t, logCalls, 2, "Only Warn and Error should be logged")
 }
@@ -457,7 +457,7 @@ func TestComplexMetadata(t *testing.T) {
 	}
 
 	metadata := map[string]any{
-		"user_id": 12345,
+		"user_id":  12345,
 		"username": "testuser",
 		"active":   true,
 		"balance":  99.99,

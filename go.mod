@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sns v1.39.6
 	github.com/elastic/go-elasticsearch/v8 v8.19.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/golang/mock v1.1.1
+	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.11.1

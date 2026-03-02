@@ -86,7 +86,7 @@ func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
 	// Call service to shorten URL
 	shortURL, err := h.service.Shorten(ctx, req.LongURL)
 	if err != nil {
-		logger.ErrorError("shorten request failed", err, map[string]any{
+		logger.Error("shorten request failed", err, map[string]any{
 			"method":          r.Method,
 			"path":            r.URL.Path,
 			"long_url_length": len(req.LongURL),
@@ -161,7 +161,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	// Call service to expand URL
 	longURL, err := h.service.Expand(ctx, shortCode)
 	if err != nil {
-		logger.ErrorError("expand request failed", err, map[string]any{
+		logger.Error("expand request failed", err, map[string]any{
 			"method":      r.Method,
 			"path":        r.URL.Path,
 			"short_code":  shortCode,

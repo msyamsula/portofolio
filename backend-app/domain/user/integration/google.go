@@ -25,6 +25,8 @@ type UserData struct {
 }
 
 // AuthService defines the interface for external OAuth authentication
+//
+//go:generate mockgen -source=google.go -destination=../../../mock/auth_service_mock.go -package=mock
 type AuthService interface {
 	// GetRedirectURLGoogle generates the OAuth redirect URL for Google
 	GetRedirectURLGoogle(ctx context.Context, state string) (string, error)
@@ -70,7 +72,7 @@ func (g *googleAuthService) GetUserDataGoogle(ctx context.Context, state, code s
 	// Exchange authorization code for token
 	token, err := g.oauthConfig.Exchange(ctx, code)
 	if err != nil {
-		infraLogger.ErrorError("failed to exchange OAuth code", err, map[string]any{
+		infraLogger.Error("failed to exchange OAuth code", err, map[string]any{
 			"state": state,
 		})
 		span.RecordError(err)
@@ -84,7 +86,7 @@ func (g *googleAuthService) GetUserDataGoogle(ctx context.Context, state, code s
 	// Get user info from Google API
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
-		infraLogger.ErrorError("failed to get user info", err, map[string]any{
+		infraLogger.Error("failed to get user info", err, map[string]any{
 			"state": state,
 		})
 		span.RecordError(err)
@@ -96,7 +98,7 @@ func (g *googleAuthService) GetUserDataGoogle(ctx context.Context, state, code s
 	// Parse response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		infraLogger.ErrorError("failed to read response body", err, map[string]any{
+		infraLogger.Error("failed to read response body", err, map[string]any{
 			"state": state,
 		})
 		span.RecordError(err)
@@ -106,8 +108,8 @@ func (g *googleAuthService) GetUserDataGoogle(ctx context.Context, state, code s
 
 	// Check HTTP status
 	if resp.StatusCode != http.StatusOK {
-		infraLogger.Error("user info request failed", map[string]any{
-			"state":        state,
+		infraLogger.Error("user info request failed", nil, map[string]any{
+			"state":         state,
 			"status_code":   resp.StatusCode,
 			"response_body": string(body),
 		})
@@ -118,8 +120,8 @@ func (g *googleAuthService) GetUserDataGoogle(ctx context.Context, state, code s
 	// Unmarshal JSON response
 	var googleUserData UserData
 	if err := json.Unmarshal(body, &googleUserData); err != nil {
-		infraLogger.ErrorError("failed to unmarshal user data", err, map[string]any{
-			"state":        state,
+		infraLogger.Error("failed to unmarshal user data", err, map[string]any{
+			"state":         state,
 			"response_body": string(body),
 		})
 		span.RecordError(err)
@@ -128,7 +130,7 @@ func (g *googleAuthService) GetUserDataGoogle(ctx context.Context, state, code s
 	}
 
 	infraLogger.Info("successfully retrieved user data from Google", map[string]any{
-		"state":  state,
+		"state":   state,
 		"user_id": googleUserData.ID,
 		"email":   googleUserData.Email,
 	})

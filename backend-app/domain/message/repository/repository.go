@@ -19,6 +19,8 @@ const (
 )
 
 // Repository defines the interface for message data access
+//
+//go:generate mockgen -source=repository.go -destination=../../../mock/message_repository_mock.go -package=mock -mock_names Repository=MockMessageRepository
 type Repository interface {
 	// InsertMessage inserts a new message into the database
 	InsertMessage(ctx context.Context, msg dto.Message, table string) (dto.Message, error)

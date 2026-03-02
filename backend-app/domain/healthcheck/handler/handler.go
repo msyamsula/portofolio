@@ -44,7 +44,7 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 	// Call service to check health
 	status, err := h.service.Check(ctx)
 	if err != nil {
-		logger.Error("health check failed", map[string]any{"error": err})
+		logger.Error("health check failed", err, map[string]any{"error": err})
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "health check failed")
 		_ = infraHandler.InternalError(w, "health check failed")

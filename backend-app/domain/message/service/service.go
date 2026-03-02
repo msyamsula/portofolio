@@ -9,6 +9,8 @@ import (
 )
 
 // Service defines the interface for message business logic
+//
+//go:generate mockgen -source=service.go -destination=../../../mock/message_service_mock.go -package=mock -mock_names Service=MockMessageService
 type Service interface {
 	// InsertMessage inserts a new message
 	InsertMessage(ctx context.Context, msg dto.Message) (dto.Message, error)

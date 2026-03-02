@@ -1,6 +1,8 @@
 package service
 
 // Service defines the interface for graph algorithm operations
+//
+//go:generate mockgen -source=service.go -destination=../../../mock/graph_service_mock.go -package=mock -mock_names Service=MockGraphService
 type Service interface {
 	ArticulationPointAndBridge(g *Graph) (log []string, id []string, bridge [][]string)
 	BreadthFirstSearch(g *Graph) []string
@@ -13,17 +15,17 @@ type Service interface {
 
 type service struct {
 	// Algorithm state tracking
-	dfsLog  []string
-	bfsLog  []string
-	cycleLog []string
-	cycle    []CyclePair
-	dagPath  []string
-	sccTree  []string
-	apLog    []string
-	apId     []string
-	bridge   [][]string
+	dfsLog    []string
+	bfsLog    []string
+	cycleLog  []string
+	cycle     []CyclePair
+	dagPath   []string
+	sccTree   []string
+	apLog     []string
+	apId      []string
+	bridge    [][]string
 	eulerPath []string
-	dfsTree  []string
+	dfsTree   []string
 }
 
 // New creates a new graph service

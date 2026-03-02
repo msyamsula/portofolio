@@ -13,6 +13,8 @@ import (
 )
 
 // Service defines the interface for user authentication business logic
+//
+//go:generate mockgen -source=service.go -destination=../../../mock/user_service_mock.go -package=mock -mock_names Service=MockUserService
 type Service interface {
 	// GetRedirectURLGoogle generates the OAuth redirect URL for Google
 	GetRedirectURLGoogle(ctx context.Context, state string) (string, error)
@@ -50,7 +52,7 @@ func (s *userService) GetAppTokenForGoogleUser(ctx context.Context, state, code 
 	// Get user data from external OAuth provider
 	userData, err := s.externalAuthService.GetUserDataGoogle(ctx, state, code)
 	if err != nil {
-		infraLogger.ErrorError("failed to get user data from OAuth provider", err, map[string]any{
+		infraLogger.Error("failed to get user data from OAuth provider", err, map[string]any{
 			"state": state,
 		})
 		return "", err
@@ -59,7 +61,7 @@ func (s *userService) GetAppTokenForGoogleUser(ctx context.Context, state, code 
 	// Create app token with user data
 	token, err := s.createToken(ctx, userData.ID, userData.Email, userData.Name)
 	if err != nil {
-		infraLogger.ErrorError("failed to create app token", err, map[string]any{
+		infraLogger.Error("failed to create app token", err, map[string]any{
 			"state":   state,
 			"user_id": userData.ID,
 		})
@@ -77,13 +79,13 @@ func (s *userService) ValidateToken(ctx context.Context, tokenString string) (dt
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
 	if err != nil {
-		infraLogger.ErrorError("failed to parse token", err, nil)
+		infraLogger.Error("failed to parse token", err, nil)
 		return dto.UserData{}, err
 	}
 
 	// Validate token
 	if !token.Valid {
-		infraLogger.Error("invalid token", nil)
+		infraLogger.Error("invalid token", nil, nil)
 		return dto.UserData{}, err
 	}
 
@@ -96,7 +98,7 @@ func (s *userService) ValidateToken(ctx context.Context, tokenString string) (dt
 		}, nil
 	}
 
-	infraLogger.Error("failed to extract claims from token", nil)
+	infraLogger.Error("failed to extract claims from token", nil, nil)
 	return dto.UserData{}, err
 }
 

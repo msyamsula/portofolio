@@ -22,6 +22,8 @@ var (
 )
 
 // Repository defines the interface for URL persistence operations
+//
+//go:generate mockgen -source=repository.go -destination=../../../mock/url_shortener_repository_mock.go -package=mock -mock_names Repository=MockURLShortenerRepository
 type Repository interface {
 	Save(ctx context.Context, shortCode, longURL string) error
 	FindByShortCode(ctx context.Context, shortCode string) (*dto.URLRecord, error)
@@ -201,7 +203,7 @@ func (r *repository) cacheURL(ctx context.Context, key string, value dto.URLReco
 	data, _ := json.Marshal(value)
 	if err := r.cache.Set(ctx, key, data, r.cacheTTL).Err(); err != nil {
 		span.RecordError(err)
-		logger.Error("failed to cache url", map[string]any{"shortCode": value.ShortCode, "longURL": value.LongURL, "error": err})
+		logger.Error("failed to cache url", err, map[string]any{"shortCode": value.ShortCode, "longURL": value.LongURL})
 		return
 	}
 	span.AddEvent("cache_write_success")

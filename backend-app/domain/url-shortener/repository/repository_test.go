@@ -9,99 +9,75 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/redis/go-redis/v9"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/msyamsula/portofolio/backend-app/domain/url-shortener/dto"
 	"github.com/msyamsula/portofolio/backend-app/mock"
 )
 
-func TestRepository_Save_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	// Expect DB insert
-	mockDB.EXPECT().ExecContext(gomock.Any(), gomock.Any(), "test123", "https://example.com").Return(nil, nil)
-
-	// Expect cache invalidation for shortCode
-	mockCache.EXPECT().Del(gomock.Any(), "test123").Return(redis.NewIntCmd(ctx, 1))
-
-	// Expect cache invalidation for longURL
-	mockCache.EXPECT().Del(gomock.Any(), "https://example.com").Return(redis.NewIntCmd(ctx, 1))
-
-	err := repo.Save(ctx, "test123", "https://example.com")
-	assert.NoError(t, err)
+// URLShortenerRepositoryTestSuite defines the test suite for URL shortener repository
+type URLShortenerRepositoryTestSuite struct {
+	suite.Suite
+	ctrl      *gomock.Controller
+	mockDB    *mock.MockDatabase
+	mockCache *mock.MockCache
+	repo      Repository
+	ctx       context.Context
 }
 
-func TestRepository_Save_DBError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (s *URLShortenerRepositoryTestSuite) SetupTest() {
+	s.ctrl = gomock.NewController(s.T())
+	s.mockDB = mock.NewMockDatabase(s.ctrl)
+	s.mockCache = mock.NewMockCache(s.ctrl)
+	s.repo = NewRepository(s.mockDB, s.mockCache)
+	s.ctx = context.Background()
+}
 
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
+func (s *URLShortenerRepositoryTestSuite) TearDownTest() {
+	s.ctrl.Finish()
+}
 
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
+// --- Save tests ---
 
+func (s *URLShortenerRepositoryTestSuite) TestSave_Success() {
+	s.mockDB.EXPECT().ExecContext(gomock.Any(), gomock.Any(), "test123", "https://example.com").Return(nil, nil)
+	s.mockCache.EXPECT().Del(gomock.Any(), "test123").Return(redis.NewIntCmd(s.ctx, 1))
+	s.mockCache.EXPECT().Del(gomock.Any(), "https://example.com").Return(redis.NewIntCmd(s.ctx, 1))
+
+	err := s.repo.Save(s.ctx, "test123", "https://example.com")
+	s.NoError(err)
+}
+
+func (s *URLShortenerRepositoryTestSuite) TestSave_DBError() {
 	expectedErr := errors.New("database error")
-	mockDB.EXPECT().ExecContext(gomock.Any(), gomock.Any(), "test123", "https://example.com").Return(nil, expectedErr)
+	s.mockDB.EXPECT().ExecContext(gomock.Any(), gomock.Any(), "test123", "https://example.com").Return(nil, expectedErr)
 
-	err := repo.Save(ctx, "test123", "https://example.com")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to save url mapping")
+	err := s.repo.Save(s.ctx, "test123", "https://example.com")
+	s.Error(err)
+	s.Contains(err.Error(), "failed to save url mapping")
 }
 
-func TestRepository_FindByShortCode_CacheHit(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+// --- FindByShortCode tests ---
 
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	expectedRecord := &dto.URLRecord{
-		ShortCode: "test123",
-		LongURL:   "https://example.com",
-	}
-
-	// Create a mock StringCmd with cached data
+func (s *URLShortenerRepositoryTestSuite) TestFindByShortCode_CacheHit() {
 	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	data := []byte(`{"short_code":"test123","long_url":"https://example.com","created_at":"` + createdAt.Format(time.RFC3339Nano) + `"}`)
-	cmd := redis.NewStringCmd(ctx)
+	cmd := redis.NewStringCmd(s.ctx)
 	cmd.SetVal(string(data))
 
-	mockCache.EXPECT().Get(gomock.Any(), "test123").Return(cmd)
+	s.mockCache.EXPECT().Get(gomock.Any(), "test123").Return(cmd)
 
-	// DB should not be called on cache hit
-	result, err := repo.FindByShortCode(ctx, "test123")
-	assert.NoError(t, err)
-	assert.Equal(t, expectedRecord.ShortCode, result.ShortCode)
-	assert.Equal(t, expectedRecord.LongURL, result.LongURL)
+	result, err := s.repo.FindByShortCode(s.ctx, "test123")
+	s.NoError(err)
+	s.Equal("test123", result.ShortCode)
+	s.Equal("https://example.com", result.LongURL)
 }
 
-func TestRepository_FindByShortCode_CacheMiss_DBHit(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	// Cache miss - return nil data with error
-	cacheCmd := redis.NewStringCmd(ctx)
+func (s *URLShortenerRepositoryTestSuite) TestFindByShortCode_CacheMiss_DBHit() {
+	cacheCmd := redis.NewStringCmd(s.ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(gomock.Any(), "test123").Return(cacheCmd)
+	s.mockCache.EXPECT().Get(gomock.Any(), "test123").Return(cacheCmd)
 
-	// DB hit - return the record
 	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	expectedRecord := &dto.URLRecord{
 		ShortCode: "test123",
@@ -109,87 +85,51 @@ func TestRepository_FindByShortCode_CacheMiss_DBHit(t *testing.T) {
 		CreatedAt: createdAt,
 	}
 
-	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), "test123").Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
+	s.mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), "test123").Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
 		*dest = *expectedRecord
 	}).Return(nil)
 
-	// Expect cache to be populated
-	mockCache.EXPECT().Set(gomock.Any(), "test123", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(ctx))
+	s.mockCache.EXPECT().Set(gomock.Any(), "test123", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(s.ctx))
 
-	result, err := repo.FindByShortCode(ctx, "test123")
-	assert.NoError(t, err)
-	assert.Equal(t, expectedRecord.ShortCode, result.ShortCode)
-	assert.Equal(t, expectedRecord.LongURL, result.LongURL)
+	result, err := s.repo.FindByShortCode(s.ctx, "test123")
+	s.NoError(err)
+	s.Equal(expectedRecord.ShortCode, result.ShortCode)
+	s.Equal(expectedRecord.LongURL, result.LongURL)
 }
 
-func TestRepository_FindByShortCode_NotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	// Cache miss
-	cacheCmd := redis.NewStringCmd(ctx)
+func (s *URLShortenerRepositoryTestSuite) TestFindByShortCode_NotFound() {
+	cacheCmd := redis.NewStringCmd(s.ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(gomock.Any(), "nonexistent").Return(cacheCmd)
+	s.mockCache.EXPECT().Get(gomock.Any(), "nonexistent").Return(cacheCmd)
 
-	// DB miss
-	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
+	s.mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
 
-	_, err := repo.FindByShortCode(ctx, "nonexistent")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "url not found")
+	_, err := s.repo.FindByShortCode(s.ctx, "nonexistent")
+	s.Error(err)
+	s.Contains(err.Error(), "url not found")
 }
 
-func TestRepository_FindByLongURL_CacheHit(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+// --- FindByLongURL tests ---
 
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	expectedRecord := &dto.URLRecord{
-		ShortCode: "test123",
-		LongURL:   "https://example.com",
-	}
-
-	// Create a mock StringCmd with cached data
+func (s *URLShortenerRepositoryTestSuite) TestFindByLongURL_CacheHit() {
 	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	data := []byte(`{"short_code":"test123","long_url":"https://example.com","created_at":"` + createdAt.Format(time.RFC3339Nano) + `"}`)
-	cmd := redis.NewStringCmd(ctx)
+	cmd := redis.NewStringCmd(s.ctx)
 	cmd.SetVal(string(data))
 
-	mockCache.EXPECT().Get(gomock.Any(), "https://example.com").Return(cmd)
+	s.mockCache.EXPECT().Get(gomock.Any(), "https://example.com").Return(cmd)
 
-	result, err := repo.FindByLongURL(ctx, "https://example.com")
-	assert.NoError(t, err)
-	assert.Equal(t, expectedRecord.ShortCode, result.ShortCode)
-	assert.Equal(t, expectedRecord.LongURL, result.LongURL)
+	result, err := s.repo.FindByLongURL(s.ctx, "https://example.com")
+	s.NoError(err)
+	s.Equal("test123", result.ShortCode)
+	s.Equal("https://example.com", result.LongURL)
 }
 
-func TestRepository_FindByLongURL_CacheMiss_DBHit(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	// Cache miss
-	cacheCmd := redis.NewStringCmd(ctx)
+func (s *URLShortenerRepositoryTestSuite) TestFindByLongURL_CacheMiss_DBHit() {
+	cacheCmd := redis.NewStringCmd(s.ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(gomock.Any(), "https://example.com").Return(cacheCmd)
+	s.mockCache.EXPECT().Get(gomock.Any(), "https://example.com").Return(cacheCmd)
 
-	// DB hit
 	createdAt := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	expectedRecord := &dto.URLRecord{
 		ShortCode: "test123",
@@ -197,51 +137,38 @@ func TestRepository_FindByLongURL_CacheMiss_DBHit(t *testing.T) {
 		CreatedAt: createdAt,
 	}
 
-	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
+	s.mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ context.Context, dest *dto.URLRecord, _ interface{}, _ interface{}) {
 		*dest = *expectedRecord
 	}).Return(nil)
 
-	// Expect cache to be populated
-	mockCache.EXPECT().Set(gomock.Any(), "https://example.com", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(ctx))
+	s.mockCache.EXPECT().Set(gomock.Any(), "https://example.com", gomock.Any(), gomock.Any()).Return(redis.NewStatusCmd(s.ctx))
 
-	result, err := repo.FindByLongURL(ctx, "https://example.com")
-	assert.NoError(t, err)
-	assert.Equal(t, expectedRecord.ShortCode, result.ShortCode)
-	assert.Equal(t, expectedRecord.LongURL, result.LongURL)
+	result, err := s.repo.FindByLongURL(s.ctx, "https://example.com")
+	s.NoError(err)
+	s.Equal(expectedRecord.ShortCode, result.ShortCode)
+	s.Equal(expectedRecord.LongURL, result.LongURL)
 }
 
-func TestRepository_FindByLongURL_NotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
-
-	repo := NewRepository(mockDB, mockCache)
-	ctx := context.Background()
-
-	// Cache miss
-	cacheCmd := redis.NewStringCmd(ctx)
+func (s *URLShortenerRepositoryTestSuite) TestFindByLongURL_NotFound() {
+	cacheCmd := redis.NewStringCmd(s.ctx)
 	cacheCmd.SetErr(errors.New("cache miss"))
-	mockCache.EXPECT().Get(gomock.Any(), "https://example.com/notfound").Return(cacheCmd)
+	s.mockCache.EXPECT().Get(gomock.Any(), "https://example.com/notfound").Return(cacheCmd)
 
-	// DB miss
-	mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
+	s.mockDB.EXPECT().GetContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(sql.ErrNoRows)
 
-	_, err := repo.FindByLongURL(ctx, "https://example.com/notfound")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "url not found")
+	_, err := s.repo.FindByLongURL(s.ctx, "https://example.com/notfound")
+	s.Error(err)
+	s.Contains(err.Error(), "url not found")
 }
 
-func TestNewRepository(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+// --- Constructor test ---
 
-	mockDB := mock.NewMockDatabase(ctrl)
-	mockCache := mock.NewMockCache(ctrl)
+func (s *URLShortenerRepositoryTestSuite) TestNewRepository() {
+	repo := NewRepository(s.mockDB, s.mockCache)
+	s.NotNil(repo)
+}
 
-	repo := NewRepository(mockDB, mockCache)
-
-	assert.NotNil(t, repo)
-	// repo implements Repository by design
+// Run the test suite
+func TestURLShortenerRepositorySuite(t *testing.T) {
+	suite.Run(t, new(URLShortenerRepositoryTestSuite))
 }

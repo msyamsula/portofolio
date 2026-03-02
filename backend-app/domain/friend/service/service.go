@@ -8,6 +8,8 @@ import (
 )
 
 // Service defines the interface for friend business logic
+//
+//go:generate mockgen -source=service.go -destination=../../../mock/friend_service_mock.go -package=mock -mock_names Service=MockFriendService
 type Service interface {
 	// AddFriend adds a friendship relationship between two users
 	AddFriend(ctx context.Context, userA, userB dto.User) error

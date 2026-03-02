@@ -16,6 +16,8 @@ var (
 )
 
 // Repository defines the interface for friend data access
+//
+//go:generate mockgen -source=repository.go -destination=../../../mock/friend_repository_mock.go -package=mock -mock_names Repository=MockFriendRepository
 type Repository interface {
 	// AddFriend adds a friendship relationship between two users
 	AddFriend(ctx context.Context, userA, userB dto.User) error

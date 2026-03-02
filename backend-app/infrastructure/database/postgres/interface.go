@@ -8,6 +8,8 @@ import (
 )
 
 // Database defines the interface for database operations
+//
+//go:generate mockgen -source=interface.go -destination=../../../mock/postgres_mock.go -package=mock
 type Database interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error

@@ -6,6 +6,8 @@ import (
 )
 
 // Service defines the interface for health check operations
+//
+//go:generate mockgen -source=service.go -destination=../../../mock/healthcheck_service_mock.go -package=mock -mock_names Service=MockHealthcheckService
 type Service interface {
 	Check(ctx context.Context) (string, error)
 	Uptime() float64

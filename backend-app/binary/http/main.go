@@ -102,12 +102,12 @@ func main() {
 
 	// Initialize logger (must be first for proper logging)
 	if err := initLogger(cfg); err != nil {
-		infraLogger.Error("failed to initialize logger", map[string]any{"error": err})
+		infraLogger.Error("failed to initialize logger", err, map[string]any{"error": err})
 		os.Exit(1)
 	}
 	defer func() {
 		if err := infraLogger.Shutdown(context.Background()); err != nil {
-			infraLogger.ErrorError("failed to shutdown logger", err, nil)
+			infraLogger.Error("failed to shutdown logger", err, nil)
 		}
 	}()
 
@@ -116,7 +116,7 @@ func main() {
 	if spanClient != nil {
 		defer func() {
 			if err := spanClient.Shutdown(context.Background()); err != nil {
-				infraLogger.ErrorError("failed to shutdown telemetry", err, nil)
+				infraLogger.Error("failed to shutdown telemetry", err, nil)
 			}
 		}()
 	}
@@ -125,7 +125,7 @@ func main() {
 	if metricsClient != nil {
 		defer func() {
 			if err := metricsClient.Shutdown(context.Background()); err != nil {
-				infraLogger.ErrorError("failed to shutdown metrics", err, nil)
+				infraLogger.Error("failed to shutdown metrics", err, nil)
 			}
 		}()
 	}
@@ -296,7 +296,7 @@ func startServer(router *mux.Router, port string) {
 	// Start server in goroutine
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			infraLogger.ErrorError("server error", err, nil)
+			infraLogger.Error("server error", err, nil)
 		}
 	}()
 
@@ -310,7 +310,7 @@ func startServer(router *mux.Router, port string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		infraLogger.ErrorError("server shutdown error", err, nil)
+		infraLogger.Error("server shutdown error", err, nil)
 	}
 	infraLogger.Info("server stopped", nil)
 }
@@ -447,7 +447,7 @@ func initPostgres(cfg Config) *sqlx.DB {
 		SSLMode:  cfg.PostgresSSL,
 	})
 	if err != nil {
-		infraLogger.ErrorError("failed to connect to postgres", err, map[string]any{
+		infraLogger.Error("failed to connect to postgres", err, map[string]any{
 			"host":     cfg.PostgresHost,
 			"port":     cfg.PostgresPort,
 			"database": cfg.PostgresDB,
@@ -470,7 +470,7 @@ func initRedis(cfg Config) *redis.Client {
 		DB:       cfg.RedisDB,
 	})
 	if err := redisInf.PingRedis(ctx, rdb); err != nil {
-		infraLogger.ErrorError("failed to connect to redis", err, map[string]any{
+		infraLogger.Error("failed to connect to redis", err, map[string]any{
 			"host": cfg.RedisHost,
 			"db":   cfg.RedisDB,
 		})

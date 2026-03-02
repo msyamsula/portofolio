@@ -15,6 +15,8 @@ import (
 )
 
 // Service defines the interface for URL shortening operations
+//
+//go:generate mockgen -source=service.go -destination=../../../mock/url_shortener_service_mock.go -package=mock -mock_names Service=MockURLShortenerService
 type Service interface {
 	Shorten(ctx context.Context, longURL string) (string, error)
 	Expand(ctx context.Context, shortCode string) (string, error)
