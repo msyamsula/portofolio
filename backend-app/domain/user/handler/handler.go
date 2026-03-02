@@ -280,9 +280,9 @@ func (h *Handler) ValidateToken(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all user handler routes
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/user/google/redirect", h.GoogleRedirectURL).Methods("GET")
-	r.HandleFunc("/user/google/callback", h.GoogleCallback).Methods("GET")
-	r.HandleFunc("/user/validate", h.ValidateToken).Methods("GET")
+	r.HandleFunc("/google/redirect", h.GoogleRedirectURL).Methods("GET")
+	r.HandleFunc("/google/callback", h.GoogleCallback).Methods("GET")
+	r.HandleFunc("/validate", h.ValidateToken).Methods("GET")
 }
 
 // generateRandomState generates a random state string for OAuth flow

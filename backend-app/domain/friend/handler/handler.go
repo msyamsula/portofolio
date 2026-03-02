@@ -200,6 +200,6 @@ func (h *Handler) GetFriends(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all friend handler routes
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/friend/add", h.AddFriend).Methods("POST")
-	r.HandleFunc("/friend/get", h.GetFriends).Methods("GET")
+	r.HandleFunc("/add", h.AddFriend).Methods("POST")
+	r.HandleFunc("/get", h.GetFriends).Methods("GET")
 }

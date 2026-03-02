@@ -191,6 +191,6 @@ func (h *Handler) GetConversation(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all message handler routes
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/message/insert", h.InsertMessage).Methods("POST")
-	r.HandleFunc("/message/conversation", h.GetConversation).Methods("GET")
+	r.HandleFunc("/insert", h.InsertMessage).Methods("POST")
+	r.HandleFunc("/conversation", h.GetConversation).Methods("GET")
 }

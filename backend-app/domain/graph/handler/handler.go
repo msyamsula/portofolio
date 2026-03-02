@@ -152,5 +152,5 @@ func (h *Handler) Solve(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all graph handler routes
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/graph/solve/{algo}", h.Solve).Methods("POST")
+	r.HandleFunc("/solve/{algo}", h.Solve).Methods("POST")
 }
