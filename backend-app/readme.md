@@ -1,252 +1,173 @@
-# Backend App — Copilot Notes
+# Backend App
 
-This document explains the backend architecture, observability, folder layout, infrastructure/domain connections, and how to run locally.
+A comprehensive Go backend application featuring URL shortening, graph algorithms, friend management, messaging, and user authentication. Built with a domain-driven modular architecture following clean code principles.
 
-## Architecture (Code-Level)
+## Quick Start
 
-```mermaid
-flowchart LR
-  Client[Client / Frontend] -->|HTTP| Router[Gorilla Mux Router]
+```bash
+# Start local dependencies (DB + observability)
+cd infrastructure/instance/local && make start
 
-  subgraph Middleware
-    MW1[Content-Type]
-    MW2[Recovery]
-    MW3[Logging]
-    MW4[CORS]
-    MW5[Metrics]
-    MW6[Tracing]
-    MW7[Response Time]
-  end
-
-  Router --> Middleware
-
-  subgraph Domains
-    URL[URL Shortener Handler]
-    Graph[Graph Handler]
-    Friend[Friend Handler]
-    Message[Message Handler]
-    User[User Handler]
-    Health[Healthcheck Handler]
-  end
-
-  Middleware --> URL
-  Middleware --> Graph
-  Middleware --> Friend
-  Middleware --> Message
-  Middleware --> User
-  Middleware --> Health
-
-  subgraph Services
-    URLS[URL Shortener Service]
-    GraphS[Graph Service]
-    FriendS[Friend Service]
-    MessageS[Message Service]
-    UserS[User Service]
-    HealthS[Healthcheck Service]
-  end
-
-  URL --> URLS
-  Graph --> GraphS
-  Friend --> FriendS
-  Message --> MessageS
-  User --> UserS
-  Health --> HealthS
-
-  subgraph Repositories
-    URLR[URL Repo]
-    FriendR[Friend Repo]
-    MessageR[Message Repo]
-  end
-
-  URLS --> URLR
-  FriendS --> FriendR
-  MessageS --> MessageR
-
-  subgraph DataStores
-    PG[(PostgreSQL)]
-    Redis[(Redis)]
-  end
-
-  URLR --> PG
-  URLR --> Redis
-  FriendR --> PG
-  MessageR --> PG
-
-  subgraph Integrations
-    Google[Google OAuth]
-    JWT[JWT App Token]
-  end
-
-  UserS --> Google
-  UserS --> JWT
+# Run the backend
+cd binary/http && make up
 ```
 
-## Observability (Logs, Metrics, Traces)
+## Documentation Vault
 
-### How it’s wired
-- **Logs**: `infrastructure/telemetry/logger` writes structured logs and optionally exports via OTLP.
-- **Metrics**: `infrastructure/telemetry/metrics` defines HTTP counters and duration histograms.
-- **Traces**: `infrastructure/telemetry/span` instruments spans; HTTP requests are wrapped via `otelhttp.NewHandler`.
+This README serves as a **vault index** for navigating through the codebase documentation. Each section below links to detailed documentation located near the implementation.
 
-### Runtime flow
-```mermaid
-flowchart LR
-  App[backend-app] -->|OTLP gRPC| Collector[OTel Collector :4317]
-  Collector --> Jaeger[Jaeger]
-  Collector --> Prometheus[Prometheus]
-  Collector --> Loki[Loki]
-  Prometheus --> Grafana[Grafana]
-  Loki --> Grafana
-  Jaeger --> Grafana
-```
+### High-Level Architecture
 
-### Where to look
-- **Collector & stack**: `backend-app/infrastructure/instance/local/`
-- **Collector config**: `backend-app/infrastructure/instance/local/otel-collector.yaml`
-- **K8s observability**: `backend-app/infrastructure/deploymnet/`
+| Topic | File |
+|--------|------|
+| [Architecture Overview](docs/architecture-overview.md) | High-level design |
+| [Code Structure](docs/code-structure.md) | Directory layout |
+| [Design Principles](docs/design-principles.md) | Core principles |
+| [Request Flow](docs/request-flow.md) | Request lifecycle |
 
-### Key middleware signals
-- `MetricsMiddleware` records request count + latency by method, route, and status.
-- `TracingMiddleware` creates HTTP spans per route group.
-- `LoggingMiddleware` emits request start/end with duration.
+### Design Patterns
 
-## Folder Structure
+| Pattern | File | Description |
+|----------|------|-------------|
+| [Clean Architecture](docs/clean-architecture.md) | Layered architecture |
+| [Domain-Driven Design](docs/domain-driven-design.md) | Bounded contexts |
+| [Repository Pattern](docs/repository-pattern.md) | Data access abstraction |
+| [Cache-Aside Pattern](docs/cache-aside-pattern.md) | Performance optimization |
+| [Dependency Inversion](docs/dependency-inversion.md) | Interface abstractions |
 
-```
-backend-app/
-  binary/
-    main.go
-    http/
-      main.go
-      .env
-      Dockerfile
-      Makefile
-      docs/                  # Swagger output
-  domain/
-    url-shortener/
-      dto/ handler/ integration/ repository/ service/
-    graph/
-      handler/ service/
-    friend/
-      dto/ handler/ repository/ service/
-    message/
-      dto/ handler/ repository/ service/
-    user/
-      dto/ handler/ integration/ service/
-    healthcheck/
-      handler/ service/
-  infrastructure/
-    database/
-      postgres/
-      redis/
-    http/
-      middleware/
-      server.go
-    telemetry/
-      logger/ metrics/ span/
-    instance/
-      local/                 # docker-compose + observability stack
-    deploymnet/
-      collector/ deployments/
-  mock/
-```
+### Business Domains
 
-## Technology Stack
+| Domain | File | Description |
+|--------|------|-------------|
+| [URL Shortener](domain/url-shortener/README.md) | Shorten and expand URLs |
+| [Friend](domain/friend/README.md) | Manage friendships |
+| [Message](domain/message/README.md) | Messaging system |
+| [User](domain/user/README.md) | Authentication |
+| [Graph](domain/graph/README.md) | Graph algorithms |
+| [Healthcheck](domain/healthcheck/README.md) | Health monitoring |
 
-- **Language**: Go 1.25
-- **HTTP Routing**: `gorilla/mux`
-- **DB Access**: `sqlx`, `lib/pq` (PostgreSQL)
-- **Cache**: `go-redis`
-- **Auth**: Google OAuth (`x/oauth2`) + JWT (`golang-jwt`)
-- **Observability**: OpenTelemetry SDK + `otelhttp`
-- **API Docs**: `swaggo/swag` + `http-swagger`
-- **Infra**: Docker, docker-compose, optional Kubernetes manifests
+### Infrastructure
 
-## Domains and Infrastructure Connections
+| Component | File | Description |
+|-----------|------|-------------|
+| [Database Layer](infrastructure/database/README.md) | Database clients |
+| [PostgreSQL Client](infrastructure/database/postgres/README.md) | PostgreSQL connectivity |
+| [Redis Client](infrastructure/database/redis/README.md) | Redis caching |
+| [HTTP Infrastructure](infrastructure/http/README.md) | HTTP server & middleware |
+| [HTTP Middleware](infrastructure/http/middleware/README.md) | Cross-cutting concerns |
+| [Telemetry Stack](infrastructure/telemetry/README.md) | Observability |
+| [Structured Logging](infrastructure/telemetry/logger/README.md) | Log aggregation |
+| [Metrics Collection](infrastructure/telemetry/metrics/README.md) | Metrics tracking |
+| [Distributed Tracing](infrastructure/telemetry/span/README.md) | Tracing |
+| [Deployment Infrastructure](infrastructure/deploymnet/README.md) | Deployment configs |
+| [HTTP Server](binary/http/README.md) | HTTP server entry point |
+| [Test Mocks](mock/README.md) | Test doubles |
 
-### Domain overview
-- **URL Shortener**: cache-aside repo using PostgreSQL + Redis.
-- **Friend**: friendship graph stored in PostgreSQL.
-- **Message**: conversations stored in PostgreSQL.
-- **User**: Google OAuth integration, issues JWT app tokens.
-- **Graph**: algorithm endpoints (no DB dependency).
-- **Healthcheck**: liveness checks only.
+### Observability Tools
 
-### Domain ↔ Infra map
-```mermaid
-flowchart LR
-  subgraph Domains
-    URL[URL Shortener]
-    Friend[Friend]
-    Message[Message]
-    User[User]
-    Graph[Graph]
-    Health[Healthcheck]
-  end
+| Tool | File | Description |
+|------|------|-------------|
+| Prometheus | [Metrics Collection](infrastructure/telemetry/metrics/README.md) | Metrics storage |
+| Loki | [Structured Logging](infrastructure/telemetry/logger/README.md) | Log aggregation |
+| Jaeger | [Distributed Tracing](infrastructure/telemetry/span/README.md) | Trace visualization |
+| Grafana | [Telemetry Stack](infrastructure/telemetry/README.md) | Dashboard visualization |
 
-  subgraph Infrastructure
-    PG[(PostgreSQL)]
-    Redis[(Redis)]
-    OTel[OTel Logger/Metrics/Span]
-    HTTP[HTTP Middleware]
-  end
+### Authentication
 
-  URL --> PG
-  URL --> Redis
-  Friend --> PG
-  Message --> PG
-  User --> OTel
-  Graph --> OTel
-  Health --> OTel
+| Component | File | Description |
+|-----------|------|-------------|
+| OAuth 2.0 | [User Domain](domain/user/README.md) | Google OAuth integration |
+| JWT Authentication | [User Domain](domain/user/README.md) | Token-based auth |
 
-  URL --> HTTP
-  Friend --> HTTP
-  Message --> HTTP
-  User --> HTTP
-  Graph --> HTTP
-  Health --> HTTP
-```
+### Kubernetes
 
-### Infra components (what they do)
-- **PostgreSQL** (`infrastructure/database/postgres`): SQL access + connection pooling.
-- **Redis** (`infrastructure/database/redis`): cache client + health ping.
-- **HTTP** (`infrastructure/http/middleware`): request logging, CORS, JSON enforcement, tracing, metrics, response time.
-- **Telemetry** (`infrastructure/telemetry`): OTLP exporters for logs/metrics/traces.
+| Topic | File | Description |
+|------|------|-------------|
+| Kubernetes Probes | [Healthcheck Domain](domain/healthcheck/README.md) | Liveness/readiness probes |
 
-## Local Start (Docker-first)
+### Architecture Decision Records
 
-### 1) Start local dependencies (DB + observability)
-```zsh
-cd /Users/m.syamsularifin/go/portofolio/backend-app/infrastructure/instance/local
-make start
-```
-
-This boots:
-- OTel Collector (4317/4318)
-- Jaeger UI (16686)
-- Prometheus (9090)
-- Grafana (3000)
-- Loki (3100)
-- Postgres (5432)
-- Redis (6379)
-
-### 2) Build Swagger + run backend container
-```zsh
-cd /Users/m.syamsularifin/go/portofolio/backend-app/binary/http
-make up
-```
-
-### 3) Open Swagger UI
-- `http://localhost:5000/swagger/index.html`
-
-### 4) Verify observability
-- Jaeger: `http://localhost:16686`
-- Grafana: `http://localhost:3000`
-- Prometheus: `http://localhost:9090`
-
-### Common env overrides
-Edit `backend-app/binary/http/.env` to adjust service name, OTEL endpoint, and DB settings.
+For detailed architectural decisions, see [ADR documentation](docs/adr/001-code-structure.md).
 
 ---
 
-If you want, I can add a short diagram for request lifecycle or include API route summaries.
+## Obsidian Vault
+
+To open this codebase in Obsidian as a knowledge graph:
+
+1. Open Obsidian
+2. Click "Open folder as vault"
+3. Select `/Users/m.syamsularifin/go/portofolio/backend-app/`
+
+The graph view will show:
+- All documentation files as nodes
+- Connections between related concepts
+- Clear clusters for domains, infrastructure, and patterns
+
+---
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Documentation Vault](#documentation-vault)
+  - [High-Level Architecture](#high-level-architecture)
+  - [Design Patterns](#design-patterns)
+  - [Business Domains](#business-domains)
+  - [Infrastructure](#infrastructure)
+  - [Observability Tools](#observability-tools)
+  - [Authentication](#authentication)
+  - [Kubernetes](#kubernetes)
+  - [Architecture Decision Records](#architecture-decision-records)
+- [Local Development](#local-development)
+- [API Endpoints](#api-endpoints)
+- [Technology Stack](#technology-stack)
+
+## Local Development
+
+### Services
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| Backend App | 5000 | HTTP API |
+| OTel Collector | 4317, 4318 | Telemetry ingestion |
+| Jaeger UI | 16686 | Trace visualization |
+| Prometheus | 9090 | Metrics query |
+| Grafana | 3000 | Dashboards |
+| Loki | 3100 | Log aggregation |
+| PostgreSQL | 5432 | Primary database |
+| Redis | 6379 | Caching layer |
+
+### Access Points
+
+- **API**: `http://localhost:5000`
+- **Swagger UI**: `http://localhost:5000/swagger/index.html`
+- **Jaeger**: `http://localhost:16686`
+- **Prometheus**: `http://localhost:9090`
+- **Grafana**: `http://localhost:3000` (admin/admin)
+
+## API Endpoints
+
+| Domain | Base Path | Methods |
+|--------|-----------|---------|
+| URL Shortener | `/url` | `POST /shorten`, `GET /{shortCode}` |
+| Graph | `/graph` | Algorithm endpoints |
+| Friend | `/friend` | CRUD operations |
+| Message | `/message` | Send/receive messages |
+| User | `/user` | OAuth, token management |
+| Healthcheck | `/health` | Liveness, readiness probes |
+
+## Technology Stack
+
+| Category       | Technology         |
+| -------------- | ------------------ |
+| Language       | Go 1.25+           |
+| HTTP Routing   | `gorilla/mux`      |
+| Database       | PostgreSQL, Redis  |
+| Authentication | Google OAuth, JWT  |
+| Observability  | OpenTelemetry      |
+| Documentation  | Swagger/OpenAPI    |
+| Deployment     | Docker, Kubernetes |
+
+---
+
+**Last Updated**: 2026-03-02
