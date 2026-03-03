@@ -12,6 +12,7 @@ import (
 
 // Config holds the PostgreSQL configuration
 type Config struct {
+	URI      string
 	User     string
 	Host     string
 	Password string
@@ -40,24 +41,31 @@ var configurePool configurePoolFunc = func(db *sqlx.DB) {
 
 // NewPostgresClient creates a new PostgreSQL client connection
 func NewPostgresClient(ctx context.Context, cfg Config) (*sqlx.DB, error) {
-	sslmode := cfg.SSLMode
-	if sslmode == "" {
-		if cfg.Database == "production" {
-			sslmode = "require"
-		} else {
-			sslmode = "disable"
-		}
-	}
+	var connectionString string
 
-	connectionString := fmt.Sprintf(
-		"user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
-		cfg.User,
-		cfg.Database,
-		sslmode,
-		cfg.Password,
-		cfg.Host,
-		cfg.Port,
-	)
+	if cfg.URI != "" {
+		// Use the URI directly
+		connectionString = cfg.URI
+	} else {
+		sslmode := cfg.SSLMode
+		if sslmode == "" {
+			if cfg.Database == "production" {
+				sslmode = "require"
+			} else {
+				sslmode = "disable"
+			}
+		}
+
+		connectionString = fmt.Sprintf(
+			"user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
+			cfg.User,
+			cfg.Database,
+			sslmode,
+			cfg.Password,
+			cfg.Host,
+			cfg.Port,
+		)
+	}
 
 	db, err := connectFunc(ctx, "postgres", connectionString)
 	if err != nil {
@@ -66,4 +74,14 @@ func NewPostgresClient(ctx context.Context, cfg Config) (*sqlx.DB, error) {
 
 	configurePool(db)
 	return db, nil
+}
+
+// NewClient creates a new PostgreSQL client (alias for NewPostgresClient)
+func NewClient(ctx context.Context, cfg Config) (*sqlx.DB, error) {
+	return NewPostgresClient(ctx, cfg)
+}
+
+// TestConnection tests the database connection
+func TestConnection(ctx context.Context, db *sqlx.DB) error {
+	return db.PingContext(ctx)
 }

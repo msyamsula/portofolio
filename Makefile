@@ -1,8 +1,9 @@
 INFRA_DIR ?= backend-app/infrastructure/instance/local
 HTTP_DIR ?= backend-app/binary/http
+PG_AGENT_DIR ?= backend-app/binary/pg-agent
 CV_DIR ?= frontend-app/cv
 
-.PHONY: infra-start infra-stop swagger up stop start-backend stop-backend start-frontend stop-frontend start-all stop-all test generate
+.PHONY: infra-start infra-stop swagger up stop start-backend stop-backend start-frontend stop-frontend start-all stop-all test generate pg-agent pg-agent-build
 
 start-all: start-backend start-frontend
 
@@ -44,3 +45,15 @@ test:
 
 generate:
 	go generate ./backend-app/...
+
+pg-agent: pg-agent-build
+	@echo "Starting PostgreSQL CLI Agent..."
+	@cd $(PG_AGENT_DIR) && go run main.go
+
+pg-agent-build:
+	@echo "Building pg-agent..."
+	@go build -o bin/pg-agent $(PG_AGENT_DIR)/main.go
+
+pg-agent-run:
+	@echo "Running PostgreSQL CLI Agent..."
+	@./bin/pg-agent
