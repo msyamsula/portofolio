@@ -1,0 +1,175 @@
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — event_log and conversation tables.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: msg-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-message}
+    volumes:
+      - msg_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    networks:
+      - message-net
+
+  # ---------------------------------------------------------------------------
+  # Kafka in KRaft mode (no ZooKeeper) — single broker for local development.
+  # Partition key = conversationID so events for the same conversation are
+  # ordered within a partition.
+  # ---------------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: msg-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - msg_kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - message-net
+
+  # ---------------------------------------------------------------------------
+  # migrate — one-shot: applies migration/up.sql then exits.
+  # api, worker, and reconciler all depend on this completing first.
+  # ---------------------------------------------------------------------------
+  migrate:
+    image: postgres:16-alpine
+    container_name: msg-migrate
+    command: >
+      sh -c "psql '${DATABASE_URL:-postgres://postgres:postgres@postgres/message?sslmode=disable}' -f /migration/up.sql"
+    volumes:
+      - ./migration:/migration:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - message-net
+
+  # ---------------------------------------------------------------------------
+  # create-topics — one-shot: creates the Kafka topic then exits.
+  # 3 partitions allow up to 3 parallel worker replicas.
+  # entrypoint is overridden because the Confluent image's default entrypoint
+  # (the Confluent Docker run script) only understands broker configuration —
+  # passing arbitrary commands to it results in exit 127.
+  # ---------------------------------------------------------------------------
+  create-topics:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: msg-create-topics
+    entrypoint:
+      - /bin/bash
+      - -c
+      - >-
+        kafka-topics --bootstrap-server kafka:9092
+        --create --if-not-exists
+        --topic message.events
+        --partitions 3
+        --replication-factor 1
+        && echo Topics\ ready.
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - message-net
+
+  # ---------------------------------------------------------------------------
+  # api — HTTP server + outbox relay goroutine.
+  # Handles POST /message/send and polls the event_log for unpublished events.
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    container_name: msg-api
+    env_file: env.example
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      create-topics:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - message-net
+
+  # ---------------------------------------------------------------------------
+  # worker — Kafka consumer only.
+  # Reads events from the topic, calls ProcessSuccess (b→d transition).
+  # Scale horizontally; Kafka consumer group distributes partitions across replicas.
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: worker.Dockerfile
+    container_name: msg-worker
+    env_file: env.example
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      create-topics:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - message-net
+
+  # ---------------------------------------------------------------------------
+  # reconciler — cron sweeper running independently from api and worker.
+  #
+  # Ticks every RECONCILE_INTERVAL and drives stuck or failing messages toward
+  # SUCCESS or terminal FAILED. Runs as its own container so it can be:
+  #   - restarted independently without affecting the consumer
+  #   - scaled to 1 replica (safe to run multiple, version guard resolves races)
+  #   - monitored and alerting configured separately
+  # ---------------------------------------------------------------------------
+  reconciler:
+    build:
+      context: .
+      dockerfile: reconciler.Dockerfile
+    container_name: msg-reconciler
+    env_file: env.example
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - message-net
+
+volumes:
+  msg_postgres_data:
+  msg_kafka_data:
+
+networks:
+  message-net:
+    name: message-net
+    driver: bridge
