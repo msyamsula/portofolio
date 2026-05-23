@@ -50,6 +50,21 @@ type RaftNode struct {
 	// If now - lastHeartbeat > electionTimeout → start election.
 	lastHeartbeat time.Time
 
+	// nextIndex tracks, for each peer, the next log entry the leader
+	// will send to that peer. It's an optimistic guess — the leader
+	// assumes everyone is caught up when it first wins election.
+	// If a follower rejects, the leader decrements and retries.
+	//
+	// Only used when this node is the leader. nil otherwise.
+	nextIndex map[NodeID]int64
+
+	// matchIndex tracks, for each peer, the highest log entry that
+	// the peer has confirmed it received. This is a fact, not a guess.
+	// Only updated when a follower responds Success=true.
+	//
+	// Only used when this node is the leader. nil otherwise.
+	matchIndex map[NodeID]int64
+
 	// stopCh signals the loop to stop. Used for clean shutdown.
 	stopCh chan struct{}
 }
@@ -446,9 +461,24 @@ func (rn *RaftNode) CollectVote(resp RequestVoteResponse, votes *int) (won bool)
 }
 
 // becomeLeader transitions to leader state.
+//
+// Initializes nextIndex and matchIndex for all peers.
+//   - nextIndex: start at lastLogTxID + 1 (optimistic: assume everyone is caught up)
+//   - matchIndex: start at 0 (pessimistic: we haven't confirmed anything yet)
+//
+// If the guess is wrong (follower is behind), the follower will reject
+// and the leader will decrement nextIndex and retry. This converges quickly.
 func (rn *RaftNode) becomeLeader() {
 	rn.state.Role = Leader
 	rn.state.LeaderID = rn.config.Self
+
+	// Initialize replication tracking for each peer.
+	rn.nextIndex = make(map[NodeID]int64)
+	rn.matchIndex = make(map[NodeID]int64)
+	for _, peer := range rn.config.OtherPeers() {
+		rn.nextIndex[peer.ID] = rn.lastLogTxID + 1
+		rn.matchIndex[peer.ID] = 0
+	}
 
 	rn.logger.Info("became leader",
 		"node", rn.config.Self,
