@@ -1,0 +1,83 @@
+// This file defines the gRPC API — the network contract between client and server.
+//
+// WHY DO WE NEED THIS?
+//
+// Right now, our Store can only be used by Go code in the same process.
+// But ZooKeeper is a network service — clients connect over TCP from
+// different machines. We need a way to call Create/Get/Set/Delete
+// over the network.
+//
+// gRPC solves this:
+//   Client (any language) → sends request over network → Server (our Go code)
+//
+// This .proto file defines:
+//   1. What operations exist (Create, Get, Set, Delete, GetChildren)
+//   2. What data each request contains
+//   3. What data each response contains
+//
+// From this file, protoc generates Go code that handles all the
+// serialization, networking, and connection management for us.
+
+syntax = "proto3";
+
+package zk;
+
+// This tells protoc where to put the generated Go code.
+option go_package = "github.com/syamsularifin/zookeeper/api/proto/zkpb";
+
+// The ZooKeeper service — one RPC per tree operation.
+service ZooKeeper {
+  rpc Create(CreateRequest) returns (CreateResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Set(SetRequest) returns (SetResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc GetChildren(GetChildrenRequest) returns (GetChildrenResponse);
+}
+
+// --- Create ---
+
+message CreateRequest {
+  string path = 1;  // e.g. "/app/config"
+  bytes data = 2;   // e.g. "port=5432"
+}
+
+message CreateResponse {
+  string path = 1;  // the path that was created
+}
+
+// --- Get ---
+
+message GetRequest {
+  string path = 1;
+}
+
+message GetResponse {
+  bytes data = 1;
+}
+
+// --- Set ---
+
+message SetRequest {
+  string path = 1;
+  bytes data = 2;
+}
+
+message SetResponse {}
+
+// --- Delete ---
+
+message DeleteRequest {
+  string path = 1;
+}
+
+message DeleteResponse {}
+
+// --- GetChildren ---
+
+message GetChildrenRequest {
+  string path = 1;
+}
+
+message GetChildrenResponse {
+  repeated string children = 1;  // list of child names
+}
