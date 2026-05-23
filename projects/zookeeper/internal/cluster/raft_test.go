@@ -155,3 +155,133 @@ func TestRequestVote_RejectCandidateWithShorterLog(t *testing.T) {
 		t.Fatal("should reject candidate with shorter log")
 	}
 }
+
+// --- Election tests ---
+
+// This test simulates a full election with 3 nodes.
+// No network — just direct method calls.
+// Read it top to bottom to see exactly how an election works.
+func TestElection_FullFlow(t *testing.T) {
+	// Setup: 3 nodes, all start as followers in term 0.
+	node1 := newTestNode("node-1")
+	node2 := newTestNode("node-2")
+	node3 := newTestNode("node-3")
+
+	// --- BEFORE ELECTION ---
+	// All three are followers. No leader exists.
+	s1 := node1.GetState()
+	if s1.Role != Follower || s1.CurrentTerm != 0 {
+		t.Fatal("node-1 should be follower in term 0")
+	}
+
+	// --- node-2 STARTS AN ELECTION ---
+	// Imagine node-2's heartbeat timer expired (no leader heartbeat received).
+	// node-2 calls StartElection():
+	//   1. term goes from 0 → 1
+	//   2. becomes candidate
+	//   3. votes for itself
+	//   4. returns a vote request to send to others
+	voteReq := node2.StartElection()
+
+	s2 := node2.GetState()
+	if s2.Role != Candidate {
+		t.Fatalf("node-2 should be candidate, got %s", s2.Role)
+	}
+	if s2.CurrentTerm != 1 {
+		t.Fatalf("node-2 should be in term 1, got %d", s2.CurrentTerm)
+	}
+	if s2.VotedFor != "node-2" {
+		t.Fatalf("node-2 should have voted for itself, got %s", s2.VotedFor)
+	}
+
+	// --- node-2 SENDS vote request to node-1 and node-3 ---
+	// In real life this goes over the network.
+	// In this test we just call the method directly.
+	resp1 := node1.HandleRequestVote(voteReq)
+	resp3 := node3.HandleRequestVote(voteReq)
+
+	// Both should grant their vote (term 1 is new, no one voted yet)
+	if !resp1.VoteGranted {
+		t.Fatal("node-1 should vote for node-2")
+	}
+	if !resp3.VoteGranted {
+		t.Fatal("node-3 should vote for node-2")
+	}
+
+	// --- node-2 COLLECTS votes ---
+	// It already has 1 vote (itself). Quorum for 3 nodes = 2.
+	votes := 1 // self-vote
+
+	won := node2.CollectVote(resp1, &votes)
+	// votes is now 2, quorum is 2 → should win
+	if !won {
+		t.Fatal("node-2 should win after getting node-1's vote")
+	}
+
+	// --- AFTER ELECTION ---
+	// node-2 is now leader
+	s2 = node2.GetState()
+	if s2.Role != Leader {
+		t.Fatalf("node-2 should be leader, got %s", s2.Role)
+	}
+	if s2.LeaderID != "node-2" {
+		t.Fatalf("node-2 should know it's the leader, got %s", s2.LeaderID)
+	}
+
+	// node-1 and node-3 are followers who voted for node-2
+	s1 = node1.GetState()
+	if s1.VotedFor != "node-2" {
+		t.Fatalf("node-1 should have voted for node-2, got %s", s1.VotedFor)
+	}
+}
+
+// This test shows what happens when an election fails (split vote).
+func TestElection_SplitVote(t *testing.T) {
+	node1 := newTestNode("node-1")
+	node2 := newTestNode("node-2")
+	node3 := newTestNode("node-3")
+
+	// node-2 AND node-3 both start elections at the same time.
+	// Both increment to term 1 and vote for themselves.
+	voteReq2 := node2.StartElection()
+	voteReq3 := node3.StartElection()
+
+	// node-1 receives node-2's request first → votes for node-2
+	resp := node1.HandleRequestVote(voteReq2)
+	if !resp.VoteGranted {
+		t.Fatal("node-1 should vote for node-2 (first request)")
+	}
+
+	// node-1 then receives node-3's request → rejects (already voted)
+	resp = node1.HandleRequestVote(voteReq3)
+	if resp.VoteGranted {
+		t.Fatal("node-1 should reject node-3 (already voted for node-2)")
+	}
+
+	// node-2 asks node-3 → node-3 already voted for itself → rejects
+	resp = node3.HandleRequestVote(voteReq2)
+	if resp.VoteGranted {
+		t.Fatal("node-3 should reject node-2 (voted for itself)")
+	}
+
+	// Result:
+	//   node-2 has 2 votes: itself + node-1       → wins (quorum = 2)
+	//   node-3 has 1 vote:  itself                 → loses
+	votes2 := 1 // self-vote
+	won := node2.CollectVote(
+		RequestVoteResponse{Term: 1, VoteGranted: true}, // node-1's yes
+		&votes2,
+	)
+	if !won {
+		t.Fatal("node-2 should win with 2 votes")
+	}
+
+	votes3 := 1 // self-vote
+	won = node3.CollectVote(
+		RequestVoteResponse{Term: 1, VoteGranted: false}, // node-1's no
+		&votes3,
+	)
+	if won {
+		t.Fatal("node-3 should not win with only 1 vote")
+	}
+}

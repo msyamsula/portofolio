@@ -173,6 +173,97 @@ func (rn *RaftNode) HandleRequestVote(req RequestVoteRequest) RequestVoteRespons
 	}
 }
 
+// StartElection is called when a follower hasn't heard from the leader
+// for too long. It transitions to candidate and prepares a vote request.
+//
+// What happens step by step:
+//
+//   1. Increment term (new election round)
+//   2. Become candidate
+//   3. Vote for myself
+//   4. Return the vote request to send to other nodes
+//
+// This method does NOT send the request — it just prepares it.
+// The caller (network layer) is responsible for actually sending it
+// to other nodes and collecting responses.
+func (rn *RaftNode) StartElection() RequestVoteRequest {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+
+	// Step 1: new term
+	rn.state.CurrentTerm++
+
+	// Step 2: become candidate
+	rn.state.Role = Candidate
+	rn.state.LeaderID = "" // no leader during election
+
+	// Step 3: vote for myself
+	rn.state.VotedFor = rn.config.Self
+
+	rn.logger.Info("starting election",
+		"node", rn.config.Self,
+		"term", rn.state.CurrentTerm,
+	)
+
+	// Step 4: build the request for others
+	return RequestVoteRequest{
+		Term:        rn.state.CurrentTerm,
+		CandidateID: rn.config.Self,
+		LastLogTxID: rn.lastLogTxID,
+	}
+}
+
+// CollectVote processes one vote response and returns true if we've won.
+//
+// The candidate calls this for each response it receives.
+// It tracks how many votes it has. When it reaches quorum, it wins.
+//
+// Returns:
+//   won=true  → we got enough votes, we're now leader
+//   won=false → not enough votes yet (or we lost)
+func (rn *RaftNode) CollectVote(resp RequestVoteResponse, votes *int) (won bool) {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+
+	// If we're no longer a candidate, ignore the vote.
+	// This can happen if we received a higher-term message
+	// while waiting for votes and stepped down to follower.
+	if rn.state.Role != Candidate {
+		return false
+	}
+
+	// If the voter's term is higher, step down.
+	// Someone else started a newer election.
+	if resp.Term > rn.state.CurrentTerm {
+		rn.becomeFollower(resp.Term, "")
+		return false
+	}
+
+	// Count the vote
+	if resp.VoteGranted {
+		*votes++
+	}
+
+	// Check if we have enough votes
+	if *votes >= rn.config.QuorumSize() {
+		rn.becomeLeader()
+		return true
+	}
+
+	return false
+}
+
+// becomeLeader transitions to leader state.
+func (rn *RaftNode) becomeLeader() {
+	rn.state.Role = Leader
+	rn.state.LeaderID = rn.config.Self
+
+	rn.logger.Info("became leader",
+		"node", rn.config.Self,
+		"term", rn.state.CurrentTerm,
+	)
+}
+
 // becomeFollower transitions to follower state.
 // Called when we see a higher term or receive a valid AppendEntries.
 func (rn *RaftNode) becomeFollower(term int64, leaderID NodeID) {
