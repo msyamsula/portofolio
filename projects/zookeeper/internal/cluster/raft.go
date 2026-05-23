@@ -1,10 +1,13 @@
 package cluster
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 )
 
 // RaftNode is the core Raft state machine.
@@ -29,15 +32,195 @@ type RaftNode struct {
 	// Used in elections: voters won't vote for a candidate with
 	// a shorter log (fewer entries) than their own.
 	lastLogTxID int64
+
+	// transport is how we send messages to other nodes.
+	transport Transport
+
+	// heartbeatInterval is how often the leader sends heartbeats.
+	// Default: 100ms. Short enough that followers don't time out.
+	heartbeatInterval time.Duration
+
+	// electionTimeout range. Each follower picks a random timeout
+	// between min and max. The randomness prevents all followers
+	// from starting elections at the same time (split vote).
+	electionTimeoutMin time.Duration
+	electionTimeoutMax time.Duration
+
+	// lastHeartbeat is when we last heard from the leader.
+	// If now - lastHeartbeat > electionTimeout → start election.
+	lastHeartbeat time.Time
+
+	// stopCh signals the loop to stop. Used for clean shutdown.
+	stopCh chan struct{}
 }
 
 // NewRaftNode creates a node that starts as a follower in term 0.
-func NewRaftNode(config Config) *RaftNode {
+func NewRaftNode(config Config, transport Transport) *RaftNode {
 	return &RaftNode{
-		config: config,
-		state:  NewNodeState(),
-		logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		config:             config,
+		state:              NewNodeState(),
+		logger:             slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		transport:          transport,
+		heartbeatInterval:  100 * time.Millisecond,
+		electionTimeoutMin: 300 * time.Millisecond,
+		electionTimeoutMax: 500 * time.Millisecond,
+		lastHeartbeat:      time.Now(),
+		stopCh:             make(chan struct{}),
 	}
+}
+
+// randomElectionTimeout returns a random duration between min and max.
+// The randomness is critical: if all nodes used the same timeout,
+// they'd all start elections at the same time → split vote → no leader.
+//
+// We use crypto/rand instead of math/rand because:
+//   - math/rand is predictable (seeded by a deterministic source)
+//   - crypto/rand uses the OS entropy pool (/dev/urandom)
+//   - In a cluster, all nodes might start at the same time with similar
+//     state. math/rand could produce similar sequences. crypto/rand won't.
+func (rn *RaftNode) randomElectionTimeout() time.Duration {
+	spread := int64(rn.electionTimeoutMax - rn.electionTimeoutMin)
+
+	var b [8]byte
+	rand.Read(b[:])
+	n := int64(binary.LittleEndian.Uint64(b[:])) % spread
+	if n < 0 {
+		n = -n
+	}
+
+	return rn.electionTimeoutMin + time.Duration(n)
+}
+
+// Run starts the main loop in a goroutine.
+// The loop does one thing: check what role I am and act accordingly.
+//
+//   Leader:    send heartbeats every 100ms
+//   Follower:  if no heartbeat received for 300-500ms → start election
+//   Candidate: same as follower (election timed out, try again)
+func (rn *RaftNode) Run() {
+	go rn.loop()
+}
+
+// Stop shuts down the loop.
+func (rn *RaftNode) Stop() {
+	close(rn.stopCh)
+}
+
+// loop is the main event loop. It runs forever until Stop is called.
+//
+// Every 50ms it wakes up and asks: "what should I do right now?"
+//
+//   If I'm the leader:
+//     Has 100ms passed since my last heartbeat?
+//     YES → send heartbeats to all followers
+//
+//   If I'm a follower or candidate:
+//     Has 300-500ms passed since I last heard from the leader?
+//     YES → start an election
+func (rn *RaftNode) loop() {
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-rn.stopCh:
+			return
+		case <-ticker.C:
+			rn.tick()
+		}
+	}
+}
+
+// tick is called every 50ms. It checks the current role and acts.
+func (rn *RaftNode) tick() {
+	rn.mu.Lock()
+	role := rn.state.Role
+	rn.mu.Unlock()
+
+	switch role {
+	case Leader:
+		rn.leaderTick()
+	case Follower, Candidate:
+		rn.followerTick()
+	}
+}
+
+// leaderTick sends heartbeats to all followers.
+func (rn *RaftNode) leaderTick() {
+	rn.mu.Lock()
+	req := AppendEntriesRequest{
+		Term:     rn.state.CurrentTerm,
+		LeaderID: rn.config.Self,
+		Entries:  nil, // empty = heartbeat
+	}
+	rn.mu.Unlock()
+
+	// Send heartbeat to every other node.
+	// We don't wait for responses here — heartbeats are fire-and-forget.
+	// If a follower responds with a higher term, we'd step down,
+	// but we keep it simple for now.
+	for _, peer := range rn.config.OtherPeers() {
+		resp, err := rn.transport.SendAppendEntries(peer, req)
+		if err != nil {
+			continue // peer is unreachable, skip
+		}
+
+		// If any follower has a higher term, we're stale — step down
+		if resp.Term > req.Term {
+			rn.mu.Lock()
+			rn.becomeFollower(resp.Term, "")
+			rn.mu.Unlock()
+			return
+		}
+	}
+}
+
+// followerTick checks if we've timed out waiting for the leader.
+func (rn *RaftNode) followerTick() {
+	rn.mu.Lock()
+	elapsed := time.Since(rn.lastHeartbeat)
+	rn.mu.Unlock()
+
+	timeout := rn.randomElectionTimeout()
+	if elapsed < timeout {
+		return // still within timeout, do nothing
+	}
+
+	// Timeout expired. Leader is probably dead. Start an election.
+	rn.runElection()
+}
+
+// runElection runs a full election: start it, ask for votes, count them.
+func (rn *RaftNode) runElection() {
+	voteReq := rn.StartElection()
+	votes := 1 // we already voted for ourselves in StartElection
+
+	// Ask every other node for their vote
+	for _, peer := range rn.config.OtherPeers() {
+		resp, err := rn.transport.SendRequestVote(peer, voteReq)
+		if err != nil {
+			continue // peer unreachable, skip
+		}
+
+		won := rn.CollectVote(resp, &votes)
+		if won {
+			// We're leader now. Send immediate heartbeats so followers
+			// know we exist and don't start their own elections.
+			rn.leaderTick()
+			return
+		}
+	}
+
+	// Didn't get enough votes. Stay candidate.
+	// Next tick will check timeout again and maybe retry.
+}
+
+// ResetElectionTimer is called when we receive a valid heartbeat
+// from the leader. It pushes back the election timeout.
+func (rn *RaftNode) ResetElectionTimer() {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+	rn.lastHeartbeat = time.Now()
 }
 
 // GetState returns a copy of the current state. Safe for reading from outside.
@@ -88,6 +271,10 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 	// Rule 2: accept. The sender's term is >= ours.
 	// This means the sender is a legitimate leader (or at least newer than us).
 	rn.becomeFollower(req.Term, req.LeaderID)
+
+	// Reset the election timer. We just heard from the leader,
+	// so there's no need to start an election.
+	rn.lastHeartbeat = time.Now()
 
 	return AppendEntriesResponse{
 		Term:    rn.state.CurrentTerm,
@@ -199,6 +386,11 @@ func (rn *RaftNode) StartElection() RequestVoteRequest {
 
 	// Step 3: vote for myself
 	rn.state.VotedFor = rn.config.Self
+
+	// Step 3b: reset election timer so we don't immediately start
+	// another election on the next tick. We wait a full random timeout
+	// before trying again if this election fails.
+	rn.lastHeartbeat = time.Now()
 
 	rn.logger.Info("starting election",
 		"node", rn.config.Self,

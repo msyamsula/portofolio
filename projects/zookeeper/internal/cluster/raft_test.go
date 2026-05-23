@@ -1,17 +1,58 @@
 package cluster
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
+
+// fakeTransport connects nodes directly via method calls. No network needed.
+// It holds a map of all nodes so it can forward messages to the right one.
+type fakeTransport struct {
+	nodes map[NodeID]*RaftNode
+}
+
+func (ft *fakeTransport) SendRequestVote(peer Peer, req RequestVoteRequest) (RequestVoteResponse, error) {
+	node, ok := ft.nodes[peer.ID]
+	if !ok {
+		return RequestVoteResponse{}, fmt.Errorf("node %s not found", peer.ID)
+	}
+	return node.HandleRequestVote(req), nil
+}
+
+func (ft *fakeTransport) SendAppendEntries(peer Peer, req AppendEntriesRequest) (AppendEntriesResponse, error) {
+	node, ok := ft.nodes[peer.ID]
+	if !ok {
+		return AppendEntriesResponse{}, fmt.Errorf("node %s not found", peer.ID)
+	}
+	return node.HandleAppendEntries(req), nil
+}
+
+var testPeers = []Peer{
+	{ID: "node-1", Addr: "localhost:3001"},
+	{ID: "node-2", Addr: "localhost:3002"},
+	{ID: "node-3", Addr: "localhost:3003"},
+}
 
 func newTestNode(id NodeID) *RaftNode {
-	return NewRaftNode(Config{
-		Self: id,
-		Peers: []Peer{
-			{ID: "node-1", Addr: "localhost:3001"},
-			{ID: "node-2", Addr: "localhost:3002"},
-			{ID: "node-3", Addr: "localhost:3003"},
-		},
-	})
+	// Use a no-op transport for unit tests that don't need networking
+	return NewRaftNode(Config{Self: id, Peers: testPeers}, &fakeTransport{})
 }
+
+// newTestCluster creates 3 connected nodes that can talk to each other.
+func newTestCluster() (map[NodeID]*RaftNode, *fakeTransport) {
+	ft := &fakeTransport{nodes: make(map[NodeID]*RaftNode)}
+
+	for _, p := range testPeers {
+		node := NewRaftNode(Config{Self: p.ID, Peers: testPeers}, ft)
+		ft.nodes[p.ID] = node
+	}
+
+	return ft.nodes, ft
+}
+
+// ignore the unused warning for time in tests that don't use it
+var _ = time.Now
 
 // --- AppendEntries tests ---
 
@@ -284,4 +325,61 @@ func TestElection_SplitVote(t *testing.T) {
 	if won {
 		t.Fatal("node-3 should not win with only 1 vote")
 	}
+}
+
+// --- Automatic election test ---
+
+// This test starts 3 connected nodes, starts the loop, and waits
+// for a leader to be elected automatically. No manual calls.
+func TestElection_Automatic(t *testing.T) {
+	nodes, _ := newTestCluster()
+
+	// Make timeouts very short so the test runs fast.
+	for _, node := range nodes {
+		node.heartbeatInterval = 20 * time.Millisecond
+		node.electionTimeoutMin = 50 * time.Millisecond
+		node.electionTimeoutMax = 150 * time.Millisecond
+	}
+
+	// Start all 3 nodes. Each runs its loop in a goroutine.
+	for _, node := range nodes {
+		node.Run()
+	}
+
+	// Wait for an election to happen (should take < 200ms)
+	time.Sleep(500 * time.Millisecond)
+
+	// Stop all nodes
+	for _, node := range nodes {
+		node.Stop()
+	}
+
+	// Check: exactly one node should be leader
+	leaderCount := 0
+	var leaderID NodeID
+	for id, node := range nodes {
+		state := node.GetState()
+		if state.Role == Leader {
+			leaderCount++
+			leaderID = id
+		}
+	}
+
+	if leaderCount != 1 {
+		t.Fatalf("expected exactly 1 leader, got %d", leaderCount)
+	}
+
+	// Check: all followers should know who the leader is
+	for id, node := range nodes {
+		if id == leaderID {
+			continue
+		}
+		state := node.GetState()
+		if state.LeaderID != leaderID {
+			t.Fatalf("node %s thinks leader is %s, but actual leader is %s",
+				id, state.LeaderID, leaderID)
+		}
+	}
+
+	t.Logf("leader elected: %s", leaderID)
 }
