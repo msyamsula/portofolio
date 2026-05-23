@@ -13,33 +13,57 @@ import (
 	"github.com/syamsularifin/zookeeper/internal/wal"
 )
 
+// Storage is the interface RaftNode uses to access WAL and tree.
+//
+// Why an interface instead of a concrete Store?
+//   - RaftNode lives in package "cluster", Store lives in package "store"
+//   - An interface avoids tight coupling between the two
+//   - Tests can use a simple in-memory implementation (no temp files)
+//
+// In production, *store.Store implements this interface.
+// In tests, memoryStorage implements it.
+type Storage interface {
+	// AppendWAL writes an entry to the WAL (disk) and in-memory cache.
+	// The entry must already have a TxID assigned.
+	AppendWAL(entry wal.Entry) error
+
+	// ApplyTree applies an entry to the in-memory tree.
+	// Called only after the entry is committed (majority confirmed).
+	ApplyTree(entry wal.Entry) error
+
+	// GetWALEntriesFrom returns cached entries starting at fromTxID.
+	// Used by the leader to grab entries for replication.
+	GetWALEntriesFrom(fromTxID int64) []wal.Entry
+
+	// LastWALTxID returns the TxID of the last WAL entry.
+	// Returns 0 if no entries exist.
+	LastWALTxID() int64
+}
+
 // RaftNode is the core Raft state machine.
 //
 // It knows:
 //   - who it is and who the other nodes are (Config)
 //   - what state it's in: follower, candidate, or leader (NodeState)
 //
+// It owns:
+//   - a Storage (WAL + tree) for durability and state
+//
 // It can:
 //   - handle AppendEntries messages (from leader)
 //   - handle RequestVote messages (from candidates)
-//
-// No networking here. No timers. Just: "given this message, what should I do?"
-// We add networking and timers in later steps.
+//   - propose new writes (leader only)
 type RaftNode struct {
 	mu     sync.Mutex
 	config Config
 	state  *NodeState
 	logger *slog.Logger
 
-	// log is the in-memory list of WAL entries this node knows about.
-	// The leader appends new entries here via Propose().
-	// Followers will receive entries via AppendEntries (later step).
-	log []wal.Entry
-
-	// lastLogTxID tracks the TxID of our latest log entry.
-	// Used in elections: voters won't vote for a candidate with
-	// a shorter log (fewer entries) than their own.
-	lastLogTxID int64
+	// store is the durable storage: WAL (disk) + tree (memory).
+	// Leader writes to WAL during Propose.
+	// Follower writes to WAL during HandleAppendEntries.
+	// Both apply to tree after commit.
+	store Storage
 
 	// commitIndex is the highest TxID that's been committed
 	// (replicated to a majority of nodes). Entries up to this
@@ -55,14 +79,6 @@ type RaftNode struct {
 	// The gap between lastApplied and commitIndex is "committed
 	// but not yet applied." applyCommitted() closes this gap.
 	lastApplied int64
-
-	// applyFunc is called for each committed entry to apply it
-	// to the state machine. The Store will set this to a function
-	// that executes CREATE/SET/DELETE on the tree.
-	//
-	// If nil, entries are committed but not applied (useful for tests
-	// that only care about replication, not application).
-	applyFunc func(entry wal.Entry)
 
 	// transport is how we send messages to other nodes.
 	transport Transport
@@ -84,7 +100,7 @@ type RaftNode struct {
 	// nextIndex tracks, for each peer, the next log entry the leader
 	// will send to that peer. It's an optimistic guess — the leader
 	// assumes everyone is caught up when it first wins election.
-	// If a follower rejects, the leader decrements and retries.
+	// If a follower rejects, the leader jumps back using LastLogTxID.
 	//
 	// Only used when this node is the leader. nil otherwise.
 	nextIndex map[NodeID]int64
@@ -101,12 +117,13 @@ type RaftNode struct {
 }
 
 // NewRaftNode creates a node that starts as a follower in term 0.
-func NewRaftNode(config Config, transport Transport) *RaftNode {
+func NewRaftNode(config Config, transport Transport, store Storage) *RaftNode {
 	return &RaftNode{
 		config:             config,
 		state:              NewNodeState(),
 		logger:             slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		transport:          transport,
+		store:              store,
 		heartbeatInterval:  100 * time.Millisecond,
 		electionTimeoutMin: 300 * time.Millisecond,
 		electionTimeoutMax: 500 * time.Millisecond,
@@ -140,9 +157,9 @@ func (rn *RaftNode) randomElectionTimeout() time.Duration {
 // Run starts the main loop in a goroutine.
 // The loop does one thing: check what role I am and act accordingly.
 //
-//   Leader:    send heartbeats every 100ms
-//   Follower:  if no heartbeat received for 300-500ms → start election
-//   Candidate: same as follower (election timed out, try again)
+//	Leader:    send heartbeats every 100ms
+//	Follower:  if no heartbeat received for 300-500ms → start election
+//	Candidate: same as follower (election timed out, try again)
 func (rn *RaftNode) Run() {
 	go rn.loop()
 }
@@ -156,13 +173,12 @@ func (rn *RaftNode) Stop() {
 //
 // Every 50ms it wakes up and asks: "what should I do right now?"
 //
-//   If I'm the leader:
-//     Has 100ms passed since my last heartbeat?
-//     YES → send heartbeats to all followers
+//	If I'm the leader:
+//	  Send heartbeats (with any new entries) to all followers
 //
-//   If I'm a follower or candidate:
-//     Has 300-500ms passed since I last heard from the leader?
-//     YES → start an election
+//	If I'm a follower or candidate:
+//	  Has 300-500ms passed since I last heard from the leader?
+//	  YES → start an election
 func (rn *RaftNode) loop() {
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
@@ -194,11 +210,11 @@ func (rn *RaftNode) tick() {
 // leaderTick sends entries (or heartbeats) to all followers.
 //
 // For each peer:
-//   1. Look up nextIndex[peer] — "where is this peer in the log?"
-//   2. Grab all entries from nextIndex onward
-//   3. Send them via AppendEntries
-//   4. On success → advance nextIndex and matchIndex
-//   5. On failure → decrement nextIndex (peer is further behind than we thought)
+//  1. Look up nextIndex[peer] — "where is this peer in the log?"
+//  2. Grab entries from the WAL starting at nextIndex
+//  3. Send them via AppendEntries
+//  4. On success → advance nextIndex and matchIndex
+//  5. On failure → jump nextIndex to peer's LastLogTxID + 1
 //
 // If there are no new entries, this is just a heartbeat (empty Entries).
 func (rn *RaftNode) leaderTick() {
@@ -208,19 +224,12 @@ func (rn *RaftNode) leaderTick() {
 	rn.mu.Unlock()
 
 	for _, peer := range rn.config.OtherPeers() {
-		// Step 1: figure out what entries this peer needs.
 		rn.mu.Lock()
 		next := rn.nextIndex[peer.ID]
 
-		// Step 2: grab entries from nextIndex onward.
-		// next is a TxID (1-based). log is a slice (0-based).
-		// Entry with TxID=1 is at log[0], TxID=2 at log[1], etc.
-		// So entries to send start at log[next-1].
-		var entries []wal.Entry
-		if idx := int(next - 1); idx < len(rn.log) {
-			entries = rn.log[idx:]
-		}
-		// If idx >= len(log), entries stays nil → heartbeat.
+		// Grab entries from WAL starting at nextIndex.
+		// Returns nil if peer is caught up → heartbeat.
+		entries := rn.store.GetWALEntriesFrom(next)
 
 		req := AppendEntriesRequest{
 			Term:              term,
@@ -230,7 +239,6 @@ func (rn *RaftNode) leaderTick() {
 		}
 		rn.mu.Unlock()
 
-		// Step 3: send to peer.
 		resp, err := rn.transport.SendAppendEntries(peer, req)
 		if err != nil {
 			continue // peer unreachable, try next tick
@@ -245,14 +253,10 @@ func (rn *RaftNode) leaderTick() {
 		}
 
 		if resp.Success && len(entries) > 0 {
-			// Step 4: peer accepted. Update tracking.
 			lastSent := entries[len(entries)-1].TxID
 			rn.nextIndex[peer.ID] = lastSent + 1
 			rn.matchIndex[peer.ID] = lastSent
 		} else if !resp.Success {
-			// Step 5: peer rejected. Jump to where the peer actually is.
-			// Old way:  nextIndex-- (one at a time, slow)
-			// New way:  nextIndex = peer's LastLogTxID + 1 (one round trip)
 			rn.nextIndex[peer.ID] = resp.LastLogTxID + 1
 		}
 		rn.mu.Unlock()
@@ -270,11 +274,12 @@ func (rn *RaftNode) leaderTick() {
 // TxID that a majority of nodes have.
 //
 // Example (3-node cluster, quorum=2):
-//   leader's lastLogTxID = 1000
-//   matchIndex: node-1=700, node-3=500
-//   All values: [1000, 700, 500]
-//   Sort desc:  [1000, 700, 500]
-//   Quorum-th (2nd): 700 → commitIndex = 700
+//
+//	leader's LastWALTxID = 1000
+//	matchIndex: node-1=700, node-3=500
+//	All values: [1000, 700, 500]
+//	Sort desc:  [1000, 700, 500]
+//	Quorum-th (2nd): 700 → commitIndex = 700
 //
 // O(peers log peers) regardless of how many entries exist.
 func (rn *RaftNode) advanceCommitIndex() {
@@ -283,7 +288,7 @@ func (rn *RaftNode) advanceCommitIndex() {
 
 	// Collect: leader's own position + all peers.
 	matches := make([]int64, 0, len(rn.config.Peers))
-	matches = append(matches, rn.lastLogTxID) // leader has everything
+	matches = append(matches, rn.store.LastWALTxID()) // leader has everything
 	for _, peer := range rn.config.OtherPeers() {
 		matches = append(matches, rn.matchIndex[peer.ID])
 	}
@@ -317,15 +322,18 @@ func (rn *RaftNode) advanceCommitIndex() {
 //
 // Must be called with rn.mu held.
 func (rn *RaftNode) applyCommitted() {
-	if rn.applyFunc == nil {
+	if rn.lastApplied >= rn.commitIndex {
 		return
 	}
 
-	for rn.lastApplied < rn.commitIndex {
-		rn.lastApplied++
-		// log is 0-indexed, TxID is 1-indexed.
-		entry := rn.log[rn.lastApplied-1]
-		rn.applyFunc(entry)
+	// Grab all entries from lastApplied+1 onward, apply up to commitIndex.
+	entries := rn.store.GetWALEntriesFrom(rn.lastApplied + 1)
+	for _, entry := range entries {
+		if entry.TxID > rn.commitIndex {
+			break
+		}
+		rn.store.ApplyTree(entry)
+		rn.lastApplied = entry.TxID
 	}
 }
 
@@ -377,26 +385,19 @@ func (rn *RaftNode) ResetElectionTimer() {
 	rn.lastHeartbeat = time.Now()
 }
 
-// SetApplyFunc sets the function that's called when an entry is committed.
-// The Store uses this to execute CREATE/SET/DELETE on the tree.
-func (rn *RaftNode) SetApplyFunc(fn func(entry wal.Entry)) {
-	rn.mu.Lock()
-	defer rn.mu.Unlock()
-	rn.applyFunc = fn
-}
-
 // Propose accepts a new write from a client.
 //
 // Only the leader can accept writes. If this node isn't the leader,
 // it returns an error — the client should retry on the leader.
 //
 // What happens:
-//   1. Assign a TxID (lastLogTxID + 1)
-//   2. Append the entry to our local log
-//   3. Return the entry (caller will replicate it later)
+//  1. Check we're the leader
+//  2. Assign a TxID (last WAL TxID + 1)
+//  3. Write to WAL via store (durable on disk)
 //
-// Note: the entry is NOT committed yet. It's just in the leader's log.
-// It becomes committed only after a majority of nodes have it (later step).
+// The entry is not committed yet. On the next tick, leaderTick
+// replicates it to followers. Once majority confirms, it's committed.
+// Only then does it get applied to the tree.
 func (rn *RaftNode) Propose(op wal.OpType, path string, data []byte) (wal.Entry, error) {
 	rn.mu.Lock()
 	defer rn.mu.Unlock()
@@ -405,14 +406,16 @@ func (rn *RaftNode) Propose(op wal.OpType, path string, data []byte) (wal.Entry,
 		return wal.Entry{}, fmt.Errorf("not the leader")
 	}
 
-	rn.lastLogTxID++
 	entry := wal.Entry{
-		TxID: rn.lastLogTxID,
+		TxID: rn.store.LastWALTxID() + 1,
 		Op:   op,
 		Path: path,
 		Data: data,
 	}
-	rn.log = append(rn.log, entry)
+
+	if err := rn.store.AppendWAL(entry); err != nil {
+		return wal.Entry{}, fmt.Errorf("WAL write failed: %w", err)
+	}
 
 	rn.logger.Info("proposed entry",
 		"txid", entry.TxID,
@@ -445,17 +448,18 @@ func (rn *RaftNode) GetCommitIndex() int64 {
 //
 // The logic:
 //
-//   1. Is the sender's term < my term?
-//      YES → reject. The sender is a stale leader.
+//  1. Is the sender's term < my term?
+//     YES → reject. The sender is a stale leader.
 //
-//   2. Is the sender's term >= my term?
-//      YES → accept. This is a legitimate leader.
-//      → Update my term to match
-//      → Step down to follower (if I was candidate or leader)
-//      → Record who the leader is
+//  2. Is the sender's term >= my term?
+//     YES → accept. This is a legitimate leader.
+//     → Update my term to match
+//     → Step down to follower (if I was candidate or leader)
+//     → Record who the leader is
 //
-// That's the heartbeat logic. Now also handles log replication:
-//   3. Append any new entries from the leader to our log.
+//  3. Write new entries to our WAL (skip entries we already have).
+//  4. Update commitIndex from the leader.
+//  5. Apply any newly committed entries to the tree.
 func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesResponse {
 	rn.mu.Lock()
 	defer rn.mu.Unlock()
@@ -470,7 +474,7 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 		return AppendEntriesResponse{
 			Term:        rn.state.CurrentTerm,
 			Success:     false,
-			LastLogTxID: rn.lastLogTxID,
+			LastLogTxID: rn.store.LastWALTxID(),
 		}
 	}
 
@@ -480,21 +484,27 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 	// Reset the election timer.
 	rn.lastHeartbeat = time.Now()
 
-	// Rule 3: append new entries to our log.
-	// The leader already knows our lastLogTxID (from our response),
-	// so it only sends entries we don't have. Just append all of them.
+	// Rule 3: write new entries to our WAL.
+	// Skip entries we already have — the leader might resend
+	// entries we already received (e.g. after a rejected AppendEntries
+	// where the leader backed up nextIndex too far).
 	if len(req.Entries) > 0 {
-		rn.log = append(rn.log, req.Entries...)
-		rn.lastLogTxID = req.Entries[len(req.Entries)-1].TxID
+		myLastTxID := rn.store.LastWALTxID()
+		for _, entry := range req.Entries {
+			if entry.TxID > myLastTxID {
+				rn.store.AppendWAL(entry)
+			}
+		}
 	}
 
 	// Rule 4: update commitIndex from the leader.
-	// Use min(LeaderCommitIndex, lastLogTxID) because we can't commit
+	// Use min(LeaderCommitIndex, lastWALTxID) because we can't commit
 	// entries we don't have yet.
+	lastTxID := rn.store.LastWALTxID()
 	if req.LeaderCommitIndex > rn.commitIndex {
 		rn.commitIndex = req.LeaderCommitIndex
-		if rn.commitIndex > rn.lastLogTxID {
-			rn.commitIndex = rn.lastLogTxID
+		if rn.commitIndex > lastTxID {
+			rn.commitIndex = lastTxID
 		}
 	}
 
@@ -504,7 +514,7 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 	return AppendEntriesResponse{
 		Term:        rn.state.CurrentTerm,
 		Success:     true,
-		LastLogTxID: rn.lastLogTxID,
+		LastLogTxID: rn.store.LastWALTxID(),
 	}
 }
 
@@ -513,16 +523,16 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 // A candidate sends this to all nodes when it starts an election.
 // The voter decides:
 //
-//   1. Is the candidate's term < my term?
-//      YES → reject. The candidate is behind.
+//  1. Is the candidate's term < my term?
+//     YES → reject. The candidate is behind.
 //
-//   2. Have I already voted for someone else this term?
-//      YES → reject. One vote per term.
+//  2. Have I already voted for someone else this term?
+//     YES → reject. One vote per term.
 //
-//   3. Is the candidate's log less up-to-date than mine?
-//      YES → reject. Electing it could lose committed data.
+//  3. Is the candidate's log less up-to-date than mine?
+//     YES → reject. Electing it could lose committed data.
 //
-//   4. Otherwise → grant the vote.
+//  4. Otherwise → grant the vote.
 func (rn *RaftNode) HandleRequestVote(req RequestVoteRequest) RequestVoteResponse {
 	rn.mu.Lock()
 	defer rn.mu.Unlock()
@@ -561,11 +571,11 @@ func (rn *RaftNode) HandleRequestVote(req RequestVoteRequest) RequestVoteRespons
 
 	// Rule 3: is the candidate's log at least as up-to-date as mine?
 	// A candidate with fewer entries might be missing committed data.
-	if req.LastLogTxID < rn.lastLogTxID {
+	if req.LastLogTxID < rn.store.LastWALTxID() {
 		rn.logger.Info("rejecting vote: candidate log behind",
 			"from", req.CandidateID,
 			"their_last_tx", req.LastLogTxID,
-			"my_last_tx", rn.lastLogTxID,
+			"my_last_tx", rn.store.LastWALTxID(),
 		)
 		return RequestVoteResponse{
 			Term:        rn.state.CurrentTerm,
@@ -591,10 +601,10 @@ func (rn *RaftNode) HandleRequestVote(req RequestVoteRequest) RequestVoteRespons
 //
 // What happens step by step:
 //
-//   1. Increment term (new election round)
-//   2. Become candidate
-//   3. Vote for myself
-//   4. Return the vote request to send to other nodes
+//  1. Increment term (new election round)
+//  2. Become candidate
+//  3. Vote for myself
+//  4. Return the vote request to send to other nodes
 //
 // This method does NOT send the request — it just prepares it.
 // The caller (network layer) is responsible for actually sending it
@@ -627,7 +637,7 @@ func (rn *RaftNode) StartElection() RequestVoteRequest {
 	return RequestVoteRequest{
 		Term:        rn.state.CurrentTerm,
 		CandidateID: rn.config.Self,
-		LastLogTxID: rn.lastLogTxID,
+		LastLogTxID: rn.store.LastWALTxID(),
 	}
 }
 
@@ -637,8 +647,9 @@ func (rn *RaftNode) StartElection() RequestVoteRequest {
 // It tracks how many votes it has. When it reaches quorum, it wins.
 //
 // Returns:
-//   won=true  → we got enough votes, we're now leader
-//   won=false → not enough votes yet (or we lost)
+//
+//	won=true  → we got enough votes, we're now leader
+//	won=false → not enough votes yet (or we lost)
 func (rn *RaftNode) CollectVote(resp RequestVoteResponse, votes *int) (won bool) {
 	rn.mu.Lock()
 	defer rn.mu.Unlock()
@@ -674,20 +685,20 @@ func (rn *RaftNode) CollectVote(resp RequestVoteResponse, votes *int) (won bool)
 // becomeLeader transitions to leader state.
 //
 // Initializes nextIndex and matchIndex for all peers.
-//   - nextIndex: start at lastLogTxID + 1 (optimistic: assume everyone is caught up)
+//   - nextIndex: start at LastWALTxID + 1 (optimistic: assume everyone is caught up)
 //   - matchIndex: start at 0 (pessimistic: we haven't confirmed anything yet)
 //
 // If the guess is wrong (follower is behind), the follower will reject
-// and the leader will decrement nextIndex and retry. This converges quickly.
+// and the leader will jump nextIndex using LastLogTxID. This converges quickly.
 func (rn *RaftNode) becomeLeader() {
 	rn.state.Role = Leader
 	rn.state.LeaderID = rn.config.Self
 
-	// Initialize replication tracking for each peer.
+	lastTxID := rn.store.LastWALTxID()
 	rn.nextIndex = make(map[NodeID]int64)
 	rn.matchIndex = make(map[NodeID]int64)
 	for _, peer := range rn.config.OtherPeers() {
-		rn.nextIndex[peer.ID] = rn.lastLogTxID + 1
+		rn.nextIndex[peer.ID] = lastTxID + 1
 		rn.matchIndex[peer.ID] = 0
 	}
 

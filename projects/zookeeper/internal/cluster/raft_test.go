@@ -9,6 +9,53 @@ import (
 	"github.com/syamsularifin/zookeeper/internal/znode"
 )
 
+// memoryStorage is an in-memory implementation of Storage for tests.
+// No temp files, no disk I/O — just slices.
+type memoryStorage struct {
+	entries []wal.Entry
+	applied []wal.Entry
+	tree    *znode.DataTree // optional, for integration tests
+}
+
+func newMemoryStorage() *memoryStorage {
+	return &memoryStorage{}
+}
+
+func (ms *memoryStorage) AppendWAL(entry wal.Entry) error {
+	ms.entries = append(ms.entries, entry)
+	return nil
+}
+
+func (ms *memoryStorage) ApplyTree(entry wal.Entry) error {
+	ms.applied = append(ms.applied, entry)
+	if ms.tree != nil {
+		switch entry.Op {
+		case "CREATE":
+			return ms.tree.Create(entry.Path, entry.Data)
+		case "SET":
+			return ms.tree.Set(entry.Path, entry.Data)
+		case "DELETE":
+			return ms.tree.Delete(entry.Path)
+		}
+	}
+	return nil
+}
+
+func (ms *memoryStorage) GetWALEntriesFrom(fromTxID int64) []wal.Entry {
+	idx := int(fromTxID - 1)
+	if idx < 0 || idx >= len(ms.entries) {
+		return nil
+	}
+	return ms.entries[idx:]
+}
+
+func (ms *memoryStorage) LastWALTxID() int64 {
+	if len(ms.entries) == 0 {
+		return 0
+	}
+	return ms.entries[len(ms.entries)-1].TxID
+}
+
 // fakeTransport connects nodes directly via method calls. No network needed.
 // It holds a map of all nodes so it can forward messages to the right one.
 type fakeTransport struct {
@@ -37,21 +84,25 @@ var testPeers = []Peer{
 	{ID: "node-3", Addr: "localhost:3003"},
 }
 
-func newTestNode(id NodeID) *RaftNode {
-	// Use a no-op transport for unit tests that don't need networking
-	return NewRaftNode(Config{Self: id, Peers: testPeers}, &fakeTransport{})
+func newTestNode(id NodeID) (*RaftNode, *memoryStorage) {
+	ms := newMemoryStorage()
+	node := NewRaftNode(Config{Self: id, Peers: testPeers}, &fakeTransport{}, ms)
+	return node, ms
 }
 
 // newTestCluster creates 3 connected nodes that can talk to each other.
-func newTestCluster() (map[NodeID]*RaftNode, *fakeTransport) {
+func newTestCluster() (map[NodeID]*RaftNode, map[NodeID]*memoryStorage) {
 	ft := &fakeTransport{nodes: make(map[NodeID]*RaftNode)}
+	stores := make(map[NodeID]*memoryStorage)
 
 	for _, p := range testPeers {
-		node := NewRaftNode(Config{Self: p.ID, Peers: testPeers}, ft)
+		ms := newMemoryStorage()
+		stores[p.ID] = ms
+		node := NewRaftNode(Config{Self: p.ID, Peers: testPeers}, ft, ms)
 		ft.nodes[p.ID] = node
 	}
 
-	return ft.nodes, ft
+	return ft.nodes, stores
 }
 
 // ignore the unused warning for time in tests that don't use it
@@ -91,7 +142,7 @@ func TestPropose_LeaderAccepts(t *testing.T) {
 }
 
 func TestPropose_FollowerRejects(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	// node-1 is a follower — should reject
 	_, err := node.Propose("CREATE", "/app", []byte("hello"))
@@ -118,7 +169,6 @@ func TestCommit_AdvancesAfterMajority(t *testing.T) {
 	node2.Propose("CREATE", "/app", []byte("v1"))
 	node2.Propose("SET", "/app", []byte("v2"))
 	node2.Propose("CREATE", "/db", []byte("v3"))
-
 	// Before replication: commitIndex should be 0.
 	if ci := node2.GetCommitIndex(); ci != 0 {
 		t.Fatalf("expected commitIndex=0 before replication, got %d", ci)
@@ -172,16 +222,8 @@ func TestCommit_FollowerLearnsCommitIndex(t *testing.T) {
 // --- Apply tests ---
 
 func TestApply_LeaderAppliesCommittedEntries(t *testing.T) {
-	nodes, _ := newTestCluster()
+	nodes, stores := newTestCluster()
 	node2 := nodes["node-2"]
-
-	// Track what gets applied on the leader.
-	var applied []wal.Entry
-	node2.mu.Lock()
-	node2.applyFunc = func(entry wal.Entry) {
-		applied = append(applied, entry)
-	}
-	node2.mu.Unlock()
 
 	// Make node-2 the leader.
 	voteReq := node2.StartElection()
@@ -197,6 +239,7 @@ func TestApply_LeaderAppliesCommittedEntries(t *testing.T) {
 	node2.leaderTick()
 
 	// Leader should have applied both entries.
+	applied := stores["node-2"].applied
 	if len(applied) != 2 {
 		t.Fatalf("expected 2 applied entries, got %d", len(applied))
 	}
@@ -209,16 +252,8 @@ func TestApply_LeaderAppliesCommittedEntries(t *testing.T) {
 }
 
 func TestApply_FollowerAppliesAfterLearningCommitIndex(t *testing.T) {
-	nodes, _ := newTestCluster()
+	nodes, stores := newTestCluster()
 	node2 := nodes["node-2"]
-
-	// Track what gets applied on node-1 (a follower).
-	var applied []wal.Entry
-	nodes["node-1"].mu.Lock()
-	nodes["node-1"].applyFunc = func(entry wal.Entry) {
-		applied = append(applied, entry)
-	}
-	nodes["node-1"].mu.Unlock()
 
 	// Make node-2 the leader.
 	voteReq := node2.StartElection()
@@ -233,14 +268,15 @@ func TestApply_FollowerAppliesAfterLearningCommitIndex(t *testing.T) {
 	node2.leaderTick() // sends entries + advances commitIndex
 
 	// Follower hasn't applied yet — it learned commitIndex=0 in this tick.
-	if len(applied) != 0 {
-		t.Fatalf("expected 0 applied on follower after first tick, got %d", len(applied))
+	if len(stores["node-1"].applied) != 0 {
+		t.Fatalf("expected 0 applied on follower after first tick, got %d", len(stores["node-1"].applied))
 	}
 
 	// Second tick carries the updated commitIndex.
 	node2.leaderTick()
 
 	// Now follower should have applied the entry.
+	applied := stores["node-1"].applied
 	if len(applied) != 1 {
 		t.Fatalf("expected 1 applied entry on follower, got %d", len(applied))
 	}
@@ -252,7 +288,7 @@ func TestApply_FollowerAppliesAfterLearningCommitIndex(t *testing.T) {
 // --- Replication tests ---
 
 func TestReplication_LeaderSendsEntriesToFollowers(t *testing.T) {
-	nodes, _ := newTestCluster()
+	nodes, stores := newTestCluster()
 	node2 := nodes["node-2"]
 
 	// Make node-2 the leader.
@@ -272,36 +308,29 @@ func TestReplication_LeaderSendsEntriesToFollowers(t *testing.T) {
 	node2.Propose("SET", "/app", []byte("v2"))
 	node2.Propose("CREATE", "/db", []byte("v3"))
 
-	// Leader's log should have 3 entries.
-	node2.mu.Lock()
-	if len(node2.log) != 3 {
-		t.Fatalf("leader should have 3 entries, got %d", len(node2.log))
+	// Leader's WAL should have 3 entries.
+	if len(stores["node-2"].entries) != 3 {
+		t.Fatalf("leader should have 3 entries, got %d", len(stores["node-2"].entries))
 	}
-	node2.mu.Unlock()
 
 	// Followers have nothing yet — entries haven't been sent.
-	nodes["node-1"].mu.Lock()
-	if len(nodes["node-1"].log) != 0 {
+	if len(stores["node-1"].entries) != 0 {
 		t.Fatal("node-1 should have 0 entries before replication")
 	}
-	nodes["node-1"].mu.Unlock()
 
 	// Trigger one leaderTick — this sends entries to followers.
 	node2.leaderTick()
 
-	// Now both followers should have all 3 entries.
+	// Now both followers should have all 3 entries in their WAL.
 	for _, id := range []NodeID{"node-1", "node-3"} {
-		node := nodes[id]
-		node.mu.Lock()
-		count := len(node.log)
-		lastTx := node.lastLogTxID
-		node.mu.Unlock()
+		count := len(stores[id].entries)
+		lastTx := stores[id].LastWALTxID()
 
 		if count != 3 {
 			t.Fatalf("%s should have 3 entries, got %d", id, count)
 		}
 		if lastTx != 3 {
-			t.Fatalf("%s should have lastLogTxID=3, got %d", id, lastTx)
+			t.Fatalf("%s should have lastWALTxID=3, got %d", id, lastTx)
 		}
 	}
 
@@ -321,7 +350,7 @@ func TestReplication_LeaderSendsEntriesToFollowers(t *testing.T) {
 // --- AppendEntries tests ---
 
 func TestAppendEntries_AcceptFromLeader(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	// Leader in term 1 sends heartbeat
 	resp := node.HandleAppendEntries(AppendEntriesRequest{
@@ -343,7 +372,7 @@ func TestAppendEntries_AcceptFromLeader(t *testing.T) {
 }
 
 func TestAppendEntries_RejectStaleTerm(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	// First, node learns about term 5
 	node.HandleAppendEntries(AppendEntriesRequest{Term: 5, LeaderID: "node-2"})
@@ -362,7 +391,7 @@ func TestAppendEntries_RejectStaleTerm(t *testing.T) {
 // --- RequestVote tests ---
 
 func TestRequestVote_GrantVote(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	resp := node.HandleRequestVote(RequestVoteRequest{
 		Term:        1,
@@ -381,7 +410,7 @@ func TestRequestVote_GrantVote(t *testing.T) {
 }
 
 func TestRequestVote_RejectStaleTerm(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	// Node is in term 5
 	node.HandleAppendEntries(AppendEntriesRequest{Term: 5, LeaderID: "node-3"})
@@ -399,7 +428,7 @@ func TestRequestVote_RejectStaleTerm(t *testing.T) {
 }
 
 func TestRequestVote_RejectAlreadyVoted(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	// Vote for node-2 in term 1
 	node.HandleRequestVote(RequestVoteRequest{
@@ -421,7 +450,7 @@ func TestRequestVote_RejectAlreadyVoted(t *testing.T) {
 }
 
 func TestRequestVote_NewTermClearsVote(t *testing.T) {
-	node := newTestNode("node-1")
+	node, _ := newTestNode("node-1")
 
 	// Vote for node-2 in term 1
 	node.HandleRequestVote(RequestVoteRequest{
@@ -443,11 +472,12 @@ func TestRequestVote_NewTermClearsVote(t *testing.T) {
 }
 
 func TestRequestVote_RejectCandidateWithShorterLog(t *testing.T) {
-	node := newTestNode("node-1")
-	// Simulate this node having entries up to TxID 10
-	node.mu.Lock()
-	node.lastLogTxID = 10
-	node.mu.Unlock()
+	// Pre-populate storage with 10 entries so the node has a long log.
+	ms := newMemoryStorage()
+	for i := int64(1); i <= 10; i++ {
+		ms.entries = append(ms.entries, wal.Entry{TxID: i})
+	}
+	node := NewRaftNode(Config{Self: "node-1", Peers: testPeers}, &fakeTransport{}, ms)
 
 	// Candidate only has entries up to TxID 5
 	resp := node.HandleRequestVote(RequestVoteRequest{
@@ -468,9 +498,9 @@ func TestRequestVote_RejectCandidateWithShorterLog(t *testing.T) {
 // Read it top to bottom to see exactly how an election works.
 func TestElection_FullFlow(t *testing.T) {
 	// Setup: 3 nodes, all start as followers in term 0.
-	node1 := newTestNode("node-1")
-	node2 := newTestNode("node-2")
-	node3 := newTestNode("node-3")
+	node1, _ := newTestNode("node-1")
+	node2, _ := newTestNode("node-2")
+	node3, _ := newTestNode("node-3")
 
 	// --- BEFORE ELECTION ---
 	// All three are followers. No leader exists.
@@ -542,9 +572,9 @@ func TestElection_FullFlow(t *testing.T) {
 
 // This test shows what happens when an election fails (split vote).
 func TestElection_SplitVote(t *testing.T) {
-	node1 := newTestNode("node-1")
-	node2 := newTestNode("node-2")
-	node3 := newTestNode("node-3")
+	node1, _ := newTestNode("node-1")
+	node2, _ := newTestNode("node-2")
+	node3, _ := newTestNode("node-3")
 
 	// node-2 AND node-3 both start elections at the same time.
 	// Both increment to term 1 and vote for themselves.
@@ -651,30 +681,17 @@ func TestElection_Automatic(t *testing.T) {
 // --- Integration test: Raft → Tree ---
 
 // This test proves the full flow end-to-end:
-//   propose on leader → replicate → commit → apply → all trees have the data
 //
-// Each node has its own DataTree. The applyFunc executes operations on it.
+//	propose on leader → replicate → commit → apply → all trees have the data
+//
+// Each node has its own DataTree inside its memoryStorage.
 // After the flow completes, all 3 trees should be identical.
 func TestIntegration_RaftToTree(t *testing.T) {
-	nodes, _ := newTestCluster()
+	nodes, stores := newTestCluster()
 
-	// Give each node its own tree and wire applyFunc.
-	trees := make(map[NodeID]*znode.DataTree)
-	for id, node := range nodes {
-		tree := znode.NewDataTree()
-		trees[id] = tree
-
-		// Capture tree in closure — each node applies to its own tree.
-		node.SetApplyFunc(func(entry wal.Entry) {
-			switch entry.Op {
-			case "CREATE":
-				tree.Create(entry.Path, entry.Data)
-			case "SET":
-				tree.Set(entry.Path, entry.Data)
-			case "DELETE":
-				tree.Delete(entry.Path)
-			}
-		})
+	// Give each node a tree in its storage.
+	for _, ms := range stores {
+		ms.tree = znode.NewDataTree()
 	}
 
 	// Elect node-2 as leader.
@@ -698,7 +715,7 @@ func TestIntegration_RaftToTree(t *testing.T) {
 	node2.leaderTick()
 
 	// Leader's tree should have the data now.
-	data, err := trees["node-2"].Get("/app")
+	data, err := stores["node-2"].tree.Get("/app")
 	if err != nil {
 		t.Fatalf("leader tree should have /app: %v", err)
 	}
@@ -710,8 +727,8 @@ func TestIntegration_RaftToTree(t *testing.T) {
 	node2.leaderTick()
 
 	// All 3 trees should have the same data.
-	for id, tree := range trees {
-		data, err := tree.Get("/app")
+	for id, ms := range stores {
+		data, err := ms.tree.Get("/app")
 		if err != nil {
 			t.Fatalf("%s tree should have /app: %v", id, err)
 		}
@@ -719,7 +736,7 @@ func TestIntegration_RaftToTree(t *testing.T) {
 			t.Fatalf("%s: expected 'hello', got '%s'", id, string(data))
 		}
 
-		data, err = tree.Get("/app/config")
+		data, err = ms.tree.Get("/app/config")
 		if err != nil {
 			t.Fatalf("%s tree should have /app/config: %v", id, err)
 		}

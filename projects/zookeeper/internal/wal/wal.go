@@ -245,6 +245,37 @@ func (w *WAL) LastTxID() int64 {
 	return w.nextTxID - 1
 }
 
+// AppendEntry writes an entry to the log WITHOUT assigning a TxID.
+// The entry must already have a valid TxID set by the caller.
+//
+// Used in cluster mode: the leader assigns TxIDs, and followers
+// write entries with the leader's TxIDs. We can't auto-assign
+// because all nodes must agree on which TxID maps to which operation.
+func (w *WAL) AppendEntry(entry Entry) error {
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return fmt.Errorf("failed to marshal entry: %w", err)
+	}
+
+	data = append(data, '\n')
+
+	if _, err := w.file.Write(data); err != nil {
+		return fmt.Errorf("failed to write entry: %w", err)
+	}
+
+	if err := w.file.Sync(); err != nil {
+		return fmt.Errorf("failed to sync: %w", err)
+	}
+
+	// Keep nextTxID in sync so LastTxID() returns the right value
+	// and so standalone Append() still works if mixed with AppendEntry().
+	if entry.TxID >= w.nextTxID {
+		w.nextTxID = entry.TxID + 1
+	}
+
+	return nil
+}
+
 // Close flushes and closes the file.
 func (w *WAL) Close() error {
 	return w.file.Close()

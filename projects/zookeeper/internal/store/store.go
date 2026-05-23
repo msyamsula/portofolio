@@ -44,6 +44,18 @@ type Store struct {
 	tree *znode.DataTree
 	wal  *wal.WAL
 
+	// entries is an in-memory cache of all WAL entries.
+	// It mirrors what's on disk — populated during recovery,
+	// appended to during AppendWAL.
+	//
+	// Why keep this? The leader needs fast access to entries
+	// for replication (grab entries[nextIndex:] every tick).
+	// Reading from disk every 50ms would be too slow.
+	//
+	// This is NOT a duplicate — Store manages both the disk WAL
+	// and this cache as a single source of truth.
+	entries []wal.Entry
+
 	// snapPath is where we save/load the snapshot file.
 	snapPath string
 }
@@ -108,6 +120,9 @@ func (s *Store) replay(afterTxID int64) error {
 	if err != nil {
 		return err
 	}
+
+	// Cache all entries in memory for fast access during replication.
+	s.entries = entries
 
 	for _, entry := range entries {
 		// Skip entries already covered by the snapshot.
@@ -211,6 +226,50 @@ func (s *Store) TakeSnapshot() error {
 	}
 
 	return snapshot.Save(s.snapPath, snap)
+}
+
+// AppendWAL writes an entry to the WAL (disk) and the in-memory cache.
+// The entry must already have a valid TxID — assigned by the leader.
+// It does NOT apply to the tree — that happens later, after commit.
+//
+// Used by Raft:
+//   - Leader calls this during Propose (before replication)
+//   - Follower calls this during HandleAppendEntries (when receiving entries)
+func (s *Store) AppendWAL(entry wal.Entry) error {
+	if err := s.wal.AppendEntry(entry); err != nil {
+		return err
+	}
+	s.entries = append(s.entries, entry)
+	return nil
+}
+
+// ApplyTree applies a single entry to the in-memory tree.
+// It does NOT write to the WAL — that already happened.
+//
+// Used by Raft after an entry is committed (majority confirmed).
+func (s *Store) ApplyTree(entry wal.Entry) error {
+	return s.applyToTree(entry)
+}
+
+// GetWALEntriesFrom returns all cached entries starting at the given TxID.
+// Returns nil if fromTxID is beyond what we have.
+//
+// Used by the leader to grab entries for replication:
+//   entries := store.GetWALEntriesFrom(nextIndex[peer])
+func (s *Store) GetWALEntriesFrom(fromTxID int64) []wal.Entry {
+	// entries is 0-indexed, TxIDs are 1-indexed.
+	// TxID=1 is at entries[0], TxID=5 is at entries[4].
+	idx := int(fromTxID - 1)
+	if idx < 0 || idx >= len(s.entries) {
+		return nil
+	}
+	return s.entries[idx:]
+}
+
+// LastWALTxID returns the TxID of the last WAL entry.
+// Returns 0 if no entries exist.
+func (s *Store) LastWALTxID() int64 {
+	return s.wal.LastTxID()
 }
 
 // Close takes a final snapshot, then closes the WAL file.
