@@ -377,6 +377,14 @@ func (rn *RaftNode) ResetElectionTimer() {
 	rn.lastHeartbeat = time.Now()
 }
 
+// SetApplyFunc sets the function that's called when an entry is committed.
+// The Store uses this to execute CREATE/SET/DELETE on the tree.
+func (rn *RaftNode) SetApplyFunc(fn func(entry wal.Entry)) {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+	rn.applyFunc = fn
+}
+
 // Propose accepts a new write from a client.
 //
 // Only the leader can accept writes. If this node isn't the leader,

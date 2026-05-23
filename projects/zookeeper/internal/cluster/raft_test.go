@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/syamsularifin/zookeeper/internal/wal"
+	"github.com/syamsularifin/zookeeper/internal/znode"
 )
 
 // fakeTransport connects nodes directly via method calls. No network needed.
@@ -645,4 +646,85 @@ func TestElection_Automatic(t *testing.T) {
 	}
 
 	t.Logf("leader elected: %s", leaderID)
+}
+
+// --- Integration test: Raft → Tree ---
+
+// This test proves the full flow end-to-end:
+//   propose on leader → replicate → commit → apply → all trees have the data
+//
+// Each node has its own DataTree. The applyFunc executes operations on it.
+// After the flow completes, all 3 trees should be identical.
+func TestIntegration_RaftToTree(t *testing.T) {
+	nodes, _ := newTestCluster()
+
+	// Give each node its own tree and wire applyFunc.
+	trees := make(map[NodeID]*znode.DataTree)
+	for id, node := range nodes {
+		tree := znode.NewDataTree()
+		trees[id] = tree
+
+		// Capture tree in closure — each node applies to its own tree.
+		node.SetApplyFunc(func(entry wal.Entry) {
+			switch entry.Op {
+			case "CREATE":
+				tree.Create(entry.Path, entry.Data)
+			case "SET":
+				tree.Set(entry.Path, entry.Data)
+			case "DELETE":
+				tree.Delete(entry.Path)
+			}
+		})
+	}
+
+	// Elect node-2 as leader.
+	node2 := nodes["node-2"]
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	if node2.GetState().Role != Leader {
+		t.Fatal("node-2 should be leader")
+	}
+
+	// Client writes to the leader.
+	node2.Propose("CREATE", "/app", []byte("hello"))
+	node2.Propose("CREATE", "/app/config", []byte("v1"))
+
+	// Tick 1: replicate entries + leader commits + leader applies.
+	node2.leaderTick()
+
+	// Leader's tree should have the data now.
+	data, err := trees["node-2"].Get("/app")
+	if err != nil {
+		t.Fatalf("leader tree should have /app: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Fatalf("expected 'hello', got '%s'", string(data))
+	}
+
+	// Tick 2: followers learn commitIndex + followers apply.
+	node2.leaderTick()
+
+	// All 3 trees should have the same data.
+	for id, tree := range trees {
+		data, err := tree.Get("/app")
+		if err != nil {
+			t.Fatalf("%s tree should have /app: %v", id, err)
+		}
+		if string(data) != "hello" {
+			t.Fatalf("%s: expected 'hello', got '%s'", id, string(data))
+		}
+
+		data, err = tree.Get("/app/config")
+		if err != nil {
+			t.Fatalf("%s tree should have /app/config: %v", id, err)
+		}
+		if string(data) != "v1" {
+			t.Fatalf("%s: expected 'v1', got '%s'", id, string(data))
+		}
+	}
 }
