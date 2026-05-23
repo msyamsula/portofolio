@@ -32,7 +32,9 @@ package store
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/syamsularifin/zookeeper/internal/snapshot"
 	"github.com/syamsularifin/zookeeper/internal/wal"
 	"github.com/syamsularifin/zookeeper/internal/znode"
 )
@@ -41,28 +43,55 @@ import (
 type Store struct {
 	tree *znode.DataTree
 	wal  *wal.WAL
+
+	// snapPath is where we save/load the snapshot file.
+	snapPath string
 }
 
-// New creates a Store with a fresh DataTree and opens the WAL file.
-// If the WAL file has existing entries, it replays them to rebuild the tree.
-func New(walPath string) (*Store, error) {
+// New creates a Store, recovers from snapshot + WAL, and is ready to serve.
+//
+// The full recovery flow:
+//
+//   1. Load snapshot (if exists)  → tree has state at TxID X
+//   2. Open WAL                   → read all entries
+//   3. Replay WAL entries > X     → tree is fully up to date
+//
+// On first boot (no snapshot, no WAL), we just start with an empty tree.
+func New(walPath string, snapPath string) (*Store, error) {
+	s := &Store{
+		tree:     znode.NewDataTree(),
+		snapPath: snapPath,
+	}
+
+	// Step 1: Load snapshot if it exists.
+	//
+	// snap = nil means no snapshot file (first boot). That's fine.
+	// snap != nil means we have a previous state to restore.
+	snap, err := snapshot.Load(snapPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load snapshot: %w", err)
+	}
+
+	var snapshotTxID int64
+	if snap != nil {
+		s.tree.RestoreFromSnapshot(snap.Nodes)
+		snapshotTxID = snap.TxID
+	}
+
+	// Step 2: Open the WAL file.
 	w, err := wal.Open(walPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open WAL: %w", err)
 	}
+	s.wal = w
 
-	s := &Store{
-		tree: znode.NewDataTree(),
-		wal:  w,
-	}
-
-	// Replay existing WAL entries to rebuild the tree.
-	// This is what happens on restart:
-	//   1. Open the WAL file (entries are still there on disk)
-	//   2. Read each entry
-	//   3. Apply it to the empty tree
-	//   4. Tree is now back to its last state
-	if err := s.replay(); err != nil {
+	// Step 3: Replay WAL entries that came AFTER the snapshot.
+	//
+	// If snapshot was at TxID=100, we skip entries 1-100 (already in snapshot)
+	// and only replay 101, 102, 103...
+	//
+	// If there's no snapshot (snapshotTxID=0), we replay everything.
+	if err := s.replay(snapshotTxID); err != nil {
 		w.Close()
 		return nil, fmt.Errorf("WAL replay failed: %w", err)
 	}
@@ -70,23 +99,23 @@ func New(walPath string) (*Store, error) {
 	return s, nil
 }
 
-// replay reads all WAL entries and applies them to the tree.
-// Called once during startup to recover state.
-func (s *Store) replay() error {
+// replay reads WAL entries and applies those that came after the snapshot.
+//
+// afterTxID = 0 means "replay everything" (no snapshot).
+// afterTxID = 100 means "skip entries 1-100, replay 101+".
+func (s *Store) replay(afterTxID int64) error {
 	entries, err := s.wal.ReadAll()
 	if err != nil {
 		return err
 	}
 
 	for _, entry := range entries {
-		// Apply each entry to the tree. We ignore errors here because
-		// some operations might "fail" during replay:
-		//
-		// Example: WAL has CREATE /app, then DELETE /app, then CREATE /app.
-		// All 3 succeed on replay. But if the process crashed after the
-		// WAL write but before the tree apply, we might have a WAL entry
-		// for a CREATE that was never applied, followed by a DELETE.
-		// The DELETE would fail ("not found"), and that's fine — we skip it.
+		// Skip entries already covered by the snapshot.
+		if entry.TxID <= afterTxID {
+			continue
+		}
+
+		// Ignore errors — see explanation in applyToTree.
 		_ = s.applyToTree(entry)
 	}
 
@@ -160,7 +189,33 @@ func (s *Store) GetChildren(path string) ([]string, error) {
 	return s.tree.GetChildren(path)
 }
 
-// Close shuts down the store and closes the WAL file.
+// TakeSnapshot saves the current tree state to disk.
+//
+// When to call this:
+//   - Periodically (e.g. every 1000 writes)
+//   - Before shutdown (to minimize replay on next startup)
+//
+// What it does:
+//   1. Ask the tree for a flat list of all znodes
+//   2. Ask the WAL for the current TxID
+//   3. Save both to the snapshot file
+//
+// After this, on next restart:
+//   - Load this snapshot → tree is at TxID X
+//   - Replay only WAL entries after X → much faster
+func (s *Store) TakeSnapshot() error {
+	snap := &snapshot.Snapshot{
+		TxID:      s.wal.LastTxID(),
+		Timestamp: time.Now(),
+		Nodes:     s.tree.ToSnapshot(),
+	}
+
+	return snapshot.Save(s.snapPath, snap)
+}
+
+// Close takes a final snapshot, then closes the WAL file.
+// The snapshot minimizes WAL replay on next startup.
 func (s *Store) Close() error {
+	s.TakeSnapshot()
 	return s.wal.Close()
 }

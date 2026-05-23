@@ -237,6 +237,14 @@ func (w *WAL) ReadAll() ([]Entry, error) {
 	return entries, nil
 }
 
+// LastTxID returns the most recently assigned TxID.
+// Returns 0 if no entries have been written.
+//
+// Used by snapshot: "this snapshot covers everything up to TxID X"
+func (w *WAL) LastTxID() int64 {
+	return w.nextTxID - 1
+}
+
 // Close flushes and closes the file.
 func (w *WAL) Close() error {
 	return w.file.Close()
