@@ -36,6 +36,11 @@ type AppendEntriesRequest struct {
 	// Entries is the list of WAL entries to replicate.
 	// Empty for heartbeats, non-empty for log replication.
 	Entries []wal.Entry
+
+	// LeaderCommitIndex is the leader's commitIndex.
+	// The follower uses this to know which entries are safe to apply.
+	// The follower sets its own commitIndex = min(LeaderCommitIndex, its lastLogTxID).
+	LeaderCommitIndex int64
 }
 
 // AppendEntriesResponse is the follower's reply to the leader.

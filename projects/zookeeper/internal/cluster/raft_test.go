@@ -97,6 +97,75 @@ func TestPropose_FollowerRejects(t *testing.T) {
 	}
 }
 
+// --- Commit tests ---
+
+func TestCommit_AdvancesAfterMajority(t *testing.T) {
+	nodes, _ := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Make node-2 the leader.
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	// Propose 3 entries.
+	node2.Propose("CREATE", "/app", []byte("v1"))
+	node2.Propose("SET", "/app", []byte("v2"))
+	node2.Propose("CREATE", "/db", []byte("v3"))
+
+	// Before replication: commitIndex should be 0.
+	if ci := node2.GetCommitIndex(); ci != 0 {
+		t.Fatalf("expected commitIndex=0 before replication, got %d", ci)
+	}
+
+	// One leaderTick: sends entries to followers + checks majority.
+	node2.leaderTick()
+
+	// After replication: all 3 nodes have all 3 entries.
+	// Quorum = 2. Leader has them (1) + each follower confirmed (2).
+	// So commitIndex should advance to 3.
+	if ci := node2.GetCommitIndex(); ci != 3 {
+		t.Fatalf("expected commitIndex=3 after replication, got %d", ci)
+	}
+}
+
+func TestCommit_FollowerLearnsCommitIndex(t *testing.T) {
+	nodes, _ := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Make node-2 the leader.
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	// Propose and replicate.
+	node2.Propose("CREATE", "/app", []byte("v1"))
+	node2.Propose("SET", "/app", []byte("v2"))
+	node2.leaderTick() // sends entries + advances commitIndex
+
+	// Leader's commitIndex should be 2.
+	if ci := node2.GetCommitIndex(); ci != 2 {
+		t.Fatalf("leader commitIndex should be 2, got %d", ci)
+	}
+
+	// Followers don't know yet — commitIndex was sent BEFORE it advanced.
+	// The next leaderTick will carry the updated commitIndex.
+	node2.leaderTick()
+
+	// Now followers should have commitIndex = 2.
+	for _, id := range []NodeID{"node-1", "node-3"} {
+		if ci := nodes[id].GetCommitIndex(); ci != 2 {
+			t.Fatalf("%s commitIndex should be 2, got %d", id, ci)
+		}
+	}
+}
+
 // --- Replication tests ---
 
 func TestReplication_LeaderSendsEntriesToFollowers(t *testing.T) {

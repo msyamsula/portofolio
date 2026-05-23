@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -39,6 +40,14 @@ type RaftNode struct {
 	// Used in elections: voters won't vote for a candidate with
 	// a shorter log (fewer entries) than their own.
 	lastLogTxID int64
+
+	// commitIndex is the highest TxID that's been committed
+	// (replicated to a majority of nodes). Entries up to this
+	// point are safe to apply to the state machine (tree).
+	//
+	// Only the leader advances this. Followers learn it from
+	// the leader via AppendEntries.
+	commitIndex int64
 
 	// transport is how we send messages to other nodes.
 	transport Transport
@@ -199,9 +208,10 @@ func (rn *RaftNode) leaderTick() {
 		// If idx >= len(log), entries stays nil → heartbeat.
 
 		req := AppendEntriesRequest{
-			Term:     term,
-			LeaderID: leaderID,
-			Entries:  entries,
+			Term:              term,
+			LeaderID:          leaderID,
+			Entries:           entries,
+			LeaderCommitIndex: rn.commitIndex,
 		}
 		rn.mu.Unlock()
 
@@ -231,6 +241,52 @@ func (rn *RaftNode) leaderTick() {
 			rn.nextIndex[peer.ID] = resp.LastLogTxID + 1
 		}
 		rn.mu.Unlock()
+	}
+
+	// After sending to all peers, check if we can advance commitIndex.
+	rn.advanceCommitIndex()
+}
+
+// advanceCommitIndex checks if any new entries have been replicated
+// to a majority. If so, advance commitIndex.
+//
+// The approach: collect all matchIndex values (including leader's own),
+// sort descending, and pick the quorum-th value. That's the highest
+// TxID that a majority of nodes have.
+//
+// Example (3-node cluster, quorum=2):
+//   leader's lastLogTxID = 1000
+//   matchIndex: node-1=700, node-3=500
+//   All values: [1000, 700, 500]
+//   Sort desc:  [1000, 700, 500]
+//   Quorum-th (2nd): 700 → commitIndex = 700
+//
+// O(peers log peers) regardless of how many entries exist.
+func (rn *RaftNode) advanceCommitIndex() {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+
+	// Collect: leader's own position + all peers.
+	matches := make([]int64, 0, len(rn.config.Peers))
+	matches = append(matches, rn.lastLogTxID) // leader has everything
+	for _, peer := range rn.config.OtherPeers() {
+		matches = append(matches, rn.matchIndex[peer.ID])
+	}
+
+	// Sort descending.
+	sort.Slice(matches, func(i, j int) bool {
+		return matches[i] > matches[j]
+	})
+
+	// The quorum-th value (0-indexed: QuorumSize()-1) is the highest TxID
+	// that at least QuorumSize() nodes have.
+	committed := matches[rn.config.QuorumSize()-1]
+
+	if committed > rn.commitIndex {
+		rn.commitIndex = committed
+		rn.logger.Info("advanced commitIndex",
+			"commitIndex", rn.commitIndex,
+		)
 	}
 }
 
@@ -327,6 +383,13 @@ func (rn *RaftNode) GetState() NodeState {
 	return *rn.state
 }
 
+// GetCommitIndex returns the current commitIndex.
+func (rn *RaftNode) GetCommitIndex() int64 {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+	return rn.commitIndex
+}
+
 // HandleAppendEntries processes an AppendEntries message from a leader.
 //
 // This is the most common message in Raft. The leader sends it:
@@ -376,6 +439,16 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 	if len(req.Entries) > 0 {
 		rn.log = append(rn.log, req.Entries...)
 		rn.lastLogTxID = req.Entries[len(req.Entries)-1].TxID
+	}
+
+	// Rule 4: update commitIndex from the leader.
+	// Use min(LeaderCommitIndex, lastLogTxID) because we can't commit
+	// entries we don't have yet.
+	if req.LeaderCommitIndex > rn.commitIndex {
+		rn.commitIndex = req.LeaderCommitIndex
+		if rn.commitIndex > rn.lastLogTxID {
+			rn.commitIndex = rn.lastLogTxID
+		}
 	}
 
 	return AppendEntriesResponse{
