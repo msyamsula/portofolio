@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/syamsularifin/zookeeper/internal/wal"
 )
 
 // fakeTransport connects nodes directly via method calls. No network needed.
@@ -163,6 +165,86 @@ func TestCommit_FollowerLearnsCommitIndex(t *testing.T) {
 		if ci := nodes[id].GetCommitIndex(); ci != 2 {
 			t.Fatalf("%s commitIndex should be 2, got %d", id, ci)
 		}
+	}
+}
+
+// --- Apply tests ---
+
+func TestApply_LeaderAppliesCommittedEntries(t *testing.T) {
+	nodes, _ := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Track what gets applied on the leader.
+	var applied []wal.Entry
+	node2.mu.Lock()
+	node2.applyFunc = func(entry wal.Entry) {
+		applied = append(applied, entry)
+	}
+	node2.mu.Unlock()
+
+	// Make node-2 the leader.
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	// Propose 2 entries and replicate.
+	node2.Propose("CREATE", "/app", []byte("v1"))
+	node2.Propose("SET", "/app", []byte("v2"))
+	node2.leaderTick()
+
+	// Leader should have applied both entries.
+	if len(applied) != 2 {
+		t.Fatalf("expected 2 applied entries, got %d", len(applied))
+	}
+	if applied[0].Path != "/app" || applied[0].Op != "CREATE" {
+		t.Fatalf("first applied entry wrong: %+v", applied[0])
+	}
+	if applied[1].Path != "/app" || applied[1].Op != "SET" {
+		t.Fatalf("second applied entry wrong: %+v", applied[1])
+	}
+}
+
+func TestApply_FollowerAppliesAfterLearningCommitIndex(t *testing.T) {
+	nodes, _ := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Track what gets applied on node-1 (a follower).
+	var applied []wal.Entry
+	nodes["node-1"].mu.Lock()
+	nodes["node-1"].applyFunc = func(entry wal.Entry) {
+		applied = append(applied, entry)
+	}
+	nodes["node-1"].mu.Unlock()
+
+	// Make node-2 the leader.
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	// Propose and replicate.
+	node2.Propose("CREATE", "/app", []byte("v1"))
+	node2.leaderTick() // sends entries + advances commitIndex
+
+	// Follower hasn't applied yet — it learned commitIndex=0 in this tick.
+	if len(applied) != 0 {
+		t.Fatalf("expected 0 applied on follower after first tick, got %d", len(applied))
+	}
+
+	// Second tick carries the updated commitIndex.
+	node2.leaderTick()
+
+	// Now follower should have applied the entry.
+	if len(applied) != 1 {
+		t.Fatalf("expected 1 applied entry on follower, got %d", len(applied))
+	}
+	if applied[0].Path != "/app" {
+		t.Fatalf("applied entry wrong: %+v", applied[0])
 	}
 }
 

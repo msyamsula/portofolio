@@ -49,6 +49,21 @@ type RaftNode struct {
 	// the leader via AppendEntries.
 	commitIndex int64
 
+	// lastApplied is the highest TxID that's been applied to
+	// the state machine (tree). Always <= commitIndex.
+	//
+	// The gap between lastApplied and commitIndex is "committed
+	// but not yet applied." applyCommitted() closes this gap.
+	lastApplied int64
+
+	// applyFunc is called for each committed entry to apply it
+	// to the state machine. The Store will set this to a function
+	// that executes CREATE/SET/DELETE on the tree.
+	//
+	// If nil, entries are committed but not applied (useful for tests
+	// that only care about replication, not application).
+	applyFunc func(entry wal.Entry)
+
 	// transport is how we send messages to other nodes.
 	transport Transport
 
@@ -288,6 +303,30 @@ func (rn *RaftNode) advanceCommitIndex() {
 			"commitIndex", rn.commitIndex,
 		)
 	}
+
+	rn.applyCommitted()
+}
+
+// applyCommitted applies all entries between lastApplied and commitIndex.
+//
+// This is where entries finally become real: CREATE actually creates a znode,
+// SET actually updates data, DELETE actually removes a node.
+//
+// Called by both leader (after advanceCommitIndex) and follower
+// (after learning commitIndex from the leader).
+//
+// Must be called with rn.mu held.
+func (rn *RaftNode) applyCommitted() {
+	if rn.applyFunc == nil {
+		return
+	}
+
+	for rn.lastApplied < rn.commitIndex {
+		rn.lastApplied++
+		// log is 0-indexed, TxID is 1-indexed.
+		entry := rn.log[rn.lastApplied-1]
+		rn.applyFunc(entry)
+	}
 }
 
 // followerTick checks if we've timed out waiting for the leader.
@@ -450,6 +489,9 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 			rn.commitIndex = rn.lastLogTxID
 		}
 	}
+
+	// Rule 5: apply any newly committed entries.
+	rn.applyCommitted()
 
 	return AppendEntriesResponse{
 		Term:        rn.state.CurrentTerm,
