@@ -8,6 +8,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/syamsularifin/zookeeper/internal/wal"
 )
 
 // RaftNode is the core Raft state machine.
@@ -28,7 +30,12 @@ type RaftNode struct {
 	state  *NodeState
 	logger *slog.Logger
 
-	// lastLogTxID tracks the TxID of our latest WAL entry.
+	// log is the in-memory list of WAL entries this node knows about.
+	// The leader appends new entries here via Propose().
+	// Followers will receive entries via AppendEntries (later step).
+	log []wal.Entry
+
+	// lastLogTxID tracks the TxID of our latest log entry.
 	// Used in elections: voters won't vote for a candidate with
 	// a shorter log (fewer entries) than their own.
 	lastLogTxID int64
@@ -160,33 +167,70 @@ func (rn *RaftNode) tick() {
 	}
 }
 
-// leaderTick sends heartbeats to all followers.
+// leaderTick sends entries (or heartbeats) to all followers.
+//
+// For each peer:
+//   1. Look up nextIndex[peer] — "where is this peer in the log?"
+//   2. Grab all entries from nextIndex onward
+//   3. Send them via AppendEntries
+//   4. On success → advance nextIndex and matchIndex
+//   5. On failure → decrement nextIndex (peer is further behind than we thought)
+//
+// If there are no new entries, this is just a heartbeat (empty Entries).
 func (rn *RaftNode) leaderTick() {
 	rn.mu.Lock()
-	req := AppendEntriesRequest{
-		Term:     rn.state.CurrentTerm,
-		LeaderID: rn.config.Self,
-		Entries:  nil, // empty = heartbeat
-	}
+	term := rn.state.CurrentTerm
+	leaderID := rn.config.Self
 	rn.mu.Unlock()
 
-	// Send heartbeat to every other node.
-	// We don't wait for responses here — heartbeats are fire-and-forget.
-	// If a follower responds with a higher term, we'd step down,
-	// but we keep it simple for now.
 	for _, peer := range rn.config.OtherPeers() {
+		// Step 1: figure out what entries this peer needs.
+		rn.mu.Lock()
+		next := rn.nextIndex[peer.ID]
+
+		// Step 2: grab entries from nextIndex onward.
+		// next is a TxID (1-based). log is a slice (0-based).
+		// Entry with TxID=1 is at log[0], TxID=2 at log[1], etc.
+		// So entries to send start at log[next-1].
+		var entries []wal.Entry
+		if idx := int(next - 1); idx < len(rn.log) {
+			entries = rn.log[idx:]
+		}
+		// If idx >= len(log), entries stays nil → heartbeat.
+
+		req := AppendEntriesRequest{
+			Term:     term,
+			LeaderID: leaderID,
+			Entries:  entries,
+		}
+		rn.mu.Unlock()
+
+		// Step 3: send to peer.
 		resp, err := rn.transport.SendAppendEntries(peer, req)
 		if err != nil {
-			continue // peer is unreachable, skip
+			continue // peer unreachable, try next tick
 		}
 
-		// If any follower has a higher term, we're stale — step down
-		if resp.Term > req.Term {
-			rn.mu.Lock()
+		rn.mu.Lock()
+		// If peer has higher term, step down.
+		if resp.Term > term {
 			rn.becomeFollower(resp.Term, "")
 			rn.mu.Unlock()
 			return
 		}
+
+		if resp.Success && len(entries) > 0 {
+			// Step 4: peer accepted. Update tracking.
+			lastSent := entries[len(entries)-1].TxID
+			rn.nextIndex[peer.ID] = lastSent + 1
+			rn.matchIndex[peer.ID] = lastSent
+		} else if !resp.Success {
+			// Step 5: peer rejected. Jump to where the peer actually is.
+			// Old way:  nextIndex-- (one at a time, slow)
+			// New way:  nextIndex = peer's LastLogTxID + 1 (one round trip)
+			rn.nextIndex[peer.ID] = resp.LastLogTxID + 1
+		}
+		rn.mu.Unlock()
 	}
 }
 
@@ -238,6 +282,44 @@ func (rn *RaftNode) ResetElectionTimer() {
 	rn.lastHeartbeat = time.Now()
 }
 
+// Propose accepts a new write from a client.
+//
+// Only the leader can accept writes. If this node isn't the leader,
+// it returns an error — the client should retry on the leader.
+//
+// What happens:
+//   1. Assign a TxID (lastLogTxID + 1)
+//   2. Append the entry to our local log
+//   3. Return the entry (caller will replicate it later)
+//
+// Note: the entry is NOT committed yet. It's just in the leader's log.
+// It becomes committed only after a majority of nodes have it (later step).
+func (rn *RaftNode) Propose(op wal.OpType, path string, data []byte) (wal.Entry, error) {
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+
+	if rn.state.Role != Leader {
+		return wal.Entry{}, fmt.Errorf("not the leader")
+	}
+
+	rn.lastLogTxID++
+	entry := wal.Entry{
+		TxID: rn.lastLogTxID,
+		Op:   op,
+		Path: path,
+		Data: data,
+	}
+	rn.log = append(rn.log, entry)
+
+	rn.logger.Info("proposed entry",
+		"txid", entry.TxID,
+		"op", entry.Op,
+		"path", entry.Path,
+	)
+
+	return entry, nil
+}
+
 // GetState returns a copy of the current state. Safe for reading from outside.
 func (rn *RaftNode) GetState() NodeState {
 	rn.mu.Lock()
@@ -262,15 +344,13 @@ func (rn *RaftNode) GetState() NodeState {
 //      → Step down to follower (if I was candidate or leader)
 //      → Record who the leader is
 //
-// That's the entire heartbeat logic. Log replication (processing entries)
-// comes in a later step.
+// That's the heartbeat logic. Now also handles log replication:
+//   3. Append any new entries from the leader to our log.
 func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesResponse {
 	rn.mu.Lock()
 	defer rn.mu.Unlock()
 
 	// Rule 1: reject if the sender's term is old.
-	// This means the sender is a stale leader — it was leader in a previous
-	// term but doesn't know it's been replaced.
 	if req.Term < rn.state.CurrentTerm {
 		rn.logger.Info("rejecting AppendEntries: stale term",
 			"from", req.LeaderID,
@@ -278,22 +358,30 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 			"my_term", rn.state.CurrentTerm,
 		)
 		return AppendEntriesResponse{
-			Term:    rn.state.CurrentTerm,
-			Success: false,
+			Term:        rn.state.CurrentTerm,
+			Success:     false,
+			LastLogTxID: rn.lastLogTxID,
 		}
 	}
 
 	// Rule 2: accept. The sender's term is >= ours.
-	// This means the sender is a legitimate leader (or at least newer than us).
 	rn.becomeFollower(req.Term, req.LeaderID)
 
-	// Reset the election timer. We just heard from the leader,
-	// so there's no need to start an election.
+	// Reset the election timer.
 	rn.lastHeartbeat = time.Now()
 
+	// Rule 3: append new entries to our log.
+	// The leader already knows our lastLogTxID (from our response),
+	// so it only sends entries we don't have. Just append all of them.
+	if len(req.Entries) > 0 {
+		rn.log = append(rn.log, req.Entries...)
+		rn.lastLogTxID = req.Entries[len(req.Entries)-1].TxID
+	}
+
 	return AppendEntriesResponse{
-		Term:    rn.state.CurrentTerm,
-		Success: true,
+		Term:        rn.state.CurrentTerm,
+		Success:     true,
+		LastLogTxID: rn.lastLogTxID,
 	}
 }
 

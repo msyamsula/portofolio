@@ -48,6 +48,14 @@ type AppendEntriesResponse struct {
 	// Success indicates if the follower accepted the entries.
 	// false if the follower's term is higher (stale leader).
 	Success bool
+
+	// LastLogTxID tells the leader where this follower is in the log.
+	// On rejection, the leader uses this to jump nextIndex directly
+	// instead of decrementing by 1 each tick.
+	//
+	// Without this: leader guesses, backs up 1 per tick → slow.
+	// With this:    leader jumps to LastLogTxID + 1 → one round trip.
+	LastLogTxID int64
 }
 
 // RequestVoteRequest is sent by a candidate to all nodes during an election.

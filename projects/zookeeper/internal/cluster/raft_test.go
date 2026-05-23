@@ -54,6 +54,118 @@ func newTestCluster() (map[NodeID]*RaftNode, *fakeTransport) {
 // ignore the unused warning for time in tests that don't use it
 var _ = time.Now
 
+// --- Propose tests ---
+
+func TestPropose_LeaderAccepts(t *testing.T) {
+	nodes, _ := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Make node-2 the leader via election
+	voteReq := node2.StartElection()
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		votes := 1
+		node2.CollectVote(resp, &votes)
+	}
+
+	state := node2.GetState()
+	if state.Role != Leader {
+		t.Fatal("node-2 should be leader")
+	}
+
+	// Leader proposes a write
+	entry, err := node2.Propose("CREATE", "/app", []byte("hello"))
+	if err != nil {
+		t.Fatalf("leader should accept proposal: %v", err)
+	}
+
+	if entry.TxID != 1 {
+		t.Fatalf("expected TxID 1, got %d", entry.TxID)
+	}
+	if entry.Path != "/app" {
+		t.Fatalf("expected path /app, got %s", entry.Path)
+	}
+}
+
+func TestPropose_FollowerRejects(t *testing.T) {
+	node := newTestNode("node-1")
+
+	// node-1 is a follower — should reject
+	_, err := node.Propose("CREATE", "/app", []byte("hello"))
+	if err == nil {
+		t.Fatal("follower should reject proposal")
+	}
+}
+
+// --- Replication tests ---
+
+func TestReplication_LeaderSendsEntriesToFollowers(t *testing.T) {
+	nodes, _ := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Make node-2 the leader.
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	if node2.GetState().Role != Leader {
+		t.Fatal("node-2 should be leader")
+	}
+
+	// Leader proposes 3 entries.
+	node2.Propose("CREATE", "/app", []byte("v1"))
+	node2.Propose("SET", "/app", []byte("v2"))
+	node2.Propose("CREATE", "/db", []byte("v3"))
+
+	// Leader's log should have 3 entries.
+	node2.mu.Lock()
+	if len(node2.log) != 3 {
+		t.Fatalf("leader should have 3 entries, got %d", len(node2.log))
+	}
+	node2.mu.Unlock()
+
+	// Followers have nothing yet — entries haven't been sent.
+	nodes["node-1"].mu.Lock()
+	if len(nodes["node-1"].log) != 0 {
+		t.Fatal("node-1 should have 0 entries before replication")
+	}
+	nodes["node-1"].mu.Unlock()
+
+	// Trigger one leaderTick — this sends entries to followers.
+	node2.leaderTick()
+
+	// Now both followers should have all 3 entries.
+	for _, id := range []NodeID{"node-1", "node-3"} {
+		node := nodes[id]
+		node.mu.Lock()
+		count := len(node.log)
+		lastTx := node.lastLogTxID
+		node.mu.Unlock()
+
+		if count != 3 {
+			t.Fatalf("%s should have 3 entries, got %d", id, count)
+		}
+		if lastTx != 3 {
+			t.Fatalf("%s should have lastLogTxID=3, got %d", id, lastTx)
+		}
+	}
+
+	// Leader's nextIndex should have advanced for both peers.
+	node2.mu.Lock()
+	for _, peer := range node2.config.OtherPeers() {
+		if node2.nextIndex[peer.ID] != 4 {
+			t.Fatalf("nextIndex[%s] should be 4, got %d", peer.ID, node2.nextIndex[peer.ID])
+		}
+		if node2.matchIndex[peer.ID] != 3 {
+			t.Fatalf("matchIndex[%s] should be 3, got %d", peer.ID, node2.matchIndex[peer.ID])
+		}
+	}
+	node2.mu.Unlock()
+}
+
 // --- AppendEntries tests ---
 
 func TestAppendEntries_AcceptFromLeader(t *testing.T) {
