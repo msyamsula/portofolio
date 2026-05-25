@@ -56,6 +56,11 @@ type Entry struct {
 	//   3. Later (Phase 2) — followers tell the leader "send me everything after tx_id=100"
 	TxID int64 `json:"tx_id"`
 
+	// Term is the Raft term when this entry was created by the leader.
+	// Used for log consistency checks: two entries at the same TxID but
+	// different Terms mean they were created by different leaders — conflict.
+	Term int64 `json:"term"`
+
 	// Op is what happened: CREATE, SET, or DELETE.
 	Op OpType `json:"op"`
 

@@ -33,6 +33,19 @@ type AppendEntriesRequest struct {
 	// Followers use this to forward client write requests to the leader.
 	LeaderID NodeID
 
+	// PrevLogTxID is the TxID of the entry immediately BEFORE the entries
+	// in this request. The follower checks: "do I have this entry?"
+	//   YES + same term → our logs match up to here, accept the new entries.
+	//   NO or wrong term → our logs diverge, reject.
+	//
+	// 0 means "I'm sending from the very beginning" (no previous entry).
+	PrevLogTxID int64
+
+	// PrevLogTerm is the term of the entry at PrevLogTxID.
+	// This is how we detect conflicts: same TxID but different term
+	// means the entries were created by different leaders.
+	PrevLogTerm int64
+
 	// Entries is the list of WAL entries to replicate.
 	// Empty for heartbeats, non-empty for log replication.
 	Entries []wal.Entry

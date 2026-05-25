@@ -56,6 +56,16 @@ func (ms *memoryStorage) LastWALTxID() int64 {
 	return ms.entries[len(ms.entries)-1].TxID
 }
 
+func (ms *memoryStorage) TruncateWALFrom(fromTxID int64) {
+	idx := int(fromTxID - 1)
+	if idx < 0 {
+		idx = 0
+	}
+	if idx < len(ms.entries) {
+		ms.entries = ms.entries[:idx]
+	}
+}
+
 // fakeTransport connects nodes directly via method calls. No network needed.
 // It holds a map of all nodes so it can forward messages to the right one.
 type fakeTransport struct {
@@ -76,6 +86,17 @@ func (ft *fakeTransport) SendAppendEntries(peer Peer, req AppendEntriesRequest) 
 		return AppendEntriesResponse{}, fmt.Errorf("node %s not found", peer.ID)
 	}
 	return node.HandleAppendEntries(req), nil
+}
+
+// failingTransport simulates all peers being unreachable.
+type failingTransport struct{}
+
+func (ft *failingTransport) SendRequestVote(peer Peer, req RequestVoteRequest) (RequestVoteResponse, error) {
+	return RequestVoteResponse{}, fmt.Errorf("peer %s unreachable", peer.ID)
+}
+
+func (ft *failingTransport) SendAppendEntries(peer Peer, req AppendEntriesRequest) (AppendEntriesResponse, error) {
+	return AppendEntriesResponse{}, fmt.Errorf("peer %s unreachable", peer.ID)
 }
 
 var testPeers = []Peer{
@@ -127,8 +148,8 @@ func TestPropose_LeaderAccepts(t *testing.T) {
 		t.Fatal("node-2 should be leader")
 	}
 
-	// Leader proposes a write
-	entry, err := node2.Propose("CREATE", "/app", []byte("hello"))
+	// Leader appends to WAL (appendEntry = no commit wait)
+	entry, err := node2.appendEntry("CREATE", "/app", []byte("hello"))
 	if err != nil {
 		t.Fatalf("leader should accept proposal: %v", err)
 	}
@@ -145,10 +166,79 @@ func TestPropose_FollowerRejects(t *testing.T) {
 	node, _ := newTestNode("node-1")
 
 	// node-1 is a follower — should reject
-	_, err := node.Propose("CREATE", "/app", []byte("hello"))
+	_, err := node.appendEntry("CREATE", "/app", []byte("hello"))
 	if err == nil {
 		t.Fatal("follower should reject proposal")
 	}
+}
+
+// TestPropose_SynchronousCommit proves that Propose replicates immediately
+// and returns only after the entry is committed (majority confirmed).
+//
+// No tick loop needed — Propose calls leaderTick internally.
+func TestPropose_SynchronousCommit(t *testing.T) {
+	nodes, stores := newTestCluster()
+	node2 := nodes["node-2"]
+
+	// Give each node a tree so apply works.
+	for _, ms := range stores {
+		ms.tree = znode.NewDataTree()
+	}
+
+	// Elect node-2 as leader.
+	voteReq := node2.StartElection()
+	votes := 1
+	for _, peer := range node2.config.OtherPeers() {
+		resp := nodes[peer.ID].HandleRequestVote(voteReq)
+		node2.CollectVote(resp, &votes)
+	}
+
+	// Propose replicates immediately — no Run() needed.
+	entry, err := node2.Propose("CREATE", "/app", []byte("hello"))
+	if err != nil {
+		t.Fatalf("Propose should succeed: %v", err)
+	}
+
+	if entry.TxID != 1 {
+		t.Fatalf("expected TxID 1, got %d", entry.TxID)
+	}
+
+	// After Propose returns, the entry is committed AND applied.
+	// Leader's tree should have the data.
+	data, err := stores["node-2"].tree.Get("/app")
+	if err != nil {
+		t.Fatalf("leader tree should have /app: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Fatalf("expected 'hello', got '%s'", string(data))
+	}
+}
+
+// TestPropose_FailsWithoutConsensus proves that Propose returns an error
+// when majority of followers are unreachable.
+//
+// In a 3-node cluster, quorum = 2. If both followers are down,
+// only the leader has the entry → no majority → no commit → error.
+func TestPropose_FailsWithoutConsensus(t *testing.T) {
+	// Create a leader with a transport where all peers fail.
+	failTransport := &failingTransport{}
+	ms := newMemoryStorage()
+	node := NewRaftNode(Config{Self: "node-1", Peers: testPeers}, failTransport, ms)
+
+	// Force node to be leader.
+	node.mu.Lock()
+	node.state.Role = Leader
+	node.state.LeaderID = "node-1"
+	node.nextIndex = map[NodeID]int64{"node-2": 1, "node-3": 1}
+	node.matchIndex = map[NodeID]int64{"node-2": 0, "node-3": 0}
+	node.mu.Unlock()
+
+	// Propose should fail — no followers reachable, no consensus.
+	_, err := node.Propose("CREATE", "/app", []byte("hello"))
+	if err == nil {
+		t.Fatal("Propose should fail without consensus")
+	}
+	t.Logf("got expected error: %v", err)
 }
 
 // --- Commit tests ---
@@ -166,9 +256,9 @@ func TestCommit_AdvancesAfterMajority(t *testing.T) {
 	}
 
 	// Propose 3 entries.
-	node2.Propose("CREATE", "/app", []byte("v1"))
-	node2.Propose("SET", "/app", []byte("v2"))
-	node2.Propose("CREATE", "/db", []byte("v3"))
+	node2.appendEntry("CREATE", "/app", []byte("v1"))
+	node2.appendEntry("SET", "/app", []byte("v2"))
+	node2.appendEntry("CREATE", "/db", []byte("v3"))
 	// Before replication: commitIndex should be 0.
 	if ci := node2.GetCommitIndex(); ci != 0 {
 		t.Fatalf("expected commitIndex=0 before replication, got %d", ci)
@@ -198,8 +288,8 @@ func TestCommit_FollowerLearnsCommitIndex(t *testing.T) {
 	}
 
 	// Propose and replicate.
-	node2.Propose("CREATE", "/app", []byte("v1"))
-	node2.Propose("SET", "/app", []byte("v2"))
+	node2.appendEntry("CREATE", "/app", []byte("v1"))
+	node2.appendEntry("SET", "/app", []byte("v2"))
 	node2.leaderTick() // sends entries + advances commitIndex
 
 	// Leader's commitIndex should be 2.
@@ -234,8 +324,8 @@ func TestApply_LeaderAppliesCommittedEntries(t *testing.T) {
 	}
 
 	// Propose 2 entries and replicate.
-	node2.Propose("CREATE", "/app", []byte("v1"))
-	node2.Propose("SET", "/app", []byte("v2"))
+	node2.appendEntry("CREATE", "/app", []byte("v1"))
+	node2.appendEntry("SET", "/app", []byte("v2"))
 	node2.leaderTick()
 
 	// Leader should have applied both entries.
@@ -264,7 +354,7 @@ func TestApply_FollowerAppliesAfterLearningCommitIndex(t *testing.T) {
 	}
 
 	// Propose and replicate.
-	node2.Propose("CREATE", "/app", []byte("v1"))
+	node2.appendEntry("CREATE", "/app", []byte("v1"))
 	node2.leaderTick() // sends entries + advances commitIndex
 
 	// Follower hasn't applied yet — it learned commitIndex=0 in this tick.
@@ -304,9 +394,9 @@ func TestReplication_LeaderSendsEntriesToFollowers(t *testing.T) {
 	}
 
 	// Leader proposes 3 entries.
-	node2.Propose("CREATE", "/app", []byte("v1"))
-	node2.Propose("SET", "/app", []byte("v2"))
-	node2.Propose("CREATE", "/db", []byte("v3"))
+	node2.appendEntry("CREATE", "/app", []byte("v1"))
+	node2.appendEntry("SET", "/app", []byte("v2"))
+	node2.appendEntry("CREATE", "/db", []byte("v3"))
 
 	// Leader's WAL should have 3 entries.
 	if len(stores["node-2"].entries) != 3 {
@@ -385,6 +475,102 @@ func TestAppendEntries_RejectStaleTerm(t *testing.T) {
 	}
 	if resp.Term != 5 {
 		t.Fatalf("response should carry current term 5, got %d", resp.Term)
+	}
+}
+
+// TestAppendEntries_TruncatesConflictingLog proves that when a follower
+// has an orphaned entry from a different term, the new leader's entries
+// overwrite it via the prevLog consistency check.
+//
+// Scenario:
+//   1. Follower has entries [1, 2, 3, 4, 5_old]  (5_old from old leader, term 1)
+//   2. New leader (term 2) sends entries starting at 5, with prevLog = entry 4
+//   3. prevLog matches (entry 4 is same term) → accepted
+//   4. Truncate from TxID=5, append leader's new entries
+//   5. Result: [1, 2, 3, 4, 5_new, 6]
+func TestAppendEntries_TruncatesConflictingLog(t *testing.T) {
+	ms := newMemoryStorage()
+	node := NewRaftNode(Config{Self: "node-1", Peers: testPeers}, &fakeTransport{}, ms)
+
+	// Simulate follower having entries 1-5, where entry 5 is from old leader (term 1).
+	ms.entries = []wal.Entry{
+		{TxID: 1, Term: 1, Op: "CREATE", Path: "/a"},
+		{TxID: 2, Term: 1, Op: "CREATE", Path: "/b"},
+		{TxID: 3, Term: 1, Op: "CREATE", Path: "/c"},
+		{TxID: 4, Term: 1, Op: "CREATE", Path: "/d"},
+		{TxID: 5, Term: 1, Op: "CREATE", Path: "/old"}, // ← orphaned, will be overwritten
+	}
+
+	// New leader (term 2) sends entries starting at 5.
+	// PrevLog = entry 4, which matches (term 1).
+	resp := node.HandleAppendEntries(AppendEntriesRequest{
+		Term:        2,
+		LeaderID:    "node-2",
+		PrevLogTxID: 4,
+		PrevLogTerm: 1,
+		Entries: []wal.Entry{
+			{TxID: 5, Term: 2, Op: "CREATE", Path: "/new", Data: []byte("correct")},
+			{TxID: 6, Term: 2, Op: "CREATE", Path: "/e", Data: []byte("v6")},
+		},
+	})
+
+	if !resp.Success {
+		t.Fatal("should accept AppendEntries (prevLog matches)")
+	}
+
+	// Follower should have 6 entries: 1-4 unchanged, 5 replaced, 6 new.
+	if len(ms.entries) != 6 {
+		t.Fatalf("expected 6 entries, got %d", len(ms.entries))
+	}
+
+	// Entry 5 should be the leader's version (term 2), not the orphaned one.
+	if ms.entries[4].Path != "/new" || ms.entries[4].Term != 2 {
+		t.Fatalf("entry 5 wrong: %+v", ms.entries[4])
+	}
+
+	// Entry 6 should be appended.
+	if ms.entries[5].Path != "/e" {
+		t.Fatalf("entry 6 wrong: %+v", ms.entries[5])
+	}
+}
+
+// TestAppendEntries_RejectsPrevLogMismatch proves that when the follower's
+// entry at PrevLogTxID has a different term, it rejects and truncates.
+// The leader will back up and retry with an earlier prevLog.
+func TestAppendEntries_RejectsPrevLogMismatch(t *testing.T) {
+	ms := newMemoryStorage()
+	node := NewRaftNode(Config{Self: "node-1", Peers: testPeers}, &fakeTransport{}, ms)
+
+	// Follower has entries 1-3, where entry 3 is from term 1.
+	ms.entries = []wal.Entry{
+		{TxID: 1, Term: 1, Op: "CREATE", Path: "/a"},
+		{TxID: 2, Term: 1, Op: "CREATE", Path: "/b"},
+		{TxID: 3, Term: 1, Op: "CREATE", Path: "/c"}, // term 1
+	}
+
+	// Leader says prevLog should be TxID=3, Term=2. But follower has term=1 at TxID=3.
+	resp := node.HandleAppendEntries(AppendEntriesRequest{
+		Term:        3,
+		LeaderID:    "node-2",
+		PrevLogTxID: 3,
+		PrevLogTerm: 2, // mismatch! follower has term 1
+		Entries: []wal.Entry{
+			{TxID: 4, Term: 3, Op: "CREATE", Path: "/d"},
+		},
+	})
+
+	if resp.Success {
+		t.Fatal("should reject: prevLog term mismatch")
+	}
+
+	// Follower should have truncated entry 3 (the conflicting one).
+	if len(ms.entries) != 2 {
+		t.Fatalf("expected 2 entries after truncation, got %d", len(ms.entries))
+	}
+
+	// LastLogTxID should be 2 (after truncating entry 3).
+	if resp.LastLogTxID != 2 {
+		t.Fatalf("expected LastLogTxID=2, got %d", resp.LastLogTxID)
 	}
 }
 
@@ -708,8 +894,8 @@ func TestIntegration_RaftToTree(t *testing.T) {
 	}
 
 	// Client writes to the leader.
-	node2.Propose("CREATE", "/app", []byte("hello"))
-	node2.Propose("CREATE", "/app/config", []byte("v1"))
+	node2.appendEntry("CREATE", "/app", []byte("hello"))
+	node2.appendEntry("CREATE", "/app/config", []byte("v1"))
 
 	// Tick 1: replicate entries + leader commits + leader applies.
 	node2.leaderTick()

@@ -38,6 +38,11 @@ type Storage interface {
 	// LastWALTxID returns the TxID of the last WAL entry.
 	// Returns 0 if no entries exist.
 	LastWALTxID() int64
+
+	// TruncateWALFrom removes all entries with TxID >= fromTxID.
+	// Used when a follower has conflicting entries that don't match
+	// the leader's log. The follower truncates and accepts the leader's version.
+	TruncateWALFrom(fromTxID int64)
 }
 
 // RaftNode is the core Raft state machine.
@@ -231,9 +236,22 @@ func (rn *RaftNode) leaderTick() {
 		// Returns nil if peer is caught up → heartbeat.
 		entries := rn.store.GetWALEntriesFrom(next)
 
+		// Compute prevLog: the entry right before the batch.
+		// The follower checks this to verify log consistency.
+		var prevLogTxID, prevLogTerm int64
+		if next > 1 {
+			prev := rn.store.GetWALEntriesFrom(next - 1)
+			if prev != nil {
+				prevLogTxID = prev[0].TxID
+				prevLogTerm = prev[0].Term
+			}
+		}
+
 		req := AppendEntriesRequest{
 			Term:              term,
 			LeaderID:          leaderID,
+			PrevLogTxID:       prevLogTxID,
+			PrevLogTerm:       prevLogTerm,
 			Entries:           entries,
 			LeaderCommitIndex: rn.commitIndex,
 		}
@@ -390,15 +408,132 @@ func (rn *RaftNode) ResetElectionTimer() {
 // Only the leader can accept writes. If this node isn't the leader,
 // it returns an error — the client should retry on the leader.
 //
-// What happens:
-//  1. Check we're the leader
-//  2. Assign a TxID (last WAL TxID + 1)
-//  3. Write to WAL via store (durable on disk)
+// The flow:
+//  1. Create entry in memory (NOT written to WAL yet)
+//  2. Send to followers (they write to their WALs)
+//  3. Count how many confirmed
+//  4. Majority confirmed?
+//     YES → write to leader's WAL + apply to tree → return success
+//     NO  → discard entry → return error (nothing was written on leader)
 //
-// The entry is not committed yet. On the next tick, leaderTick
-// replicates it to followers. Once majority confirms, it's committed.
-// Only then does it get applied to the tree.
+// Why not write to WAL first?
+// If we wrote to WAL and then consensus failed, the entry stays in
+// the WAL. The tick loop would eventually commit it — but the client
+// was told it failed. That's a lie. By writing AFTER consensus,
+// error truly means "nothing happened."
 func (rn *RaftNode) Propose(op wal.OpType, path string, data []byte) (wal.Entry, error) {
+	rn.mu.Lock()
+	if rn.state.Role != Leader {
+		rn.mu.Unlock()
+		return wal.Entry{}, fmt.Errorf("not the leader")
+	}
+
+	// Step 1: create entry in memory only. No WAL write yet.
+	entry := wal.Entry{
+		TxID: rn.store.LastWALTxID() + 1,
+		Term: rn.state.CurrentTerm,
+		Op:   op,
+		Path: path,
+		Data: data,
+	}
+
+	term := rn.state.CurrentTerm
+	leaderID := rn.config.Self
+	rn.mu.Unlock()
+
+	rn.logger.Info("proposing entry",
+		"txid", entry.TxID,
+		"op", entry.Op,
+		"path", entry.Path,
+	)
+
+	// Step 2: send to followers. Count leader as 1 success
+	// (leader will write its WAL after consensus).
+	successCount := 1
+
+	for _, peer := range rn.config.OtherPeers() {
+		rn.mu.Lock()
+		next := rn.nextIndex[peer.ID]
+
+		// Build entries to send: any catch-up entries + our new entry.
+		var entries []wal.Entry
+		if catchUp := rn.store.GetWALEntriesFrom(next); catchUp != nil {
+			entries = append(entries, catchUp...)
+		}
+		entries = append(entries, entry)
+
+		// Compute prevLog for consistency check.
+		var prevLogTxID, prevLogTerm int64
+		if next > 1 {
+			prev := rn.store.GetWALEntriesFrom(next - 1)
+			if prev != nil {
+				prevLogTxID = prev[0].TxID
+				prevLogTerm = prev[0].Term
+			}
+		}
+
+		req := AppendEntriesRequest{
+			Term:              term,
+			LeaderID:          leaderID,
+			PrevLogTxID:       prevLogTxID,
+			PrevLogTerm:       prevLogTerm,
+			Entries:           entries,
+			LeaderCommitIndex: rn.commitIndex,
+		}
+		rn.mu.Unlock()
+
+		resp, err := rn.transport.SendAppendEntries(peer, req)
+		if err != nil {
+			continue // peer unreachable
+		}
+
+		rn.mu.Lock()
+		if resp.Term > term {
+			rn.becomeFollower(resp.Term, "")
+			rn.mu.Unlock()
+			return wal.Entry{}, fmt.Errorf("lost leadership during replication")
+		}
+
+		if resp.Success {
+			lastSent := entries[len(entries)-1].TxID
+			rn.nextIndex[peer.ID] = lastSent + 1
+			rn.matchIndex[peer.ID] = lastSent
+			successCount++
+		} else {
+			rn.nextIndex[peer.ID] = resp.LastLogTxID + 1
+		}
+		rn.mu.Unlock()
+	}
+
+	// Step 3: check consensus.
+	rn.mu.Lock()
+	defer rn.mu.Unlock()
+
+	if successCount < rn.config.QuorumSize() {
+		return wal.Entry{}, fmt.Errorf("no consensus: only %d/%d nodes confirmed",
+			successCount, len(rn.config.Peers))
+	}
+
+	// Step 4: consensus achieved! Write to leader's WAL + commit + apply.
+	if err := rn.store.AppendWAL(entry); err != nil {
+		return wal.Entry{}, fmt.Errorf("WAL write failed: %w", err)
+	}
+
+	rn.commitIndex = entry.TxID
+	rn.store.ApplyTree(entry)
+	rn.lastApplied = entry.TxID
+
+	rn.logger.Info("committed entry",
+		"txid", entry.TxID,
+		"commitIndex", rn.commitIndex,
+	)
+
+	return entry, nil
+}
+
+// appendEntry appends a new entry to the WAL without replicating.
+// Used by tests that need manual control over replication timing.
+func (rn *RaftNode) appendEntry(op wal.OpType, path string, data []byte) (wal.Entry, error) {
 	rn.mu.Lock()
 	defer rn.mu.Unlock()
 
@@ -408,6 +543,7 @@ func (rn *RaftNode) Propose(op wal.OpType, path string, data []byte) (wal.Entry,
 
 	entry := wal.Entry{
 		TxID: rn.store.LastWALTxID() + 1,
+		Term: rn.state.CurrentTerm,
 		Op:   op,
 		Path: path,
 		Data: data,
@@ -484,20 +620,54 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 	// Reset the election timer.
 	rn.lastHeartbeat = time.Now()
 
-	// Rule 3: write new entries to our WAL.
-	// Skip entries we already have — the leader might resend
-	// entries we already received (e.g. after a rejected AppendEntries
-	// where the leader backed up nextIndex too far).
-	if len(req.Entries) > 0 {
-		myLastTxID := rn.store.LastWALTxID()
-		for _, entry := range req.Entries {
-			if entry.TxID > myLastTxID {
-				rn.store.AppendWAL(entry)
+	// Rule 3: check log consistency using prevLog.
+	//
+	// The leader says: "the entry before my batch should be TxID=X, Term=Y."
+	// We check ONE entry. If it matches, our logs agree up to that point.
+	// If not, reject — the leader will back up and retry.
+	//
+	// This is O(1) — no scanning of all entries.
+	if req.PrevLogTxID > 0 {
+		prevEntries := rn.store.GetWALEntriesFrom(req.PrevLogTxID)
+		if prevEntries == nil || prevEntries[0].TxID != req.PrevLogTxID {
+			// We don't have the previous entry. Our log is shorter.
+			rn.logger.Info("rejecting AppendEntries: missing prevLog",
+				"prevLogTxID", req.PrevLogTxID,
+				"myLastTxID", rn.store.LastWALTxID(),
+			)
+			return AppendEntriesResponse{
+				Term:        rn.state.CurrentTerm,
+				Success:     false,
+				LastLogTxID: rn.store.LastWALTxID(),
+			}
+		}
+		if prevEntries[0].Term != req.PrevLogTerm {
+			// We have the entry but from a different term — conflict.
+			// Truncate from here so the leader can resend the correct entries.
+			rn.logger.Info("rejecting AppendEntries: prevLog term mismatch",
+				"prevLogTxID", req.PrevLogTxID,
+				"expected_term", req.PrevLogTerm,
+				"actual_term", prevEntries[0].Term,
+			)
+			rn.store.TruncateWALFrom(req.PrevLogTxID)
+			return AppendEntriesResponse{
+				Term:        rn.state.CurrentTerm,
+				Success:     false,
+				LastLogTxID: rn.store.LastWALTxID(),
 			}
 		}
 	}
 
-	// Rule 4: update commitIndex from the leader.
+	// Rule 4: prevLog matches (or PrevLogTxID=0, meaning "from the start").
+	// Truncate any stale entries after prevLog, then append the leader's entries.
+	if len(req.Entries) > 0 {
+		rn.store.TruncateWALFrom(req.Entries[0].TxID)
+		for _, entry := range req.Entries {
+			rn.store.AppendWAL(entry)
+		}
+	}
+
+	// Rule 5: update commitIndex from the leader.
 	// Use min(LeaderCommitIndex, lastWALTxID) because we can't commit
 	// entries we don't have yet.
 	lastTxID := rn.store.LastWALTxID()
@@ -508,7 +678,7 @@ func (rn *RaftNode) HandleAppendEntries(req AppendEntriesRequest) AppendEntriesR
 		}
 	}
 
-	// Rule 5: apply any newly committed entries.
+	// Rule 6: apply any newly committed entries.
 	rn.applyCommitted()
 
 	return AppendEntriesResponse{

@@ -272,6 +272,31 @@ func (s *Store) LastWALTxID() int64 {
 	return s.wal.LastTxID()
 }
 
+// TruncateWALFrom removes all cached entries with TxID >= fromTxID.
+//
+// Used when a follower discovers its log conflicts with the leader's.
+// The follower truncates its stale entries and accepts the leader's version.
+//
+// Example:
+//
+//	Before: entries = [1, 2, 3, 4, 5]   (entry 5 is orphaned/wrong)
+//	TruncateWALFrom(5)
+//	After:  entries = [1, 2, 3, 4]
+//
+// Note: this only truncates the in-memory cache. The disk WAL still has
+// the old entries, but they'll be overwritten by new appends with the
+// same TxIDs. On restart, the snapshot + WAL replay will produce the
+// correct state. Full disk WAL truncation is a later optimization.
+func (s *Store) TruncateWALFrom(fromTxID int64) {
+	idx := int(fromTxID - 1)
+	if idx < 0 {
+		idx = 0
+	}
+	if idx < len(s.entries) {
+		s.entries = s.entries[:idx]
+	}
+}
+
 // Close takes a final snapshot, then closes the WAL file.
 // The snapshot minimizes WAL replay on next startup.
 func (s *Store) Close() error {
