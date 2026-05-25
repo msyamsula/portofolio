@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar AI</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e;
+    --accent: #58a6ff; --green: #3fb950; --red: #f85149; --yellow: #d29922; --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  .container { width: 100%; max-width: 700px; padding: 20px; }
+
+  header { padding: 30px 0 20px; text-align: center; }
+  header h1 { font-size: 22px; margin-bottom: 4px; }
+  header p { color: var(--muted); font-size: 13px; }
+
+  .user-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 20px; font-size: 13px;
+  }
+  .user-bar a { color: var(--muted); text-decoration: none; font-size: 12px; }
+  .user-bar a:hover { color: var(--red); }
+
+  .login-box {
+    text-align: center; padding: 60px 20px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .login-box h2 { margin-bottom: 12px; font-size: 18px; }
+  .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+
+  .btn {
+    display: inline-block; padding: 10px 20px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); cursor: pointer; font-size: 14px; text-decoration: none;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn-primary:hover { background: #79c0ff; }
+  .btn-green { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+  .btn-green:hover { background: #56d364; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .chat { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+
+  .msg {
+    padding: 12px 16px; border-radius: 10px; font-size: 14px;
+    line-height: 1.6; max-width: 90%; animation: fadeIn 0.2s;
+  }
+  .msg-user { background: var(--accent); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
+  .msg-system { background: var(--surface); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 2px; }
+  .msg-draft { background: rgba(188,140,255,0.1); border: 1px solid var(--purple); align-self: flex-start; }
+  .msg-success { background: rgba(63,185,80,0.1); border: 1px solid var(--green); align-self: flex-start; }
+  .msg-error { background: rgba(248,81,73,0.1); border: 1px solid var(--red); align-self: flex-start; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .draft-details { margin: 8px 0; }
+  .draft-row { display: flex; gap: 8px; padding: 4px 0; font-size: 13px; }
+  .draft-label { color: var(--purple); font-weight: 600; min-width: 90px; }
+  .draft-value { color: var(--text); }
+
+  .prompt-area {
+    position: sticky; bottom: 0; padding: 16px 0; background: var(--bg);
+    border-top: 1px solid var(--border); margin-top: auto;
+  }
+  .prompt-box { display: flex; gap: 10px; align-items: flex-end; }
+  .prompt-box textarea {
+    flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 14px;
+    font-family: inherit; resize: none; min-height: 44px; max-height: 120px;
+  }
+  .prompt-box textarea:focus { outline: none; border-color: var(--accent); }
+  .prompt-box textarea:disabled { opacity: 0.5; }
+
+  .disambig { margin: 8px 0; }
+  .disambig-name { font-weight: 600; color: var(--yellow); margin-bottom: 6px; font-size: 13px; }
+  .disambig-option {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 4px; cursor: pointer; font-size: 13px;
+  }
+  .disambig-option:hover { border-color: var(--accent); }
+  .disambig-option.selected { border-color: var(--green); background: rgba(63,185,80,0.05); }
+
+  .slot-option {
+    display: inline-block; padding: 6px 12px; margin: 3px; font-size: 13px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer;
+  }
+  .slot-option:hover { border-color: var(--accent); }
+  .slot-option.selected { border-color: var(--green); background: rgba(63,185,80,0.05); }
+
+  .status { font-size: 12px; color: var(--muted); text-align: center; padding: 8px; }
+
+  .meetings-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .meetings-header {
+    padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--muted);
+    border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+  }
+  .meetings-header span { font-size: 11px; font-weight: 400; }
+  .meeting-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    cursor: pointer; font-size: 13px; text-decoration: none; color: var(--text);
+  }
+  .meeting-item:last-child { border-bottom: none; }
+  .meeting-item:hover { background: var(--bg); }
+  .meeting-title { font-weight: 600; color: var(--accent); }
+  .meeting-meta { color: var(--muted); font-size: 12px; text-align: right; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Calendar AI</h1>
+    <p>Schedule meetings with natural language</p>
+  </header>
+
+  <!-- Login -->
+  <div id="login-view" style="display:none">
+    <div class="login-box">
+      <h2>Sign in to get started</h2>
+      <p>Connect your Google account to access your calendar and contacts.<br>
+      Only calendar and contacts permissions are requested.</p>
+      <a href="/auth/login" class="btn btn-primary">Sign in with Google</a>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app-view" style="display:none">
+    <div class="user-bar">
+      <span>Signed in as <strong id="user-name"></strong></span>
+      <a href="/auth/logout">Sign out</a>
+    </div>
+
+    <div class="meetings-panel" id="meetings-panel" style="display:none">
+      <div class="meetings-header">Recent Meetings <span id="meetings-count"></span> <a href="#" onclick="clearMeetings();return false" style="color:var(--muted);font-size:11px;text-decoration:none;margin-left:auto">Clear all</a></div>
+      <div id="meetings-list"></div>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="prompt-area">
+      <div class="prompt-box">
+        <textarea id="prompt" placeholder='Try: "Meeting with John and Sarah at 10am tomorrow"' rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+        <button class="btn btn-primary" id="send-btn" onclick="send()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = {
+  phase: 'idle',
+  parsed: null,
+  resolved: {},
+  pendingDisambig: [],
+  selectedSlot: null,
+};
+
+// ── Meetings cache (localStorage) ──
+function getMeetings() {
+  try { return JSON.parse(localStorage.getItem('calai_meetings') || '[]'); }
+  catch { return []; }
+}
+
+function saveMeeting(meeting) {
+  const meetings = getMeetings();
+  meetings.unshift(meeting);
+  if (meetings.length > 50) meetings.length = 50;
+  localStorage.setItem('calai_meetings', JSON.stringify(meetings));
+  renderMeetings();
+}
+
+function clearMeetings() {
+  if (!confirm('Clear all meeting history?')) return;
+  localStorage.removeItem('calai_meetings');
+  renderMeetings();
+}
+
+function renderMeetings() {
+  const meetings = getMeetings();
+  const panel = document.getElementById('meetings-panel');
+  const list = document.getElementById('meetings-list');
+  const count = document.getElementById('meetings-count');
+
+  if (meetings.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  count.textContent = `${meetings.length} created`;
+
+  list.innerHTML = meetings.slice(0, 5).map(m => `
+    <a class="meeting-item" href="${esc(m.link)}" target="_blank">
+      <div>
+        <div class="meeting-title">${esc(m.title)}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:2px">${m.attendees.map(a => esc(a)).join(', ')}</div>
+      </div>
+      <div class="meeting-meta">${formatDT(m.start)}</div>
+    </a>
+  `).join('') + (meetings.length > 5 ? `<div style="padding:8px 14px;font-size:12px;color:var(--muted);cursor:pointer" onclick="toggleAllMeetings()">Show all ${meetings.length} meetings</div>` : '');
+}
+
+function toggleAllMeetings() {
+  const meetings = getMeetings();
+  const list = document.getElementById('meetings-list');
+  list.innerHTML = meetings.map(m => `
+    <a class="meeting-item" href="${esc(m.link)}" target="_blank">
+      <div>
+        <div class="meeting-title">${esc(m.title)}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:2px">${m.attendees.map(a => esc(a)).join(', ')}</div>
+      </div>
+      <div class="meeting-meta">${formatDT(m.start)}</div>
+    </a>
+  `).join('');
+}
+
+// ── Init ──
+async function init() {
+  const res = await fetch('/auth/status');
+  const data = await res.json();
+  if (data.authenticated) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'block';
+    document.getElementById('user-name').textContent = data.name || data.email;
+    document.getElementById('prompt').focus();
+    renderMeetings();
+  } else {
+    document.getElementById('login-view').style.display = 'block';
+  }
+}
+
+// ── Chat helpers ──
+function clearChat() {
+  document.getElementById('chat').innerHTML = '';
+}
+
+function addMsg(type, html) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = `msg msg-${type}`;
+  div.innerHTML = html;
+  chat.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+  return div;
+}
+
+function setLoading(show, text) {
+  const btn = document.getElementById('send-btn');
+  const input = document.getElementById('prompt');
+  btn.disabled = show;
+  input.disabled = show;
+  if (show) {
+    btn.textContent = '...';
+    if (text) addMsg('system', `<span class="spinner"></span>${esc(text)}`);
+  } else {
+    btn.textContent = 'Send';
+  }
+}
+
+function resetState() {
+  state.phase = 'idle';
+  state.parsed = null;
+  state.resolved = {};
+  state.pendingDisambig = [];
+  state.selectedSlot = null;
+}
+
+// ── Intent detection for mid-flow input ──
+function detectIntent(text) {
+  const t = text.toLowerCase().trim();
+
+  // Confirmation
+  if (['yes', 'y', 'confirm', 'ok', 'sure', 'send', 'create', 'do it', 'go ahead', 'looks good', 'lgtm'].includes(t)) {
+    return 'confirm';
+  }
+
+  // Looks like an email (for disambiguation)
+  if (text.includes('@') && !text.includes(' meeting') && text.split(' ').length <= 2) {
+    return 'email';
+  }
+
+  // Looks like a number (for picking options)
+  if (/^\d+$/.test(t) && parseInt(t) > 0 && parseInt(t) <= 20) {
+    return 'number';
+  }
+
+  // Looks like a time correction: "at 3pm", "make it 10am", "change to 2pm"
+  if (/^(at |make it |change to |how about )?\d{1,2}(:\d{2})?\s*(am|pm)/i.test(t)) {
+    return 'time_correction';
+  }
+
+  // Adding people: "also add X", "include Y", "add Z too"
+  if (/^(also |and )?(add|include|invite)\s+/i.test(t)) {
+    return 'add_person';
+  }
+
+  // Cancellation / restart
+  if (['cancel', 'nevermind', 'never mind', 'start over', 'reset', 'no'].includes(t)) {
+    return 'cancel';
+  }
+
+  // Anything else that's long enough is likely a new meeting request
+  if (text.length > 15) {
+    return 'new_meeting';
+  }
+
+  return 'unknown';
+}
+
+// ── Main flow ──
+async function send() {
+  const input = document.getElementById('prompt');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const intent = detectIntent(text);
+
+  // Handle cancel from any phase
+  if (intent === 'cancel') {
+    addMsg('user', esc(text));
+    addMsg('system', 'Cancelled. Start a new meeting request anytime.');
+    resetState();
+    clearChat();
+    return;
+  }
+
+  // Phase-specific handling
+  if (state.phase === 'disambiguating') {
+    if (intent === 'email' || intent === 'number') {
+      handleDisambigText(text);
+      return;
+    }
+    // Anything else is a follow-up or correction — re-parse with context
+    addMsg('user', esc(text));
+    await parsePrompt(text);
+    return;
+  }
+
+  if (state.phase === 'slots') {
+    if (intent === 'number') {
+      handleSlotText(text);
+      return;
+    }
+    // Follow-up — re-parse with context
+    addMsg('user', esc(text));
+    await parsePrompt(text);
+    return;
+  }
+
+  if (state.phase === 'draft') {
+    if (intent === 'confirm') {
+      addMsg('user', esc(text));
+      await createEvent();
+      return;
+    }
+    // Any other input during draft — treat as correction, re-parse with context
+    addMsg('user', esc(text));
+    await parsePrompt(text);
+    return;
+  }
+
+  // Default: new or follow-up
+  addMsg('user', esc(text));
+  await parsePrompt(text);
+}
+
+// ── Step 1: Parse ──
+async function parsePrompt(text) {
+  state.phase = 'parsing';
+  setLoading(true, state.parsed ? 'Updating meeting...' : 'Understanding your request...');
+
+  try {
+    const payload = { prompt: text };
+    if (state.parsed) {
+      payload.previous = state.parsed;
+    }
+
+    const res = await fetch('/api/parse', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    state.parsed = await res.json();
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to understand. Try again or type <strong>cancel</strong> to start over.');
+    // Keep state.parsed so user can continue
+    state.phase = state.parsed ? 'draft' : 'idle';
+    return;
+  }
+  setLoading(false);
+
+  // Reset resolved contacts since attendees may have changed
+  state.resolved = {};
+  state.pendingDisambig = [];
+
+  if (state.parsed.rejected) {
+    addMsg('error', esc(state.parsed.reject_reason));
+    state.phase = 'idle';
+    return;
+  }
+
+  if (!state.parsed.attendees || state.parsed.attendees.length === 0) {
+    addMsg('system', 'Who should I invite? e.g. <em>"with John and Sarah"</em>');
+    // Keep parsed so next prompt merges
+    return;
+  }
+
+  addMsg('system', `Got it: <strong>${esc(state.parsed.title)}</strong> with ${state.parsed.attendees.map(a => `<strong>${esc(a)}</strong>`).join(', ')}` +
+    (state.parsed.flexible ? ' (flexible time)' : (state.parsed.datetime ? ` at <strong>${formatDT(state.parsed.datetime)}</strong>` : ' (no time set yet)')) +
+    ` for ${state.parsed.duration_minutes} min`);
+
+  if (!state.parsed.datetime && !state.parsed.flexible) {
+    addMsg('system', 'When should I schedule it? e.g. <em>"at 3pm tomorrow"</em>');
+    // Keep parsed so next prompt merges
+    return;
+  }
+
+  await resolveNames();
+}
+
+// ── Step 2: Resolve contacts ──
+async function resolveNames() {
+  state.phase = 'resolving';
+  setLoading(true, 'Looking up contacts...');
+
+  try {
+    const res = await fetch('/api/resolve', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({names: state.parsed.attendees}),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const results = await res.json();
+
+    state.pendingDisambig = [];
+    state.resolved = {};
+
+    for (const [name, contacts] of Object.entries(results)) {
+      if (!contacts || contacts.length === 0) {
+        state.pendingDisambig.push({name, needsManual: true});
+      } else if (contacts.length === 1) {
+        state.resolved[name] = contacts[0];
+      } else {
+        state.pendingDisambig.push({name, options: contacts});
+      }
+    }
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to look up contacts: ' + esc(e.message));
+    state.phase = 'idle';
+    return;
+  }
+  setLoading(false);
+
+  if (state.pendingDisambig.length > 0) {
+    showDisambiguation();
+  } else {
+    afterResolve();
+  }
+}
+
+// ── Step 3: Disambiguate ──
+function showDisambiguation() {
+  state.phase = 'disambiguating';
+  const item = state.pendingDisambig[0];
+
+  if (item.needsManual) {
+    addMsg('system', `I couldn't find <strong>${esc(item.name)}</strong> in your contacts. Please type their email address.`);
+    return;
+  }
+
+  let html = `<div class="disambig">`;
+  html += `<div class="disambig-name">Which "${esc(item.name)}"?</div>`;
+  item.options.forEach((c, i) => {
+    html += `<div class="disambig-option" onclick="pickContact(${i})">${esc(c.name)} &mdash; <span style="color:var(--muted)">${esc(c.email)}</span></div>`;
+  });
+  html += `</div>`;
+  addMsg('system', html);
+}
+
+function pickContact(index) {
+  const item = state.pendingDisambig[0];
+  const contact = item.options[index];
+  state.resolved[item.name] = contact;
+  state.pendingDisambig.shift();
+
+  document.querySelectorAll('.disambig-option').forEach((el, i) => {
+    el.style.opacity = i === index ? '1' : '0.3';
+    el.style.cursor = 'default';
+    el.onclick = null;
+  });
+
+  addMsg('system', `Selected <strong>${esc(contact.name)}</strong> (${esc(contact.email)})`);
+
+  if (state.pendingDisambig.length > 0) {
+    showDisambiguation();
+  } else {
+    afterResolve();
+  }
+}
+
+function handleDisambigText(text) {
+  addMsg('user', esc(text));
+  const item = state.pendingDisambig[0];
+
+  if (item.needsManual) {
+    if (text.includes('@')) {
+      state.resolved[item.name] = {name: item.name, email: text.trim()};
+      state.pendingDisambig.shift();
+      addMsg('system', `Got it: <strong>${esc(item.name)}</strong> &rarr; ${esc(text.trim())}`);
+      if (state.pendingDisambig.length > 0) {
+        showDisambiguation();
+      } else {
+        afterResolve();
+      }
+    } else {
+      addMsg('system', 'That doesn\'t look like an email. Please provide an email address, or type <strong>cancel</strong> to start over.');
+    }
+    return;
+  }
+
+  const num = parseInt(text);
+  if (!isNaN(num) && num >= 1 && num <= item.options.length) {
+    pickContact(num - 1);
+  } else {
+    addMsg('system', `Please click an option or type a number (1-${item.options.length}).`);
+  }
+}
+
+// ── After resolve: slots or draft ──
+async function afterResolve() {
+  const emails = Object.values(state.resolved).map(c => c.email);
+  const names = Object.values(state.resolved).map(c => c.name);
+
+  addMsg('system', `Attendees confirmed: ${names.map(n => `<strong>${esc(n)}</strong>`).join(', ')}`);
+
+  if (state.parsed.flexible) {
+    await findSlots(emails);
+  } else {
+    showDraft();
+  }
+}
+
+// ── Step 4: Find slots (flexible) ──
+async function findSlots(emails) {
+  state.phase = 'slots';
+  setLoading(true, 'Checking everyone\'s availability...');
+
+  try {
+    const res = await fetch('/api/slots', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({emails, duration_minutes: state.parsed.duration_minutes}),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const slots = await res.json();
+
+    setLoading(false);
+
+    if (!slots || slots.length === 0) {
+      addMsg('error', 'No available slots found in the next 7 days. Try a different time range or type <strong>cancel</strong> to start over.');
+      state.phase = 'idle';
+      return;
+    }
+
+    let html = 'Here are times that work for everyone:<br><div style="margin-top:8px">';
+    slots.forEach((slot, i) => {
+      html += `<span class="slot-option" onclick="pickSlot(${i}, '${slot.start}')">${formatDT(slot.start)}</span>`;
+    });
+    html += '</div>';
+    addMsg('system', html);
+    state.slots = slots;
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to check availability: ' + esc(e.message));
+    state.phase = 'idle';
+  }
+}
+
+function pickSlot(index, startTime) {
+  state.parsed.datetime = startTime;
+  document.querySelectorAll('.slot-option').forEach((el, i) => {
+    el.classList.toggle('selected', i === index);
+    el.onclick = null;
+  });
+  showDraft();
+}
+
+function handleSlotText(text) {
+  addMsg('user', esc(text));
+  const num = parseInt(text);
+  if (!isNaN(num) && state.slots && num >= 1 && num <= state.slots.length) {
+    pickSlot(num - 1, state.slots[num - 1].start);
+  } else {
+    addMsg('system', 'Please click a time slot or type a number.');
+  }
+}
+
+// ── Step 5: Show draft ──
+function showDraft() {
+  state.phase = 'draft';
+  const p = state.parsed;
+  const attendees = Object.values(state.resolved);
+
+  let html = `<div class="draft-details">`;
+  html += `<div class="draft-row"><span class="draft-label">Title</span><span class="draft-value">${esc(p.title)}</span></div>`;
+  html += `<div class="draft-row"><span class="draft-label">When</span><span class="draft-value">${formatDT(p.datetime)}</span></div>`;
+  html += `<div class="draft-row"><span class="draft-label">Duration</span><span class="draft-value">${p.duration_minutes} minutes</span></div>`;
+  html += `<div class="draft-row"><span class="draft-label">Attendees</span><span class="draft-value">${attendees.map(a => `${esc(a.name)} (${esc(a.email)})`).join('<br>')}</span></div>`;
+  html += `</div>`;
+  html += `<div style="margin-top:10px;font-size:13px;color:var(--purple)">Type <strong>yes</strong> to confirm and send invites.</div>`;
+  addMsg('draft', html);
+}
+
+// ── Step 6: Create ──
+async function createEvent() {
+  state.phase = 'creating';
+  setLoading(true, 'Creating event and sending invites...');
+
+  try {
+    const emails = Object.values(state.resolved).map(c => c.email);
+    const attendeeNames = Object.values(state.resolved).map(c => c.name);
+    const res = await fetch('/api/create', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        title: state.parsed.title,
+        attendee_emails: emails,
+        start_time: state.parsed.datetime,
+        duration_minutes: state.parsed.duration_minutes,
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const result = await res.json();
+
+    setLoading(false);
+
+    // Cache in localStorage
+    saveMeeting({
+      title: state.parsed.title,
+      start: result.start,
+      end: result.end,
+      attendees: attendeeNames,
+      link: result.link,
+      event_id: result.event_id,
+      created_at: new Date().toISOString(),
+    });
+
+    // Clear chat and show success
+    clearChat();
+    addMsg('success', `Event created! Invites sent to ${attendeeNames.map(n => `<strong>${esc(n)}</strong>`).join(', ')}.<br><a href="${esc(result.link)}" target="_blank" style="color:var(--green)">Open in Google Calendar</a>`);
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to create event: ' + esc(e.message));
+  }
+
+  resetState();
+}
+
+// ── Helpers ──
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function formatDT(iso) {
+  if (!iso) return 'TBD';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) +
+      ' at ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  } catch { return iso; }
+}
+
+document.getElementById('prompt').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+init();
+</script>
+</body>
+</html>
