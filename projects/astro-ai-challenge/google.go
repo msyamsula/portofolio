@@ -289,6 +289,116 @@ func createCalendarEvent(ctx context.Context, token *oauth2.Token, oauthCfg *oau
 	return created, nil
 }
 
+type CalendarEvent struct {
+	ID              string   `json:"id"`
+	Title           string   `json:"title"`
+	Start           string   `json:"start"`
+	End             string   `json:"end"`
+	Attendees       []string `json:"attendees"`
+	Link            string   `json:"link"`
+}
+
+func listUpcomingEvents(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config, query string, maxResults int) ([]CalendarEvent, error) {
+	client := oauthCfg.Client(ctx, token)
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, fmt.Errorf("calendar service: %w", err)
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	maxTime := time.Now().AddDate(0, 1, 0).Format(time.RFC3339)
+
+	call := srv.Events.List("primary").
+		TimeMin(now).
+		TimeMax(maxTime).
+		SingleEvents(true).
+		OrderBy("startTime").
+		MaxResults(int64(maxResults))
+
+	if query != "" {
+		call = call.Q(query)
+	}
+
+	resp, err := call.Do()
+	if err != nil {
+		return nil, fmt.Errorf("list events: %w", err)
+	}
+
+	var events []CalendarEvent
+	for _, item := range resp.Items {
+		start := ""
+		if item.Start != nil {
+			start = item.Start.DateTime
+			if start == "" {
+				start = item.Start.Date
+			}
+		}
+		end := ""
+		if item.End != nil {
+			end = item.End.DateTime
+			if end == "" {
+				end = item.End.Date
+			}
+		}
+		var attendees []string
+		for _, a := range item.Attendees {
+			attendees = append(attendees, a.Email)
+		}
+		events = append(events, CalendarEvent{
+			ID:        item.Id,
+			Title:     item.Summary,
+			Start:     start,
+			End:       end,
+			Attendees: attendees,
+			Link:      item.HtmlLink,
+		})
+	}
+
+	return events, nil
+}
+
+func updateCalendarEvent(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config, eventID string, title string, attendeeEmails []string, start, end time.Time) (*calendar.Event, error) {
+	client := oauthCfg.Client(ctx, token)
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, fmt.Errorf("calendar service: %w", err)
+	}
+
+	existing, err := srv.Events.Get("primary", eventID).Do()
+	if err != nil {
+		return nil, fmt.Errorf("get event: %w", err)
+	}
+
+	if title != "" {
+		existing.Summary = title
+	}
+	if !start.IsZero() {
+		tz := getIANATimezone(start)
+		existing.Start = &calendar.EventDateTime{
+			DateTime: start.Format(time.RFC3339),
+			TimeZone: tz,
+		}
+		existing.End = &calendar.EventDateTime{
+			DateTime: end.Format(time.RFC3339),
+			TimeZone: tz,
+		}
+	}
+	if len(attendeeEmails) > 0 {
+		var attendees []*calendar.EventAttendee
+		for _, email := range attendeeEmails {
+			attendees = append(attendees, &calendar.EventAttendee{Email: email})
+		}
+		existing.Attendees = attendees
+	}
+
+	updated, err := srv.Events.Update("primary", eventID, existing).SendUpdates("all").Do()
+	if err != nil {
+		return nil, fmt.Errorf("update event: %w", err)
+	}
+
+	return updated, nil
+}
+
 func getUserEmail(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config) (string, string, error) {
 	client := oauthCfg.Client(ctx, token)
 	srv, err := people.NewService(ctx, option.WithHTTPClient(client))

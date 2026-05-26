@@ -285,6 +285,8 @@ function resetState() {
   state.resolved = {};
   state.pendingDisambig = [];
   state.selectedSlot = null;
+  state.editEventId = null;
+  state.editCandidates = [];
 }
 
 // ── Intent detection for mid-flow input ──
@@ -370,6 +372,36 @@ async function send() {
     return;
   }
 
+  if (state.phase === 'edit_picking') {
+    addMsg('user', esc(text));
+    if (intent === 'number') {
+      const idx = parseInt(text) - 1;
+      if (idx >= 0 && idx < state.editCandidates.length) {
+        pickEditCandidate(idx);
+        return;
+      }
+    }
+    if (intent === 'cancel') {
+      addMsg('system', 'Cancelled. Start a new request anytime.');
+      resetState();
+      clearChat();
+      return;
+    }
+    addMsg('system', `Please pick a number (1-${state.editCandidates.length}), or type <strong>cancel</strong>.`);
+    return;
+  }
+
+  if (state.phase === 'edit_confirm') {
+    addMsg('user', esc(text));
+    if (intent === 'confirm') {
+      await submitUpdate();
+      return;
+    }
+    // Re-parse as correction to the edit
+    await parsePrompt(text);
+    return;
+  }
+
   if (state.phase === 'draft') {
     if (intent === 'confirm') {
       addMsg('user', esc(text));
@@ -434,6 +466,12 @@ async function parsePrompt(text) {
     addMsg('system', esc(state.parsed.clarification));
     // Stay in draft phase so next input re-parses with context
     state.phase = state.parsed.title ? 'draft' : 'idle';
+    return;
+  }
+
+  // Edit intent — search calendar for matching events
+  if (state.parsed.edit_intent && !state.editEventId) {
+    await searchEventsForEdit(state.parsed.search_keywords);
     return;
   }
 
@@ -690,6 +728,116 @@ async function createEvent() {
   } catch (e) {
     setLoading(false);
     addMsg('error', 'Failed to create event: ' + esc(e.message));
+  }
+
+  resetState();
+}
+
+// ── Edit flow ──
+async function searchEventsForEdit(query) {
+  state.phase = 'edit_searching';
+  setLoading(true, 'Searching your calendar...');
+
+  try {
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: query, max_results: 5}),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const events = await res.json();
+    setLoading(false);
+
+    if (!events || events.length === 0) {
+      addMsg('system', `No upcoming events found matching "<strong>${esc(query)}</strong>". Would you like to create a new meeting instead?`);
+      state.parsed.edit_intent = false;
+      state.phase = 'idle';
+      return;
+    }
+
+    state.editCandidates = events;
+    state.phase = 'edit_picking';
+
+    let html = `Which event do you want to edit?<br><div style="margin-top:8px">`;
+    events.forEach((ev, i) => {
+      const attendeeStr = ev.attendees && ev.attendees.length > 0 ? ` — ${ev.attendees.slice(0, 3).join(', ')}` : '';
+      html += `<div class="disambig-option" onclick="pickEditCandidate(${i})">
+        <strong>${i + 1}.</strong>&nbsp;
+        <span><strong>${esc(ev.title)}</strong> · ${formatDT(ev.start)}${esc(attendeeStr)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+    addMsg('system', html);
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to search calendar: ' + esc(e.message));
+    state.phase = 'idle';
+  }
+}
+
+function pickEditCandidate(index) {
+  const ev = state.editCandidates[index];
+  state.editEventId = ev.id;
+
+  // Highlight selection
+  document.querySelectorAll('.disambig-option').forEach((el, i) => {
+    el.style.opacity = i === index ? '1' : '0.3';
+    el.style.cursor = 'default';
+    el.onclick = null;
+  });
+
+  addMsg('system', `Selected: <strong>${esc(ev.title)}</strong> (${formatDT(ev.start)})`);
+  showEditDraft(ev);
+}
+
+function showEditDraft(originalEvent) {
+  state.phase = 'edit_confirm';
+  const p = state.parsed;
+
+  let changes = [];
+  if (p.title && p.title !== 'Meeting') changes.push(`<span class="draft-label">Title</span> → <strong>${esc(p.title)}</strong>`);
+  if (p.datetime) changes.push(`<span class="draft-label">Time</span> → <strong>${formatDT(p.datetime)}</strong>`);
+  if (p.duration_minutes && p.duration_minutes !== 60) changes.push(`<span class="draft-label">Duration</span> → <strong>${p.duration_minutes} min</strong>`);
+  if (p.attendees && p.attendees.length > 0) changes.push(`<span class="draft-label">Attendees</span> → <strong>${p.attendees.map(a => esc(a)).join(', ')}</strong>`);
+
+  if (changes.length === 0) {
+    addMsg('system', 'What would you like to change? e.g. <em>"move it to 3pm"</em>, <em>"rename to sync"</em>');
+    return;
+  }
+
+  let html = `<div class="draft-details">`;
+  html += `<div style="margin-bottom:8px;color:var(--muted)">Changes to <strong>${esc(originalEvent.title)}</strong>:</div>`;
+  changes.forEach(c => { html += `<div class="draft-row">${c}</div>`; });
+  html += `</div>`;
+  html += `<div style="margin-top:10px;font-size:13px;color:var(--purple)">Type <strong>yes</strong> to apply changes.</div>`;
+  addMsg('draft', html);
+}
+
+async function submitUpdate() {
+  state.phase = 'updating';
+  setLoading(true, 'Updating event...');
+
+  try {
+    const p = state.parsed;
+    const payload = { event_id: state.editEventId };
+    if (p.title && p.title !== 'Meeting') payload.title = p.title;
+    if (p.datetime) payload.start_time = p.datetime;
+    if (p.duration_minutes) payload.duration_minutes = p.duration_minutes;
+
+    const res = await fetch('/api/update', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const result = await res.json();
+
+    setLoading(false);
+    clearChat();
+    addMsg('success', `Event updated! <strong>${esc(result.summary)}</strong> at ${formatDT(result.start)}<br><a href="${esc(result.link)}" target="_blank" style="color:var(--green)">Open in Google Calendar</a>`);
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to update event: ' + esc(e.message));
   }
 
   resetState();

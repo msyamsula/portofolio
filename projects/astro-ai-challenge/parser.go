@@ -19,6 +19,8 @@ type ParsedMeeting struct {
 	RejectReason    string   `json:"reject_reason"`
 	Ambiguous       bool     `json:"ambiguous"`
 	Clarification   string   `json:"clarification"`
+	EditIntent      bool     `json:"edit_intent"`
+	SearchKeywords  string   `json:"search_keywords"`
 }
 
 var jakartaLoc *time.Location
@@ -85,7 +87,9 @@ Output ONLY valid JSON matching this schema:
   "rejected": false,
   "reject_reason": "",
   "ambiguous": false,
-  "clarification": ""
+  "clarification": "",
+  "edit_intent": false,
+  "search_keywords": ""
 }
 
 Rules:
@@ -99,7 +103,8 @@ Rules:
 - If flexible=true, still extract any time constraints (like "this week", "next Tuesday") and put the earliest possible date in datetime
 - attendees should be the raw names the user mentioned, not email addresses
 - If the date is more than 1 month away, set rejected=true and reject_reason="Can only schedule within the next 30 days"
-- Do NOT include the creator/user in the attendees list`,
+- Do NOT include the creator/user in the attendees list
+- EDIT DETECTION: If the user wants to modify an EXISTING event on their calendar (not a draft), set edit_intent=true. Keywords: "move my", "reschedule my", "change my", "update my", "cancel my", "edit my", "push back my". Put relevant search terms in search_keywords (e.g. "standup", "meeting with John"). When edit_intent=true, still extract the NEW values (new time, new title, etc.) into the regular fields — leave unchanged fields empty.`,
 		now.Format("2006-01-02 15:04:05"),
 		maxDate.Format("2006-01-02"),
 		contextBlock)

@@ -63,6 +63,8 @@ func main() {
 	mux.HandleFunc("/api/resolve", handleResolve)
 	mux.HandleFunc("/api/slots", handleSlots)
 	mux.HandleFunc("/api/create", handleCreate)
+	mux.HandleFunc("/api/events", handleEvents)
+	mux.HandleFunc("/api/update", handleUpdate)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -299,6 +301,105 @@ func handleCreate(w http.ResponseWriter, r *http.Request) {
 	end := start.Add(time.Duration(body.DurationMinutes) * time.Minute)
 
 	event, err := createCalendarEvent(context.Background(), session.Token, oauthConfig, body.Title, body.AttendeeEmails, start, end)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"success":  true,
+		"event_id": event.Id,
+		"link":     event.HtmlLink,
+		"summary":  event.Summary,
+		"start":    event.Start.DateTime,
+		"end":      event.End.DateTime,
+	})
+}
+
+func handleEvents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, err := requireSession(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var body struct {
+		Query      string `json:"query"`
+		MaxResults int    `json:"max_results"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if body.MaxResults == 0 {
+		body.MaxResults = 10
+	}
+
+	events, err := listUpcomingEvents(context.Background(), session.Token, oauthConfig, body.Query, body.MaxResults)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
+}
+
+func handleUpdate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, err := requireSession(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var body struct {
+		EventID         string   `json:"event_id"`
+		Title           string   `json:"title"`
+		AttendeeEmails  []string `json:"attendee_emails"`
+		StartTime       string   `json:"start_time"`
+		DurationMinutes int      `json:"duration_minutes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if body.EventID == "" {
+		http.Error(w, "event_id is required", http.StatusBadRequest)
+		return
+	}
+
+	var start, end time.Time
+	if body.StartTime != "" {
+		start, err = time.Parse(time.RFC3339, body.StartTime)
+		if err != nil {
+			start, err = time.Parse("2006-01-02T15:04:05", body.StartTime)
+			if err != nil {
+				http.Error(w, "invalid start_time format", http.StatusBadRequest)
+				return
+			}
+			start = start.In(time.Now().Location())
+		}
+		dur := 60
+		if body.DurationMinutes > 0 {
+			dur = body.DurationMinutes
+		}
+		end = start.Add(time.Duration(dur) * time.Minute)
+	}
+
+	event, err := updateCalendarEvent(context.Background(), session.Token, oauthConfig, body.EventID, body.Title, body.AttendeeEmails, start, end)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
