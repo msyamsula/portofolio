@@ -25,4 +25,4 @@ ENV CLAUDE_PATH=claude
 
 EXPOSE 8080
 
-CMD ["calendar-ai"]
+CMD ["sh", "-c", "set -a && . /etc/secrets/.env && set +a && calendar-ai"]
