@@ -33,6 +33,11 @@ func main() {
 		claudePath = "claude"
 	}
 
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+
 	oauthConfig = &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -43,7 +48,7 @@ func main() {
 			"openid", "email", "profile",
 		},
 		Endpoint:    google.Endpoint,
-		RedirectURL: "http://localhost:8080/auth/callback",
+		RedirectURL: baseURL + "/auth/callback",
 	}
 
 	sessions = NewSessionStore()
@@ -65,7 +70,11 @@ func main() {
 	}
 
 	fmt.Printf("Calendar AI running at http://localhost:%s\n", port)
-	log.Fatal(http.ListenAndServe("127.0.0.1:"+port, mux))
+	host := os.Getenv("HOST")
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	log.Fatal(http.ListenAndServe(host+":"+port, mux))
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
