@@ -17,6 +17,8 @@ type ParsedMeeting struct {
 	Flexible        bool     `json:"flexible"`
 	Rejected        bool     `json:"rejected"`
 	RejectReason    string   `json:"reject_reason"`
+	Ambiguous       bool     `json:"ambiguous"`
+	Clarification   string   `json:"clarification"`
 }
 
 var jakartaLoc *time.Location
@@ -41,19 +43,30 @@ func parseMeetingPrompt(claudePath, prompt string, previous *ParsedMeeting) (*Pa
 	if previous != nil {
 		prevJSON, _ := json.Marshal(previous)
 		contextBlock = fmt.Sprintf(`
-The user already has a meeting in progress with these details:
+IMPORTANT — EXISTING MEETING CONTEXT:
+The user already has a meeting being scheduled with these details:
 %s
 
-The user's new message is a FOLLOW-UP. They may be:
-- Changing the time: "make it 3pm instead", "change to tomorrow"
-- Adding/removing attendees: "add Lisa too", "remove John"
-- Changing the title: "call it standup"
-- Changing the duration: "make it 30 minutes"
-- Providing missing info: "John", "at 2pm"
-- Starting over entirely with a completely new meeting request
+The user's new message is a FOLLOW-UP to modify this meeting. They may want to:
+- Change the title/name: "call it standup", "rename to sync", "change the name to weekly review"
+- Change the time: "make it 3pm instead", "change to tomorrow"
+- Add/remove attendees: "add Lisa too", "remove John"
+- Change the duration: "make it 30 minutes"
+- Provide missing info: "John", "at 2pm"
 
-If it's a follow-up, MERGE their changes into the existing meeting and return the updated full JSON.
-If it's a completely new meeting request (mentions different people AND different time), start fresh.
+CRITICAL MERGE RULES:
+1. Start from the existing meeting JSON above as a baseline.
+2. ONLY change the specific field(s) the user mentions. Keep ALL other fields exactly as they are.
+3. If the user says "call it X", "rename to X", "change name/title to X", update ONLY the title to X.
+4. If the user changes time, update ONLY datetime. Keep title, attendees, duration unchanged.
+5. If the user adds attendees, APPEND to the existing list. Keep title, datetime, duration unchanged.
+6. NEVER reset fields to defaults unless the user explicitly asks.
+
+If the user's message is AMBIGUOUS — you cannot tell whether they want to modify the existing meeting or start a new one — set ambiguous=true and clarification to a short question asking the user what they meant. Do NOT guess. Examples of ambiguous input:
+- "meeting with Bob at 2pm" (could be editing attendees/time OR a new meeting)
+- "standup" (could be a title change OR a new meeting called standup)
+
+Only start a completely fresh meeting if the user's message is CLEARLY an entirely new meeting request (explicitly mentions different people AND a different time AND a new topic).
 `, string(prevJSON))
 	}
 
@@ -70,7 +83,9 @@ Output ONLY valid JSON matching this schema:
   "duration_minutes": 60,
   "flexible": false,
   "rejected": false,
-  "reject_reason": ""
+  "reject_reason": "",
+  "ambiguous": false,
+  "clarification": ""
 }
 
 Rules:

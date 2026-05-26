@@ -404,7 +404,13 @@ async function parsePrompt(text) {
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(await res.text());
-    state.parsed = await res.json();
+    const parsed = await res.json();
+    // If ambiguous, keep the previous state so context is preserved for the next attempt
+    if (parsed.ambiguous) {
+      state.parsed = Object.assign({}, state.parsed, {ambiguous: true, clarification: parsed.clarification});
+    } else {
+      state.parsed = parsed;
+    }
   } catch (e) {
     setLoading(false);
     addMsg('error', 'Failed to understand. Try again or type <strong>cancel</strong> to start over.');
@@ -421,6 +427,13 @@ async function parsePrompt(text) {
   if (state.parsed.rejected) {
     addMsg('error', esc(state.parsed.reject_reason));
     state.phase = 'idle';
+    return;
+  }
+
+  if (state.parsed.ambiguous) {
+    addMsg('system', esc(state.parsed.clarification));
+    // Stay in draft phase so next input re-parses with context
+    state.phase = state.parsed.title ? 'draft' : 'idle';
     return;
   }
 
