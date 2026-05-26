@@ -357,6 +357,57 @@ func listUpcomingEvents(ctx context.Context, token *oauth2.Token, oauthCfg *oaut
 	return events, nil
 }
 
+func listEventsInRange(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config, timeMin, timeMax string) ([]CalendarEvent, error) {
+	client := oauthCfg.Client(ctx, token)
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, fmt.Errorf("calendar service: %w", err)
+	}
+
+	resp, err := srv.Events.List("primary").
+		TimeMin(timeMin).
+		TimeMax(timeMax).
+		SingleEvents(true).
+		OrderBy("startTime").
+		MaxResults(50).
+		Do()
+	if err != nil {
+		return nil, fmt.Errorf("list events: %w", err)
+	}
+
+	var events []CalendarEvent
+	for _, item := range resp.Items {
+		start := ""
+		if item.Start != nil {
+			start = item.Start.DateTime
+			if start == "" {
+				start = item.Start.Date
+			}
+		}
+		end := ""
+		if item.End != nil {
+			end = item.End.DateTime
+			if end == "" {
+				end = item.End.Date
+			}
+		}
+		var attendees []string
+		for _, a := range item.Attendees {
+			attendees = append(attendees, a.Email)
+		}
+		events = append(events, CalendarEvent{
+			ID:        item.Id,
+			Title:     item.Summary,
+			Start:     start,
+			End:       end,
+			Attendees: attendees,
+			Link:      item.HtmlLink,
+		})
+	}
+
+	return events, nil
+}
+
 func updateCalendarEvent(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config, eventID string, title string, attendeeEmails []string, start, end time.Time) (*calendar.Event, error) {
 	client := oauthCfg.Client(ctx, token)
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))

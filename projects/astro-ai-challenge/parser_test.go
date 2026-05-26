@@ -96,3 +96,53 @@ func TestAmbiguityDetection(t *testing.T) {
 	fmt.Printf("AMBIGUOUS INPUT 'meeting with Bob at 3pm': ambiguous=%v clarification=%q title=%q attendees=%v\n",
 		ambig2.Ambiguous, ambig2.Clarification, ambig2.Title, ambig2.Attendees)
 }
+
+func TestSummaryIntentDetection(t *testing.T) {
+	claudePath := "claude"
+
+	tests := []struct {
+		name        string
+		prompt      string
+		wantSummary bool
+	}{
+		{
+			name:        "whats my schedule today",
+			prompt:      "what's my schedule today?",
+			wantSummary: true,
+		},
+		{
+			name:        "show my meetings this week",
+			prompt:      "show my meetings this week",
+			wantSummary: true,
+		},
+		{
+			name:        "am I free tomorrow afternoon",
+			prompt:      "am I free tomorrow afternoon?",
+			wantSummary: true,
+		},
+		{
+			name:        "new meeting not summary",
+			prompt:      "schedule a meeting with Bob at 2pm",
+			wantSummary: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := parseMeetingPrompt(claudePath, tt.prompt, nil)
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+
+			fmt.Printf("[%s] summary_intent=%v summary_start=%q summary_end=%q\n",
+				tt.name, result.SummaryIntent, result.SummaryStart, result.SummaryEnd)
+
+			if result.SummaryIntent != tt.wantSummary {
+				t.Errorf("summary_intent: got %v, want %v", result.SummaryIntent, tt.wantSummary)
+			}
+			if tt.wantSummary && (result.SummaryStart == "" || result.SummaryEnd == "") {
+				t.Error("expected non-empty summary_start and summary_end")
+			}
+		})
+	}
+}

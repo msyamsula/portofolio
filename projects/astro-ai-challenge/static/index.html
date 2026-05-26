@@ -118,6 +118,28 @@
   .meeting-title { font-weight: 600; color: var(--accent); }
   .meeting-meta { color: var(--muted); font-size: 12px; text-align: right; }
 
+  .hints { margin-bottom: 20px; }
+  .hints-title { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .hints-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hint-card {
+    padding: 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .hint-card:hover { border-color: var(--accent); }
+  .hint-icon { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 4px; font-family: monospace; }
+  .hint-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .hint-example { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  .summary-event {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 8px 12px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 4px; font-size: 13px;
+  }
+  .summary-event-title { font-weight: 600; color: var(--accent); }
+  .summary-event-time { color: var(--muted); font-size: 12px; white-space: nowrap; margin-left: 12px; }
+  .summary-day { font-size: 12px; font-weight: 600; color: var(--yellow); margin: 10px 0 6px; }
+  .summary-empty { font-size: 13px; color: var(--muted); font-style: italic; }
+
   .spinner {
     display: inline-block; width: 14px; height: 14px;
     border: 2px solid var(--border); border-top-color: var(--accent);
@@ -156,11 +178,37 @@
       <div id="meetings-list"></div>
     </div>
 
+    <div id="hints" class="hints">
+      <div class="hints-title">What can I do?</div>
+      <div class="hints-grid">
+        <div class="hint-card" onclick="fillPrompt('Meeting with John and Sarah tomorrow at 10am')">
+          <div class="hint-icon">+</div>
+          <div class="hint-label">Create event</div>
+          <div class="hint-example">Meeting with John tomorrow at 10am</div>
+        </div>
+        <div class="hint-card" onclick="fillPrompt('Move my standup to 3pm')">
+          <div class="hint-icon">~</div>
+          <div class="hint-label">Edit event</div>
+          <div class="hint-example">Move my standup to 3pm</div>
+        </div>
+        <div class="hint-card" onclick="fillPrompt('What\\'s my schedule this week?')">
+          <div class="hint-icon">?</div>
+          <div class="hint-label">View schedule</div>
+          <div class="hint-example">What's my schedule this week?</div>
+        </div>
+        <div class="hint-card" onclick="fillPrompt('Find a time with John and Sarah, I\\'m flexible')">
+          <div class="hint-icon">&#x25CB;</div>
+          <div class="hint-label">Find free time</div>
+          <div class="hint-example">Find a time with John, I'm flexible</div>
+        </div>
+      </div>
+    </div>
+
     <div class="chat" id="chat"></div>
 
     <div class="prompt-area">
       <div class="prompt-box">
-        <textarea id="prompt" placeholder='Try: "Meeting with John and Sarah at 10am tomorrow"' rows="1"
+        <textarea id="prompt" placeholder="Create, edit, or summarize — just type naturally" rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
         <button class="btn btn-primary" id="send-btn" onclick="send()">Send</button>
       </div>
@@ -289,6 +337,22 @@ function resetState() {
   state.editCandidates = [];
 }
 
+function fillPrompt(text) {
+  const input = document.getElementById('prompt');
+  input.value = text;
+  input.focus();
+}
+
+function hideHints() {
+  const hints = document.getElementById('hints');
+  if (hints) hints.style.display = 'none';
+}
+
+function showHints() {
+  const hints = document.getElementById('hints');
+  if (hints) hints.style.display = 'block';
+}
+
 // ── Intent detection for mid-flow input ──
 function detectIntent(text) {
   const t = text.toLowerCase().trim();
@@ -338,6 +402,7 @@ async function send() {
   if (!text) return;
   input.value = '';
 
+  hideHints();
   const intent = detectIntent(text);
 
   // Handle cancel from any phase
@@ -346,6 +411,7 @@ async function send() {
     addMsg('system', 'Cancelled. Start a new meeting request anytime.');
     resetState();
     clearChat();
+    showHints();
     return;
   }
 
@@ -472,6 +538,12 @@ async function parsePrompt(text) {
   // Edit intent — search calendar for matching events
   if (state.parsed.edit_intent && !state.editEventId) {
     await searchEventsForEdit(state.parsed.search_keywords);
+    return;
+  }
+
+  // Summary intent — fetch and display schedule
+  if (state.parsed.summary_intent) {
+    await fetchSummary(state.parsed.summary_start, state.parsed.summary_end);
     return;
   }
 
@@ -733,6 +805,59 @@ async function createEvent() {
   resetState();
 }
 
+// ── Summary flow ──
+async function fetchSummary(timeMin, timeMax) {
+  state.phase = 'summary';
+  setLoading(true, 'Fetching your schedule...');
+
+  try {
+    const res = await fetch('/api/summary', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({time_min: timeMin, time_max: timeMax}),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const events = await res.json();
+    setLoading(false);
+
+    if (!events || events.length === 0) {
+      addMsg('system', `No events found for that period. Your schedule is clear!`);
+      resetState();
+      return;
+    }
+
+    // Group events by day
+    const grouped = {};
+    for (const ev of events) {
+      const d = new Date(ev.start);
+      const dayKey = d.toLocaleDateString('en-US', {weekday: 'long', month: 'short', day: 'numeric'});
+      if (!grouped[dayKey]) grouped[dayKey] = [];
+      grouped[dayKey].push(ev);
+    }
+
+    let html = `<div style="margin-bottom:6px;font-weight:600">${events.length} event${events.length > 1 ? 's' : ''} found</div>`;
+    for (const [day, dayEvents] of Object.entries(grouped)) {
+      html += `<div class="summary-day">${esc(day)}</div>`;
+      for (const ev of dayEvents) {
+        const timeStr = formatTime(ev.start) + ' - ' + formatTime(ev.end);
+        const attendeeStr = ev.attendees && ev.attendees.length > 0
+          ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${ev.attendees.slice(0, 3).map(a => esc(a)).join(', ')}${ev.attendees.length > 3 ? ' +' + (ev.attendees.length - 3) + ' more' : ''}</div>`
+          : '';
+        html += `<div class="summary-event">
+          <div><span class="summary-event-title">${esc(ev.title || '(No title)')}</span>${attendeeStr}</div>
+          <span class="summary-event-time">${esc(timeStr)}</span>
+        </div>`;
+      }
+    }
+    addMsg('system', html);
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to fetch schedule: ' + esc(e.message));
+  }
+
+  resetState();
+}
+
 // ── Edit flow ──
 async function searchEventsForEdit(query) {
   state.phase = 'edit_searching';
@@ -857,6 +982,15 @@ function formatDT(iso) {
     if (isNaN(d)) return iso;
     return d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) +
       ' at ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  } catch { return iso; }
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
   } catch { return iso; }
 }
 

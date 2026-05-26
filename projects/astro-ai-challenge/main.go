@@ -65,6 +65,7 @@ func main() {
 	mux.HandleFunc("/api/create", handleCreate)
 	mux.HandleFunc("/api/events", handleEvents)
 	mux.HandleFunc("/api/update", handleUpdate)
+	mux.HandleFunc("/api/summary", handleSummary)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -109,11 +110,13 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := sessions.Create(token, email, name)
+	secure := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(sessionDuration.Seconds()),
 	})
@@ -140,11 +143,13 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		sessions.Delete(cookie.Value)
 	}
+	secure := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 	http.SetCookie(w, &http.Cookie{
-		Name:   "session",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
+		Name:     "session",
+		Value:    "",
+		Path:     "/",
+		Secure:   secure,
+		MaxAge:   -1,
 	})
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
@@ -414,4 +419,40 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 		"start":    event.Start.DateTime,
 		"end":      event.End.DateTime,
 	})
+}
+
+func handleSummary(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, err := requireSession(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var body struct {
+		TimeMin string `json:"time_min"`
+		TimeMax string `json:"time_max"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if body.TimeMin == "" || body.TimeMax == "" {
+		http.Error(w, "time_min and time_max are required", http.StatusBadRequest)
+		return
+	}
+
+	events, err := listEventsInRange(context.Background(), session.Token, oauthConfig, body.TimeMin, body.TimeMax)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
 }
