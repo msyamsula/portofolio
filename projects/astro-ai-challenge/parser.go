@@ -24,6 +24,7 @@ type ParsedMeeting struct {
 	SummaryIntent   bool     `json:"summary_intent"`
 	SummaryStart    string   `json:"summary_start"`
 	SummaryEnd      string   `json:"summary_end"`
+	DeleteIntent    bool     `json:"delete_intent"`
 }
 
 var jakartaLoc *time.Location
@@ -95,7 +96,8 @@ Output ONLY valid JSON matching this schema:
   "search_keywords": "",
   "summary_intent": false,
   "summary_start": "",
-  "summary_end": ""
+  "summary_end": "",
+  "delete_intent": false
 }
 
 Rules:
@@ -111,6 +113,7 @@ Rules:
 - If the date is more than 1 month away, set rejected=true and reject_reason="Can only schedule within the next 30 days"
 - Do NOT include the creator/user in the attendees list
 - EDIT DETECTION: If the user wants to modify an EXISTING event on their calendar (not a draft), set edit_intent=true. Keywords: "move my", "reschedule my", "change my", "update my", "cancel my", "edit my", "push back my". Put relevant search terms in search_keywords (e.g. "standup", "meeting with John"). When edit_intent=true, still extract the NEW values (new time, new title, etc.) into the regular fields — leave unchanged fields empty.
+- DELETE DETECTION: If the user wants to DELETE, CANCEL, or REMOVE an existing event, set delete_intent=true AND edit_intent=true. Use the same search_keywords field to identify which event. Keywords: "delete my", "cancel my", "remove my", "drop my". When delete_intent=true, all other meeting fields can be left at defaults.
 - SUMMARY DETECTION: If the user wants to VIEW or SUMMARIZE their schedule, set summary_intent=true. Keywords: "what's my schedule", "what do I have", "show my meetings", "my agenda", "am I free", "what's on my calendar", "summarize my week". Set summary_start and summary_end as RFC3339 datetime strings with +07:00 offset for the requested range. Examples: "today" = start of today to end of today, "this week" = today to end of this week (Sunday), "next 3 days" = today to 3 days from now. Maximum range is 1 month. When summary_intent=true, all other meeting fields can be left at defaults.`,
 		now.Format("2006-01-02 15:04:05"),
 		maxDate.Format("2006-01-02"),

@@ -146,3 +146,61 @@ func TestSummaryIntentDetection(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteIntentDetection(t *testing.T) {
+	claudePath := "claude"
+
+	tests := []struct {
+		name       string
+		prompt     string
+		wantDelete bool
+		wantSearch bool
+	}{
+		{
+			name:       "cancel my standup",
+			prompt:     "cancel my standup tomorrow",
+			wantDelete: true,
+			wantSearch: true,
+		},
+		{
+			name:       "delete meeting with John",
+			prompt:     "delete my meeting with John",
+			wantDelete: true,
+			wantSearch: true,
+		},
+		{
+			name:       "remove my 1on1",
+			prompt:     "remove my 1on1",
+			wantDelete: true,
+			wantSearch: true,
+		},
+		{
+			name:       "create not delete",
+			prompt:     "meeting with Sarah at 3pm",
+			wantDelete: false,
+			wantSearch: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := parseMeetingPrompt(claudePath, tt.prompt, nil)
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+
+			fmt.Printf("[%s] delete_intent=%v edit_intent=%v search_keywords=%q\n",
+				tt.name, result.DeleteIntent, result.EditIntent, result.SearchKeywords)
+
+			if result.DeleteIntent != tt.wantDelete {
+				t.Errorf("delete_intent: got %v, want %v", result.DeleteIntent, tt.wantDelete)
+			}
+			if tt.wantDelete && !result.EditIntent {
+				t.Error("expected edit_intent=true when delete_intent=true")
+			}
+			if tt.wantSearch && result.SearchKeywords == "" {
+				t.Error("expected non-empty search_keywords")
+			}
+		})
+	}
+}

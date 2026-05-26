@@ -450,6 +450,20 @@ func updateCalendarEvent(ctx context.Context, token *oauth2.Token, oauthCfg *oau
 	return updated, nil
 }
 
+func deleteCalendarEvent(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config, eventID string) error {
+	client := oauthCfg.Client(ctx, token)
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return fmt.Errorf("calendar service: %w", err)
+	}
+
+	if err := srv.Events.Delete("primary", eventID).SendUpdates("all").Do(); err != nil {
+		return fmt.Errorf("delete event: %w", err)
+	}
+
+	return nil
+}
+
 func getUserEmail(ctx context.Context, token *oauth2.Token, oauthCfg *oauth2.Config) (string, string, error) {
 	client := oauthCfg.Client(ctx, token)
 	srv, err := people.NewService(ctx, option.WithHTTPClient(client))

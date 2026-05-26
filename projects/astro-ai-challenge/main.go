@@ -66,6 +66,7 @@ func main() {
 	mux.HandleFunc("/api/events", handleEvents)
 	mux.HandleFunc("/api/update", handleUpdate)
 	mux.HandleFunc("/api/summary", handleSummary)
+	mux.HandleFunc("/api/delete", handleDelete)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -455,4 +456,38 @@ func handleSummary(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
+}
+
+func handleDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, err := requireSession(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var body struct {
+		EventID string `json:"event_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if body.EventID == "" {
+		http.Error(w, "event_id is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := deleteCalendarEvent(context.Background(), session.Token, oauthConfig, body.EventID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"success": true})
 }

@@ -196,6 +196,11 @@
           <div class="hint-label">View schedule</div>
           <div class="hint-example">What's my schedule this week?</div>
         </div>
+        <div class="hint-card" onclick="fillPrompt('Cancel my standup tomorrow')">
+          <div class="hint-icon">x</div>
+          <div class="hint-label">Delete event</div>
+          <div class="hint-example">Cancel my standup tomorrow</div>
+        </div>
         <div class="hint-card" onclick="fillPrompt('Find a time with John and Sarah, I\\'m flexible')">
           <div class="hint-icon">&#x25CB;</div>
           <div class="hint-label">Find free time</div>
@@ -335,6 +340,7 @@ function resetState() {
   state.selectedSlot = null;
   state.editEventId = null;
   state.editCandidates = [];
+  state.deleteMode = false;
 }
 
 function fillPrompt(text) {
@@ -468,6 +474,21 @@ async function send() {
     return;
   }
 
+  if (state.phase === 'delete_confirm') {
+    addMsg('user', esc(text));
+    if (intent === 'confirm') {
+      await submitDelete();
+      return;
+    }
+    if (intent === 'cancel') {
+      addMsg('system', 'Cancelled. The event was not deleted.');
+      resetState();
+      return;
+    }
+    addMsg('system', 'Type <strong>yes</strong> to confirm deletion, or <strong>cancel</strong> to keep the event.');
+    return;
+  }
+
   if (state.phase === 'draft') {
     if (intent === 'confirm') {
       addMsg('user', esc(text));
@@ -535,8 +556,9 @@ async function parsePrompt(text) {
     return;
   }
 
-  // Edit intent — search calendar for matching events
+  // Delete or Edit intent — search calendar for matching events
   if (state.parsed.edit_intent && !state.editEventId) {
+    state.deleteMode = !!state.parsed.delete_intent;
     await searchEventsForEdit(state.parsed.search_keywords);
     return;
   }
@@ -883,7 +905,8 @@ async function searchEventsForEdit(query) {
     state.editCandidates = events;
     state.phase = 'edit_picking';
 
-    let html = `Which event do you want to edit?<br><div style="margin-top:8px">`;
+    const action = state.deleteMode ? 'delete' : 'edit';
+    let html = `Which event do you want to ${action}?<br><div style="margin-top:8px">`;
     events.forEach((ev, i) => {
       const attendeeStr = ev.attendees && ev.attendees.length > 0 ? ` — ${ev.attendees.slice(0, 3).join(', ')}` : '';
       html += `<div class="disambig-option" onclick="pickEditCandidate(${i})">
@@ -912,7 +935,12 @@ function pickEditCandidate(index) {
   });
 
   addMsg('system', `Selected: <strong>${esc(ev.title)}</strong> (${formatDT(ev.start)})`);
-  showEditDraft(ev);
+
+  if (state.deleteMode) {
+    showDeleteConfirm(ev);
+  } else {
+    showEditDraft(ev);
+  }
 }
 
 function showEditDraft(originalEvent) {
@@ -963,6 +991,45 @@ async function submitUpdate() {
   } catch (e) {
     setLoading(false);
     addMsg('error', 'Failed to update event: ' + esc(e.message));
+  }
+
+  resetState();
+}
+
+// ── Delete flow ──
+function showDeleteConfirm(ev) {
+  state.phase = 'delete_confirm';
+  const attendeeStr = ev.attendees && ev.attendees.length > 0
+    ? `<div class="draft-row"><span class="draft-label">Attendees</span><span class="draft-value">${ev.attendees.slice(0, 5).map(a => esc(a)).join(', ')}</span></div>`
+    : '';
+  let html = `<div class="draft-details">`;
+  html += `<div style="margin-bottom:8px;color:var(--red);font-weight:600">Delete this event?</div>`;
+  html += `<div class="draft-row"><span class="draft-label">Title</span><span class="draft-value">${esc(ev.title)}</span></div>`;
+  html += `<div class="draft-row"><span class="draft-label">When</span><span class="draft-value">${formatDT(ev.start)}</span></div>`;
+  html += attendeeStr;
+  html += `</div>`;
+  html += `<div style="margin-top:10px;font-size:13px;color:var(--red)">Type <strong>yes</strong> to delete, or <strong>cancel</strong> to keep it.</div>`;
+  addMsg('error', html);
+}
+
+async function submitDelete() {
+  state.phase = 'deleting';
+  setLoading(true, 'Deleting event...');
+
+  try {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({event_id: state.editEventId}),
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    setLoading(false);
+    clearChat();
+    addMsg('success', 'Event deleted and attendees notified.');
+  } catch (e) {
+    setLoading(false);
+    addMsg('error', 'Failed to delete event: ' + esc(e.message));
   }
 
   resetState();
