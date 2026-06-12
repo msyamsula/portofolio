@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	HTTP     HTTPConfig
-	Database DatabaseConfig
-	Redis    RedisConfig
+	HTTP            HTTPConfig
+	Database        DatabaseConfig
+	Redis           RedisConfig
+	JobOrchestrator JobOrchestratorConfig
 }
 
 type HTTPConfig struct {
@@ -39,6 +40,10 @@ type RedisConfig struct {
 	PoolSize     int
 	MinIdleConns int
 	ExecTimeout  time.Duration
+}
+
+type JobOrchestratorConfig struct {
+	Interval time.Duration
 }
 
 func Load() (Config, error) {
@@ -99,6 +104,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	jobOrchestratorInterval, err := envDuration("JOB_ORCHESTRATOR_INTERVAL", time.Second)
+	if err != nil {
+		return Config{}, err
+	}
 
 	cfg := Config{
 		HTTP: HTTPConfig{
@@ -125,6 +134,9 @@ func Load() (Config, error) {
 			MinIdleConns: redisMinIdleConns,
 			ExecTimeout:  redisExecTimeout,
 		},
+		JobOrchestrator: JobOrchestratorConfig{
+			Interval: jobOrchestratorInterval,
+		},
 	}
 
 	if cfg.Database.URL == "" {
@@ -141,6 +153,9 @@ func Load() (Config, error) {
 	}
 	if cfg.Redis.MinIdleConns < 0 || cfg.Redis.MinIdleConns > cfg.Redis.PoolSize {
 		return Config{}, fmt.Errorf("REDIS_MIN_IDLE_CONNS must be between 0 and REDIS_POOL_SIZE")
+	}
+	if cfg.JobOrchestrator.Interval <= 0 {
+		return Config{}, fmt.Errorf("JOB_ORCHESTRATOR_INTERVAL must be positive")
 	}
 
 	return cfg, nil

@@ -3,6 +3,8 @@ package redisstore
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"auto-pr-review/internal/config"
@@ -12,6 +14,17 @@ import (
 )
 
 const PeriodicJobNextTimestampKey = "link:periodic:nexttimestamp"
+
+const advancePeriodicJobScript = `
+local current_score = redis.call("ZSCORE", KEYS[1], ARGV[1])
+if not current_score then
+	return 0
+end
+if tonumber(current_score) ~= tonumber(ARGV[2]) then
+	return 0
+end
+return redis.call("ZADD", KEYS[1], "XX", "CH", ARGV[3], ARGV[1])
+`
 
 type Repository struct {
 	client      *redis.Client
@@ -61,6 +74,70 @@ func (r *Repository) RegisterPeriodicJob(ctx context.Context, job service.Period
 	return nil
 }
 
+func (r *Repository) ClaimDuePeriodicJob(ctx context.Context, now time.Time) (service.PeriodicJob, bool, error) {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	items, err := r.client.ZRangeWithScores(queryCtx, PeriodicJobNextTimestampKey, 0, 0).Result()
+	if err != nil {
+		return service.PeriodicJob{}, false, fmt.Errorf("get next periodic job: %w", err)
+	}
+	if len(items) == 0 {
+		return service.PeriodicJob{}, false, nil
+	}
+
+	member, ok := items[0].Member.(string)
+	if !ok {
+		return service.PeriodicJob{}, false, fmt.Errorf("periodic job member is not a string")
+	}
+
+	nextTimestamp := int64(items[0].Score)
+	if now.Unix() < nextTimestamp {
+		return service.PeriodicJob{}, false, nil
+	}
+
+	job, period, err := parsePeriodicJobMember(member)
+	if err != nil {
+		return service.PeriodicJob{}, false, err
+	}
+
+	updatedTimestamp := now.Add(period).Unix()
+	result, err := r.client.Eval(
+		queryCtx,
+		advancePeriodicJobScript,
+		[]string{PeriodicJobNextTimestampKey},
+		member,
+		strconv.FormatInt(nextTimestamp, 10),
+		strconv.FormatInt(updatedTimestamp, 10),
+	).Int64()
+	if err != nil {
+		return service.PeriodicJob{}, false, fmt.Errorf("advance periodic job: %w", err)
+	}
+	if result != 1 {
+		return service.PeriodicJob{}, false, nil
+	}
+
+	job.NextTimestamp = updatedTimestamp
+	return job, true, nil
+}
+
 func periodicJobMember(job service.PeriodicJob) string {
 	return fmt.Sprintf("%s:%s", job.GitHubLink, job.Period)
+}
+
+func parsePeriodicJobMember(member string) (service.PeriodicJob, time.Duration, error) {
+	separator := strings.LastIndex(member, ":")
+	if separator < 1 || separator == len(member)-1 {
+		return service.PeriodicJob{}, 0, fmt.Errorf("invalid periodic job member")
+	}
+
+	period, err := time.ParseDuration(member[separator+1:])
+	if err != nil || period < time.Second {
+		return service.PeriodicJob{}, 0, fmt.Errorf("invalid periodic job period")
+	}
+
+	return service.PeriodicJob{
+		GitHubLink: member[:separator],
+		Period:     period.String(),
+	}, period, nil
 }

@@ -38,8 +38,8 @@ func (s *PeriodicJobService) Register(ctx context.Context, rawURL, rawPeriod str
 	}
 
 	period, err := time.ParseDuration(rawPeriod)
-	if err != nil || period <= 0 {
-		return PeriodicJob{}, fmt.Errorf("%w: must be a positive duration like 5s, 10m, or 1h", ErrInvalidJobPeriod)
+	if err != nil || period < time.Second {
+		return PeriodicJob{}, fmt.Errorf("%w: must be at least 1s, like 5s, 10m, or 1h", ErrInvalidJobPeriod)
 	}
 
 	job := PeriodicJob{

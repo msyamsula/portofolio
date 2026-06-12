@@ -28,4 +28,4 @@ test:
 	go test ./...
 
 build:
-	go build ./cmd/api
+	go build ./cmd/api ./cmd/job-orchestrator

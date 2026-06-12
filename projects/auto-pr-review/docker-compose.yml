@@ -71,5 +71,21 @@ services:
     ports:
       - "${SERVICE_PORT:-8080}:8080"
 
+  job-orchestrator:
+    build: .
+    command: ["/job-orchestrator"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-auto_pr_review}:${POSTGRES_PASSWORD:-auto_pr_review}@postgres:5432/${POSTGRES_DB:-auto_pr_review}?sslmode=disable
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_POOL_SIZE: ${REDIS_POOL_SIZE:-8}
+      REDIS_MIN_IDLE_CONNS: ${REDIS_MIN_IDLE_CONNS:-1}
+      REDIS_EXEC_TIMEOUT: ${REDIS_EXEC_TIMEOUT:-3s}
+      JOB_ORCHESTRATOR_INTERVAL: ${JOB_ORCHESTRATOR_INTERVAL:-1s}
+
 volumes:
   postgres-data:

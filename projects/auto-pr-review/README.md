@@ -39,5 +39,10 @@ member is `github_link:period`, for example
 `https://github.com/octocat/Hello-World:5s`, and the score is `next_timestamp`
 ascending.
 
+A separate `job-orchestrator` container runs the background loop. On each
+`JOB_ORCHESTRATOR_INTERVAL`, it checks the smallest Redis score, skips empty or
+not-yet-due jobs, atomically advances due jobs by their period, and currently
+logs a `periodic job done` message as the placeholder processing function.
+
 Configuration is read from environment variables at process startup. Changing
 configuration requires restarting the service container.
