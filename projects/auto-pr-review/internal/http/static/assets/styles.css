@@ -27,7 +27,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -242,6 +243,44 @@ button:disabled {
   color: var(--accent-strong);
 }
 
+.row-controls {
+  display: grid;
+  grid-template-columns: minmax(112px, 130px) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.period-select {
+  min-width: 0;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.period-select.registered {
+  border-color: #86efac;
+  background: #dcfce7;
+  color: var(--success);
+}
+
+.registered-button {
+  min-height: 38px;
+  border-color: #86efac;
+  background: #dcfce7;
+  color: var(--success);
+}
+
+.registered-button:hover {
+  border-color: #4ade80;
+  background: #bbf7d0;
+  color: var(--success);
+}
+
 .delete-button {
   min-height: 38px;
   border-color: #fecaca;
@@ -352,5 +391,10 @@ button:disabled {
 
   .delete-button {
     grid-column: 1 / -1;
+  }
+
+  .row-controls {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
   }
 }

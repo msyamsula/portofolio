@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type Config struct {
 	Database        DatabaseConfig
 	Redis           RedisConfig
 	JobOrchestrator JobOrchestratorConfig
+	Jobs            JobsConfig
 }
 
 type HTTPConfig struct {
@@ -44,6 +46,10 @@ type RedisConfig struct {
 
 type JobOrchestratorConfig struct {
 	Interval time.Duration
+}
+
+type JobsConfig struct {
+	PeriodOptions []string
 }
 
 func Load() (Config, error) {
@@ -108,6 +114,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	jobPeriodOptions, err := envDurationList("JOB_PERIOD_OPTIONS", "1s,10m,5h")
+	if err != nil {
+		return Config{}, err
+	}
 
 	cfg := Config{
 		HTTP: HTTPConfig{
@@ -137,6 +147,9 @@ func Load() (Config, error) {
 		JobOrchestrator: JobOrchestratorConfig{
 			Interval: jobOrchestratorInterval,
 		},
+		Jobs: JobsConfig{
+			PeriodOptions: jobPeriodOptions,
+		},
 	}
 
 	if cfg.Database.URL == "" {
@@ -156,6 +169,9 @@ func Load() (Config, error) {
 	}
 	if cfg.JobOrchestrator.Interval <= 0 {
 		return Config{}, fmt.Errorf("JOB_ORCHESTRATOR_INTERVAL must be positive")
+	}
+	if len(cfg.Jobs.PeriodOptions) == 0 {
+		return Config{}, fmt.Errorf("JOB_PERIOD_OPTIONS must contain at least one duration")
 	}
 
 	return cfg, nil
@@ -191,4 +207,29 @@ func envDuration(key string, fallback time.Duration) (time.Duration, error) {
 		return 0, fmt.Errorf("%s must be a duration: %w", key, err)
 	}
 	return parsed, nil
+}
+
+func envDurationList(key, fallback string) ([]string, error) {
+	value := envString(key, fallback)
+	parts := strings.Split(value, ",")
+	durations := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+
+	for _, part := range parts {
+		duration := strings.TrimSpace(part)
+		if duration == "" {
+			continue
+		}
+		parsed, err := time.ParseDuration(duration)
+		if err != nil || parsed < time.Second {
+			return nil, fmt.Errorf("%s must contain positive durations of at least 1s: %q", key, duration)
+		}
+		if _, ok := seen[duration]; ok {
+			continue
+		}
+		seen[duration] = struct{}{}
+		durations = append(durations, duration)
+	}
+
+	return durations, nil
 }

@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS github_links (
     id BIGSERIAL PRIMARY KEY,
     url TEXT NOT NULL,
+    periodic_interval TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

@@ -25,11 +25,14 @@ type GitHubLinkService interface {
 
 type PeriodicJobService interface {
 	Register(ctx context.Context, rawURL, rawPeriod string) (service.PeriodicJob, error)
+	List(ctx context.Context) ([]service.PeriodicJob, error)
+	Deregister(ctx context.Context, rawURL, rawPeriod string) error
 }
 
 type Server struct {
 	githubLinks    GitHubLinkService
 	periodicJobs   PeriodicJobService
+	jobPeriods     []string
 	logger         *slog.Logger
 	requestTimeout time.Duration
 }
@@ -37,12 +40,14 @@ type Server struct {
 func NewServer(
 	githubLinks GitHubLinkService,
 	periodicJobs PeriodicJobService,
+	jobPeriods []string,
 	logger *slog.Logger,
 	requestTimeout time.Duration,
 ) http.Handler {
 	s := &Server{
 		githubLinks:    githubLinks,
 		periodicJobs:   periodicJobs,
+		jobPeriods:     append([]string(nil), jobPeriods...),
 		logger:         logger,
 		requestTimeout: requestTimeout,
 	}
@@ -55,6 +60,9 @@ func NewServer(
 	mux.HandleFunc("GET /post", s.listGitHubLinks)
 	mux.HandleFunc("DELETE /post/{id}", s.deleteGitHubLink)
 	mux.HandleFunc("POST /jobs", s.registerPeriodicJob)
+	mux.HandleFunc("GET /jobs", s.listPeriodicJobs)
+	mux.HandleFunc("DELETE /jobs", s.deregisterPeriodicJob)
+	mux.HandleFunc("GET /job-periods", s.listJobPeriods)
 	mux.HandleFunc("GET /healthz", s.healthz)
 
 	return s.withRequestTimeout(mux)
@@ -119,12 +127,55 @@ func (s *Server) registerPeriodicJob(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		if errors.Is(err, service.ErrGitHubLinkNotFound) {
+			writeError(w, http.StatusNotFound, err.Error())
+			return
+		}
 		s.logger.Error("register periodic job", slog.String("error", err.Error()))
 		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
 	writeJSON(w, http.StatusCreated, job)
+}
+
+func (s *Server) listPeriodicJobs(w http.ResponseWriter, r *http.Request) {
+	jobs, err := s.periodicJobs.List(r.Context())
+	if err != nil {
+		s.logger.Error("list periodic jobs", slog.String("error", err.Error()))
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string][]service.PeriodicJob{"jobs": jobs})
+}
+
+func (s *Server) deregisterPeriodicJob(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		URL    string `json:"url"`
+		Period string `json:"period"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	err := s.periodicJobs.Deregister(r.Context(), req.URL, req.Period)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidGitHubURL) || errors.Is(err, service.ErrInvalidJobPeriod) {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		s.logger.Error("deregister periodic job", slog.String("error", err.Error()))
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) listJobPeriods(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string][]string{"periods": s.jobPeriods})
 }
 
 func (s *Server) listGitHubLinks(w http.ResponseWriter, r *http.Request) {

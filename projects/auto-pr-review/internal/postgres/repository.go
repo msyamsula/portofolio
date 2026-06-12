@@ -16,11 +16,17 @@ import (
 
 const (
 	createGitHubLinkStatement = "create_github_link"
-	createGitHubLinkSQL       = `INSERT INTO github_links (url) VALUES ($1) RETURNING id, url`
+	createGitHubLinkSQL       = `INSERT INTO github_links (url) VALUES ($1) RETURNING id, url, periodic_interval`
 	listGitHubLinksStatement  = "list_github_links"
-	listGitHubLinksSQL        = `SELECT id, url FROM github_links ORDER BY id`
+	listGitHubLinksSQL        = `SELECT id, url, periodic_interval FROM github_links ORDER BY id`
 	deleteGitHubLinkStatement = "delete_github_link"
 	deleteGitHubLinkSQL       = `DELETE FROM github_links WHERE id = $1 RETURNING id`
+	setPeriodicJobStatement   = "set_periodic_job"
+	setPeriodicJobSQL         = `UPDATE github_links SET periodic_interval = $2 WHERE url = $1 RETURNING url, periodic_interval`
+	clearPeriodicJobStatement = "clear_periodic_job"
+	clearPeriodicJobSQL       = `UPDATE github_links SET periodic_interval = NULL WHERE url = $1 AND periodic_interval = $2 RETURNING url`
+	listPeriodicJobsStatement = "list_periodic_jobs"
+	listPeriodicJobsSQL       = `SELECT url, periodic_interval FROM github_links WHERE periodic_interval IS NOT NULL ORDER BY id`
 	uniqueViolationCode       = "23505"
 )
 
@@ -66,6 +72,15 @@ func NewRepository(ctx context.Context, cfg config.DatabaseConfig) (*Repository,
 		if _, err := conn.Prepare(ctx, deleteGitHubLinkStatement, deleteGitHubLinkSQL); err != nil {
 			return fmt.Errorf("prepare %s: %w", deleteGitHubLinkStatement, err)
 		}
+		if _, err := conn.Prepare(ctx, setPeriodicJobStatement, setPeriodicJobSQL); err != nil {
+			return fmt.Errorf("prepare %s: %w", setPeriodicJobStatement, err)
+		}
+		if _, err := conn.Prepare(ctx, clearPeriodicJobStatement, clearPeriodicJobSQL); err != nil {
+			return fmt.Errorf("prepare %s: %w", clearPeriodicJobStatement, err)
+		}
+		if _, err := conn.Prepare(ctx, listPeriodicJobsStatement, listPeriodicJobsSQL); err != nil {
+			return fmt.Errorf("prepare %s: %w", listPeriodicJobsStatement, err)
+		}
 		return nil
 	}
 
@@ -100,7 +115,7 @@ func (r *Repository) CreateGitHubLink(ctx context.Context, githubURL string) (se
 		queryCtx,
 		createGitHubLinkStatement,
 		githubURL,
-	).Scan(&link.ID, &link.URL)
+	).Scan(&link.ID, &link.URL, &link.PeriodicInterval)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
@@ -125,7 +140,7 @@ func (r *Repository) ListGitHubLinks(ctx context.Context) ([]service.GitHubLink,
 	links := make([]service.GitHubLink, 0)
 	for rows.Next() {
 		var link service.GitHubLink
-		if err := rows.Scan(&link.ID, &link.URL); err != nil {
+		if err := rows.Scan(&link.ID, &link.URL, &link.PeriodicInterval); err != nil {
 			return nil, fmt.Errorf("scan github link: %w", err)
 		}
 		links = append(links, link)
@@ -135,6 +150,73 @@ func (r *Repository) ListGitHubLinks(ctx context.Context) ([]service.GitHubLink,
 	}
 
 	return links, nil
+}
+
+func (r *Repository) SetPeriodicJob(ctx context.Context, githubURL, period string) (service.PeriodicJob, error) {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	var job service.PeriodicJob
+	err := r.pool.QueryRow(
+		queryCtx,
+		setPeriodicJobStatement,
+		githubURL,
+		period,
+	).Scan(&job.GitHubLink, &job.Period)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return service.PeriodicJob{}, service.ErrGitHubLinkNotFound
+		}
+		return service.PeriodicJob{}, fmt.Errorf("set periodic job: %w", err)
+	}
+
+	return job, nil
+}
+
+func (r *Repository) ClearPeriodicJob(ctx context.Context, githubURL, period string) error {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	var clearedURL string
+	err := r.pool.QueryRow(
+		queryCtx,
+		clearPeriodicJobStatement,
+		githubURL,
+		period,
+	).Scan(&clearedURL)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("clear periodic job: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) ListPeriodicJobs(ctx context.Context) ([]service.PeriodicJob, error) {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	rows, err := r.pool.Query(queryCtx, listPeriodicJobsStatement)
+	if err != nil {
+		return nil, fmt.Errorf("query periodic jobs: %w", err)
+	}
+	defer rows.Close()
+
+	jobs := make([]service.PeriodicJob, 0)
+	for rows.Next() {
+		var job service.PeriodicJob
+		if err := rows.Scan(&job.GitHubLink, &job.Period); err != nil {
+			return nil, fmt.Errorf("scan periodic job: %w", err)
+		}
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate periodic jobs: %w", err)
+	}
+
+	return jobs, nil
 }
 
 func (r *Repository) DeleteGitHubLink(ctx context.Context, id int64) error {
@@ -162,8 +244,10 @@ func ensureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		CREATE TABLE IF NOT EXISTS github_links (
 			id BIGSERIAL PRIMARY KEY,
 			url TEXT NOT NULL,
+			periodic_interval TEXT,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 		);
+		ALTER TABLE github_links ADD COLUMN IF NOT EXISTS periodic_interval TEXT;
 		CREATE UNIQUE INDEX IF NOT EXISTS github_links_url_unique_idx ON github_links (url);
 	`)
 	if err != nil {

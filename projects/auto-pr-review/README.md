@@ -44,5 +44,9 @@ A separate `job-orchestrator` container runs the background loop. On each
 not-yet-due jobs, atomically advances due jobs by their period, and currently
 logs a `periodic job done` message as the placeholder processing function.
 
+The web dropdown period options come from `JOB_PERIOD_OPTIONS`, for example
+`1s,10m,5h`. Periodic interval state is persisted in Postgres on each GitHub
+link; Redis only stores the next-claim sorted set used by the orchestrator.
+
 Configuration is read from environment variables at process startup. Changing
 configuration requires restarting the service container.

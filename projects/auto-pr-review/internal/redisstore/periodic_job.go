@@ -74,6 +74,44 @@ func (r *Repository) RegisterPeriodicJob(ctx context.Context, job service.Period
 	return nil
 }
 
+func (r *Repository) ListPeriodicJobs(ctx context.Context) ([]service.PeriodicJob, error) {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	items, err := r.client.ZRangeWithScores(queryCtx, PeriodicJobNextTimestampKey, 0, -1).Result()
+	if err != nil {
+		return nil, fmt.Errorf("list periodic jobs: %w", err)
+	}
+
+	jobs := make([]service.PeriodicJob, 0, len(items))
+	for _, item := range items {
+		member, ok := item.Member.(string)
+		if !ok {
+			return nil, fmt.Errorf("periodic job member is not a string")
+		}
+
+		job, _, err := parsePeriodicJobMember(member)
+		if err != nil {
+			return nil, err
+		}
+		job.NextTimestamp = int64(item.Score)
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
+func (r *Repository) DeregisterPeriodicJob(ctx context.Context, job service.PeriodicJob) error {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	if err := r.client.ZRem(queryCtx, PeriodicJobNextTimestampKey, periodicJobMember(job)).Err(); err != nil {
+		return fmt.Errorf("deregister periodic job: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Repository) ClaimDuePeriodicJob(ctx context.Context, now time.Time) (service.PeriodicJob, bool, error) {
 	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
 	defer cancel()
@@ -138,6 +176,6 @@ func parsePeriodicJobMember(member string) (service.PeriodicJob, time.Duration, 
 
 	return service.PeriodicJob{
 		GitHubLink: member[:separator],
-		Period:     period.String(),
+		Period:     member[separator+1:],
 	}, period, nil
 }

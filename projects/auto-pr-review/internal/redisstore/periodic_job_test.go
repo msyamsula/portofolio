@@ -30,7 +30,7 @@ func TestParsePeriodicJobMember(t *testing.T) {
 	if job.GitHubLink != "https://github.com/octocat/Hello-World" {
 		t.Fatalf("github link mismatch: got %q", job.GitHubLink)
 	}
-	if job.Period != "10m0s" {
+	if job.Period != "10m" {
 		t.Fatalf("period mismatch: got %q", job.Period)
 	}
 	if period.String() != "10m0s" {

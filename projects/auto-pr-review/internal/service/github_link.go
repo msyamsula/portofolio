@@ -17,8 +17,9 @@ var (
 )
 
 type GitHubLink struct {
-	ID  int64  `json:"id"`
-	URL string `json:"url"`
+	ID               int64   `json:"id"`
+	URL              string  `json:"url"`
+	PeriodicInterval *string `json:"periodic_interval,omitempty"`
 }
 
 type GitHubLinkRepository interface {
