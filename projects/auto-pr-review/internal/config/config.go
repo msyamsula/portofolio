@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"auto-pr-review/internal/llm"
 )
 
 type Config struct {
@@ -17,6 +19,15 @@ type Config struct {
 	KafkaConsumer   KafkaConsumerConfig
 	JobOrchestrator JobOrchestratorConfig
 	Jobs            JobsConfig
+	LLM             llm.Config
+	GitHub          GitHubConfig
+	PRReview        PRReviewConfig
+}
+
+type PRReviewerRuntimeConfig struct {
+	LLM      llm.Config
+	GitHub   GitHubConfig
+	PRReview PRReviewConfig
 }
 
 type HTTPConfig struct {
@@ -71,6 +82,14 @@ type JobOrchestratorConfig struct {
 
 type JobsConfig struct {
 	PeriodOptions []string
+}
+
+type GitHubConfig struct {
+	Token string
+}
+
+type PRReviewConfig struct {
+	OutputDir string
 }
 
 func Load() (Config, error) {
@@ -176,6 +195,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	prReviewerCfg, err := LoadPRReviewer()
+	if err != nil {
+		return Config{}, err
+	}
 
 	cfg := Config{
 		HTTP: HTTPConfig{
@@ -225,6 +248,9 @@ func Load() (Config, error) {
 		Jobs: JobsConfig{
 			PeriodOptions: jobPeriodOptions,
 		},
+		LLM:      prReviewerCfg.LLM,
+		GitHub:   prReviewerCfg.GitHub,
+		PRReview: prReviewerCfg.PRReview,
 	}
 
 	if cfg.Database.URL == "" {
@@ -278,8 +304,130 @@ func Load() (Config, error) {
 	if len(cfg.Jobs.PeriodOptions) == 0 {
 		return Config{}, fmt.Errorf("JOB_PERIOD_OPTIONS must contain at least one duration")
 	}
+	if cfg.LLM.Provider != llm.ProviderClaude && cfg.LLM.Provider != llm.ProviderChatGPT {
+		return Config{}, fmt.Errorf("LLM_PROVIDER must be one of: %s, %s", llm.ProviderClaude, llm.ProviderChatGPT)
+	}
+	if cfg.LLM.RequestTimeout <= 0 {
+		return Config{}, fmt.Errorf("LLM_REQUEST_TIMEOUT must be positive")
+	}
+	if cfg.LLM.MaxRetries < 0 {
+		return Config{}, fmt.Errorf("LLM_MAX_RETRIES must be non-negative")
+	}
+	if cfg.LLM.RetryBackoff < 0 {
+		return Config{}, fmt.Errorf("LLM_RETRY_BACKOFF must be non-negative")
+	}
+	if cfg.LLM.MaxIdleConns < 1 {
+		return Config{}, fmt.Errorf("LLM_MAX_IDLE_CONNS must be at least 1")
+	}
+	if cfg.LLM.MaxIdleConnsPerHost < 1 {
+		return Config{}, fmt.Errorf("LLM_MAX_IDLE_CONNS_PER_HOST must be at least 1")
+	}
+	if cfg.LLM.MaxConnsPerHost < 1 {
+		return Config{}, fmt.Errorf("LLM_MAX_CONNS_PER_HOST must be at least 1")
+	}
+	if strings.TrimSpace(cfg.PRReview.OutputDir) == "" {
+		return Config{}, fmt.Errorf("PR_REVIEW_OUTPUT_DIR is required")
+	}
 
 	return cfg, nil
+}
+
+func LoadPRReviewer() (PRReviewerRuntimeConfig, error) {
+	llmCfg, err := loadLLM()
+	if err != nil {
+		return PRReviewerRuntimeConfig{}, err
+	}
+	cfg := PRReviewerRuntimeConfig{
+		LLM: llmCfg,
+		GitHub: GitHubConfig{
+			Token: envString("GITHUB_TOKEN", ""),
+		},
+		PRReview: PRReviewConfig{
+			OutputDir: envString("PR_REVIEW_OUTPUT_DIR", "reports"),
+		},
+	}
+	if err := validateLLM(cfg.LLM); err != nil {
+		return PRReviewerRuntimeConfig{}, err
+	}
+	if strings.TrimSpace(cfg.PRReview.OutputDir) == "" {
+		return PRReviewerRuntimeConfig{}, fmt.Errorf("PR_REVIEW_OUTPUT_DIR is required")
+	}
+	return cfg, nil
+}
+
+func loadLLM() (llm.Config, error) {
+	provider := strings.ToLower(strings.TrimSpace(envString("LLM_PROVIDER", llm.ProviderClaude)))
+	var apiKey, model string
+	switch provider {
+	case llm.ProviderClaude:
+		apiKey = strings.TrimSpace(envString("ANTHROPIC_API_KEY", ""))
+		model = strings.TrimSpace(envString("ANTHROPIC_MODEL", ""))
+	case llm.ProviderChatGPT:
+		apiKey = strings.TrimSpace(envString("OPENAI_API_KEY", ""))
+		model = strings.TrimSpace(envString("OPENAI_MODEL", ""))
+	}
+
+	requestTimeout, err := envDuration("LLM_REQUEST_TIMEOUT", time.Minute)
+	if err != nil {
+		return llm.Config{}, err
+	}
+	maxRetries, err := envInt("LLM_MAX_RETRIES", 2)
+	if err != nil {
+		return llm.Config{}, err
+	}
+	retryBackoff, err := envDuration("LLM_RETRY_BACKOFF", 500*time.Millisecond)
+	if err != nil {
+		return llm.Config{}, err
+	}
+	maxIdleConns, err := envInt("LLM_MAX_IDLE_CONNS", 10)
+	if err != nil {
+		return llm.Config{}, err
+	}
+	maxIdleConnsPerHost, err := envInt("LLM_MAX_IDLE_CONNS_PER_HOST", 10)
+	if err != nil {
+		return llm.Config{}, err
+	}
+	maxConnsPerHost, err := envInt("LLM_MAX_CONNS_PER_HOST", 10)
+	if err != nil {
+		return llm.Config{}, err
+	}
+
+	return llm.Config{
+		Provider:            provider,
+		APIKey:              apiKey,
+		Model:               model,
+		RequestTimeout:      requestTimeout,
+		MaxRetries:          maxRetries,
+		RetryBackoff:        retryBackoff,
+		MaxIdleConns:        maxIdleConns,
+		MaxIdleConnsPerHost: maxIdleConnsPerHost,
+		MaxConnsPerHost:     maxConnsPerHost,
+	}, nil
+}
+
+func validateLLM(cfg llm.Config) error {
+	if cfg.Provider != llm.ProviderClaude && cfg.Provider != llm.ProviderChatGPT {
+		return fmt.Errorf("LLM_PROVIDER must be one of: %s, %s", llm.ProviderClaude, llm.ProviderChatGPT)
+	}
+	if cfg.RequestTimeout <= 0 {
+		return fmt.Errorf("LLM_REQUEST_TIMEOUT must be positive")
+	}
+	if cfg.MaxRetries < 0 {
+		return fmt.Errorf("LLM_MAX_RETRIES must be non-negative")
+	}
+	if cfg.RetryBackoff < 0 {
+		return fmt.Errorf("LLM_RETRY_BACKOFF must be non-negative")
+	}
+	if cfg.MaxIdleConns < 1 {
+		return fmt.Errorf("LLM_MAX_IDLE_CONNS must be at least 1")
+	}
+	if cfg.MaxIdleConnsPerHost < 1 {
+		return fmt.Errorf("LLM_MAX_IDLE_CONNS_PER_HOST must be at least 1")
+	}
+	if cfg.MaxConnsPerHost < 1 {
+		return fmt.Errorf("LLM_MAX_CONNS_PER_HOST must be at least 1")
+	}
+	return nil
 }
 
 func envString(key, fallback string) string {

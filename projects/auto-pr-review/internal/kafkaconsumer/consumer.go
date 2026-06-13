@@ -10,29 +10,48 @@ import (
 	"auto-pr-review/internal/config"
 	"auto-pr-review/internal/kafkaproducer"
 	"auto-pr-review/internal/schemaregistry"
+	"auto-pr-review/internal/service"
 
 	"github.com/IBM/sarama"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type MessageProcessor interface {
+	Process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error
+}
+
+type MessageProcessorFunc func(context.Context, schemaregistry.PeriodicJobEnvelope) error
+
+func (f MessageProcessorFunc) Process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
+	return f(ctx, event)
+}
 
 type Consumer struct {
 	group          sarama.ConsumerGroup
 	topic          string
 	dlqTopic       string
 	dlqPublisher   *kafkaproducer.Producer
-	pgPool         *pgxpool.Pool
 	logger         *slog.Logger
 	schemaRegistry *schemaregistry.Registry
+	processor      MessageProcessor
 	maxRetries     int
 	retryBackoff   time.Duration
 	attemptTimeout time.Duration
+}
+
+type PrReviewConsumer struct {
+	consumer *Consumer
+	reviewer *service.PRReviewer
 }
 
 type consumerGroupHandler struct {
 	consumer *Consumer
 }
 
-func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig, pgPool *pgxpool.Pool, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger) (*Consumer, error) {
+func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger, processor MessageProcessor) (*Consumer, error) {
+	if processor == nil {
+		return nil, fmt.Errorf("message processor is required")
+	}
+
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Version = sarama.V2_8_0_0
 	saramaConfig.ClientID = cfg.ClientID
@@ -61,17 +80,44 @@ func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig,
 		topic:          cfg.Topic,
 		dlqTopic:       cfg.DLQTopic,
 		dlqPublisher:   dlqPublisher,
-		pgPool:         pgPool,
 		logger:         logger,
 		schemaRegistry: registry,
+		processor:      processor,
 		maxRetries:     consumerCfg.MaxRetries,
 		retryBackoff:   consumerCfg.RetryBackoff,
 		attemptTimeout: consumerCfg.AttemptTimeout,
 	}, nil
 }
 
+func NewPrReviewConsumer(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger) (*PrReviewConsumer, error) {
+	reviewer, err := service.NewPRReviewer(service.PRDiscussionReviewConfig{
+		LLM:         cfg.LLM,
+		GitHubToken: cfg.GitHub.Token,
+		OutputDir:   cfg.PRReview.OutputDir,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create PR reviewer: %w", err)
+	}
+
+	prReviewConsumer := &PrReviewConsumer{
+		reviewer: reviewer,
+	}
+
+	consumer, err := NewConsumer(cfg.Kafka, cfg.KafkaConsumer, dlqPublisher, logger, MessageProcessorFunc(prReviewConsumer.process))
+	if err != nil {
+		return nil, err
+	}
+	prReviewConsumer.consumer = consumer
+
+	return prReviewConsumer, nil
+}
+
 func (c *Consumer) Close() error {
 	return c.group.Close()
+}
+
+func (c *PrReviewConsumer) Close() error {
+	return c.consumer.Close()
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
@@ -85,6 +131,10 @@ func (c *Consumer) Run(ctx context.Context) error {
 			return err
 		}
 	}
+}
+
+func (c *PrReviewConsumer) Run(ctx context.Context) error {
+	return c.consumer.Run(ctx)
 }
 
 func (h *consumerGroupHandler) Setup(sarama.ConsumerGroupSession) error { return nil }
@@ -139,11 +189,11 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 		}
 
 		attemptCtx, cancel := context.WithTimeout(ctx, c.attemptTimeout)
-		err = c.pgPool.Ping(attemptCtx)
+		err = c.processor.Process(attemptCtx, event)
 		cancel()
 		if err == nil {
 			c.logger.Info(
-				"postgres ping success",
+				"kafka message processed",
 				slog.String("github_link", event.GitHubLink),
 				slog.String("idempotency_key", event.IdempotencyKey),
 				slog.String("topic", msg.Topic),
@@ -156,7 +206,7 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 
 		lastErr = err
 		c.logger.Warn(
-			"postgres ping failed",
+			"kafka message processing attempt failed",
 			slog.String("error", err.Error()),
 			slog.String("github_link", event.GitHubLink),
 			slog.String("idempotency_key", event.IdempotencyKey),
@@ -182,6 +232,29 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 		slog.Int64("offset", msg.Offset),
 	)
 
+	return nil
+}
+
+func (c *PrReviewConsumer) process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
+	if event.GitHubLink == "" {
+		return fmt.Errorf("github link is required")
+	}
+
+	outputPath, err := c.reviewer.WriteReviewPlanMarkdownToDefaultFile(ctx, event.GitHubLink)
+	if err != nil {
+		return err
+	}
+
+	return c.consumer.logReviewOutput(event, outputPath)
+}
+
+func (c *Consumer) logReviewOutput(event schemaregistry.PeriodicJobEnvelope, outputPath string) error {
+	c.logger.Info(
+		"PR review written",
+		slog.String("github_link", event.GitHubLink),
+		slog.String("idempotency_key", event.IdempotencyKey),
+		slog.String("output_path", outputPath),
+	)
 	return nil
 }
 

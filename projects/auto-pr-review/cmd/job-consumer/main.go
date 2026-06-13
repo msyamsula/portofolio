@@ -10,8 +10,6 @@ import (
 	"auto-pr-review/internal/config"
 	"auto-pr-review/internal/kafkaconsumer"
 	"auto-pr-review/internal/kafkaproducer"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -26,13 +24,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	pgPool, err := newPostgresPool(ctx, cfg.Database)
-	if err != nil {
-		logger.Error("connect postgres", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-	defer pgPool.Close()
-
 	dlqPublisher, err := kafkaproducer.NewProducer(cfg.Kafka)
 	if err != nil {
 		logger.Error("connect kafka publisher", slog.String("error", err.Error()))
@@ -44,9 +35,9 @@ func main() {
 		}
 	}()
 
-	consumer, err := kafkaconsumer.NewConsumer(cfg.Kafka, cfg.KafkaConsumer, pgPool, dlqPublisher, logger)
+	consumer, err := kafkaconsumer.NewPrReviewConsumer(cfg, dlqPublisher, logger)
 	if err != nil {
-		logger.Error("create kafka consumer", slog.String("error", err.Error()))
+		logger.Error("create PR review consumer", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 	defer func() {
@@ -60,30 +51,4 @@ func main() {
 		logger.Error("run consumer", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-}
-
-func newPostgresPool(ctx context.Context, cfg config.DatabaseConfig) (*pgxpool.Pool, error) {
-	poolConfig, err := pgxpool.ParseConfig(cfg.URL)
-	if err != nil {
-		return nil, err
-	}
-
-	poolConfig.MaxConns = cfg.MaxConns
-	poolConfig.MinConns = cfg.MinConns
-	poolConfig.MaxConnLifetime = cfg.MaxConnLifetime
-	poolConfig.MaxConnIdleTime = cfg.MaxConnIdleTime
-
-	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	pingCtx, cancel := context.WithTimeout(ctx, cfg.ExecTimeout)
-	defer cancel()
-	if err := pool.Ping(pingCtx); err != nil {
-		pool.Close()
-		return nil, err
-	}
-
-	return pool, nil
 }
