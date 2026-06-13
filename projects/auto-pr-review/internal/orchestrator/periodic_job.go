@@ -61,7 +61,7 @@ func (o *PeriodicJobOrchestrator) runOnce(ctx context.Context) {
 	}
 
 	if err := o.done(ctx, job); err != nil {
-		o.logger.Warn("periodic job done failed", slog.String("error", err.Error()))
+		o.logger.Warn("periodic job dispatch failed", slog.String("error", err.Error()))
 		return
 	}
 }

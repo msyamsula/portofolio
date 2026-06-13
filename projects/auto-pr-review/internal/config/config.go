@@ -13,6 +13,7 @@ type Config struct {
 	HTTP            HTTPConfig
 	Database        DatabaseConfig
 	Redis           RedisConfig
+	Kafka           KafkaConfig
 	JobOrchestrator JobOrchestratorConfig
 	Jobs            JobsConfig
 }
@@ -42,6 +43,17 @@ type RedisConfig struct {
 	PoolSize     int
 	MinIdleConns int
 	ExecTimeout  time.Duration
+}
+
+type KafkaConfig struct {
+	Brokers        []string
+	Topic          string
+	DLQTopic       string
+	ClientID       string
+	MaxRetries     int
+	RetryBackoff   time.Duration
+	MaxInFlight    int
+	PublishTimeout time.Duration
 }
 
 type JobOrchestratorConfig struct {
@@ -110,6 +122,26 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	kafkaBrokers, err := envList("KAFKA_BROKERS", "kafka:9092")
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaMaxRetries, err := envInt("KAFKA_MAX_RETRIES", 5)
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaRetryBackoff, err := envDuration("KAFKA_RETRY_BACKOFF", 100*time.Millisecond)
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaMaxInFlight, err := envInt("KAFKA_MAX_IN_FLIGHT", 10)
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaPublishTimeout, err := envDuration("KAFKA_PUBLISH_TIMEOUT", 3*time.Second)
+	if err != nil {
+		return Config{}, err
+	}
 	jobOrchestratorInterval, err := envDuration("JOB_ORCHESTRATOR_INTERVAL", time.Second)
 	if err != nil {
 		return Config{}, err
@@ -144,6 +176,16 @@ func Load() (Config, error) {
 			MinIdleConns: redisMinIdleConns,
 			ExecTimeout:  redisExecTimeout,
 		},
+		Kafka: KafkaConfig{
+			Brokers:        kafkaBrokers,
+			Topic:          envString("KAFKA_TOPIC", "pr_review"),
+			DLQTopic:       envString("KAFKA_DLQ_TOPIC", "pr_review_dlq"),
+			ClientID:       envString("KAFKA_CLIENT_ID", "auto-pr-review-job-orchestrator"),
+			MaxRetries:     kafkaMaxRetries,
+			RetryBackoff:   kafkaRetryBackoff,
+			MaxInFlight:    kafkaMaxInFlight,
+			PublishTimeout: kafkaPublishTimeout,
+		},
 		JobOrchestrator: JobOrchestratorConfig{
 			Interval: jobOrchestratorInterval,
 		},
@@ -166,6 +208,21 @@ func Load() (Config, error) {
 	}
 	if cfg.Redis.MinIdleConns < 0 || cfg.Redis.MinIdleConns > cfg.Redis.PoolSize {
 		return Config{}, fmt.Errorf("REDIS_MIN_IDLE_CONNS must be between 0 and REDIS_POOL_SIZE")
+	}
+	if len(cfg.Kafka.Brokers) == 0 {
+		return Config{}, fmt.Errorf("KAFKA_BROKERS must contain at least one broker")
+	}
+	if cfg.Kafka.MaxRetries < 0 {
+		return Config{}, fmt.Errorf("KAFKA_MAX_RETRIES must be non-negative")
+	}
+	if cfg.Kafka.RetryBackoff < 0 {
+		return Config{}, fmt.Errorf("KAFKA_RETRY_BACKOFF must be non-negative")
+	}
+	if cfg.Kafka.MaxInFlight < 1 {
+		return Config{}, fmt.Errorf("KAFKA_MAX_IN_FLIGHT must be at least 1")
+	}
+	if cfg.Kafka.PublishTimeout <= 0 {
+		return Config{}, fmt.Errorf("KAFKA_PUBLISH_TIMEOUT must be positive")
 	}
 	if cfg.JobOrchestrator.Interval <= 0 {
 		return Config{}, fmt.Errorf("JOB_ORCHESTRATOR_INTERVAL must be positive")
@@ -207,6 +264,20 @@ func envDuration(key string, fallback time.Duration) (time.Duration, error) {
 		return 0, fmt.Errorf("%s must be a duration: %w", key, err)
 	}
 	return parsed, nil
+}
+
+func envList(key, fallback string) ([]string, error) {
+	value := envString(key, fallback)
+	parts := strings.Split(value, ",")
+	items := make([]string, 0, len(parts))
+	for _, part := range parts {
+		item := strings.TrimSpace(part)
+		if item == "" {
+			continue
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }
 
 func envDurationList(key, fallback string) ([]string, error) {

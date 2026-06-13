@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -111,11 +112,12 @@ func (r *Repository) CreateGitHubLink(ctx context.Context, githubURL string) (se
 	defer cancel()
 
 	var link service.GitHubLink
+	var periodicInterval sql.NullString
 	err := r.pool.QueryRow(
 		queryCtx,
 		createGitHubLinkStatement,
 		githubURL,
-	).Scan(&link.ID, &link.URL, &link.PeriodicInterval)
+	).Scan(&link.ID, &link.URL, &periodicInterval)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
@@ -123,6 +125,7 @@ func (r *Repository) CreateGitHubLink(ctx context.Context, githubURL string) (se
 		}
 		return service.GitHubLink{}, fmt.Errorf("insert github link: %w", err)
 	}
+	link.PeriodicInterval = nullStringPtr(periodicInterval)
 
 	return link, nil
 }
@@ -140,9 +143,11 @@ func (r *Repository) ListGitHubLinks(ctx context.Context) ([]service.GitHubLink,
 	links := make([]service.GitHubLink, 0)
 	for rows.Next() {
 		var link service.GitHubLink
-		if err := rows.Scan(&link.ID, &link.URL, &link.PeriodicInterval); err != nil {
+		var periodicInterval sql.NullString
+		if err := rows.Scan(&link.ID, &link.URL, &periodicInterval); err != nil {
 			return nil, fmt.Errorf("scan github link: %w", err)
 		}
+		link.PeriodicInterval = nullStringPtr(periodicInterval)
 		links = append(links, link)
 	}
 	if err := rows.Err(); err != nil {
@@ -255,4 +260,13 @@ func ensureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 
 	return nil
+}
+
+func nullStringPtr(value sql.NullString) *string {
+	if !value.Valid {
+		return nil
+	}
+
+	result := value.String
+	return &result
 }

@@ -7,6 +7,7 @@ Small Go HTTP API for registering GitHub links in Postgres.
 ```bash
 make env
 make up
+make kafka-topic-create
 ```
 
 The web UI and API are exposed on `localhost:8080` by default, and Postgres is
@@ -47,6 +48,29 @@ logs a `periodic job done` message as the placeholder processing function.
 The web dropdown period options come from `JOB_PERIOD_OPTIONS`, for example
 `1s,10m,5h`. Periodic interval state is persisted in Postgres on each GitHub
 link; Redis only stores the next-claim sorted set used by the orchestrator.
+
+Kafka is used for dispatch after a claim:
+- topic `pr_review` with 3 partitions
+- dead-letter topic `pr_review_dlq`
+- max retries `5`
+- retry backoff `100ms`
+- max in-flight requests `10`
+- messages are keyed by GitHub link so the same link lands in the same partition
+- Kafka broker limits connections with the configured broker settings
+- Kafka retention is set to 2 days for this project
+- payloads use an Avro record schema stored in the repo
+
+Local monitoring and topic management:
+- `make kafka-topics`
+- `make kafka-topic-describe`
+- `make kafka-consume-debug`
+- `make kafka-group-describe`
+- `make kafka-group-state`
+
+The debug consumer group is `auto_pr_debugging`, so it reads without competing
+with the running consumer group. Offset commits are per consumer group, so the
+debug group and the running group track acknowledgements independently.
+`make kafka-group-state` shows the running group `auto_pr_review`.
 
 Configuration is read from environment variables at process startup. Changing
 configuration requires restarting the service container.

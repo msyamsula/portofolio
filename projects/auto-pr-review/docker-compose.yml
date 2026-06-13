@@ -42,6 +42,22 @@ services:
       timeout: 3s
       retries: 10
 
+  kafka:
+    image: apache/kafka:latest
+    command: ["sh", "/start-kafka.sh"]
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+    environment:
+      KAFKA_KRAFT_CLUSTER_ID: ${KAFKA_KRAFT_CLUSTER_ID:-4L6g3nShT-eMCtK--X86sw}
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ./scripts/start-kafka.sh:/start-kafka.sh:ro
+      - ./kafka/server.properties:/opt/kafka/config/server.properties:ro
+
   api:
     build: .
     depends_on:
@@ -78,6 +94,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-auto_pr_review}:${POSTGRES_PASSWORD:-auto_pr_review}@postgres:5432/${POSTGRES_DB:-auto_pr_review}?sslmode=disable
       REDIS_ADDR: redis:6379
@@ -88,6 +106,14 @@ services:
       REDIS_EXEC_TIMEOUT: ${REDIS_EXEC_TIMEOUT:-3s}
       JOB_ORCHESTRATOR_INTERVAL: ${JOB_ORCHESTRATOR_INTERVAL:-1s}
       JOB_PERIOD_OPTIONS: ${JOB_PERIOD_OPTIONS:-1s,10m,5h}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-pr_review}
+      KAFKA_DLQ_TOPIC: ${KAFKA_DLQ_TOPIC:-pr_review_dlq}
+      KAFKA_CLIENT_ID: ${KAFKA_CLIENT_ID:-auto-pr-review-job-orchestrator}
+      KAFKA_MAX_RETRIES: ${KAFKA_MAX_RETRIES:-5}
+      KAFKA_RETRY_BACKOFF: ${KAFKA_RETRY_BACKOFF:-100ms}
+      KAFKA_MAX_IN_FLIGHT: ${KAFKA_MAX_IN_FLIGHT:-10}
+      KAFKA_PUBLISH_TIMEOUT: ${KAFKA_PUBLISH_TIMEOUT:-3s}
 
 volumes:
   postgres-data:
