@@ -128,6 +128,18 @@ func getString(nativeMap map[string]any, key string) (string, error) {
 	return str, nil
 }
 
+func getStringDefault(nativeMap map[string]any, key, fallback string) (string, error) {
+	value, ok := nativeMap[key]
+	if !ok {
+		return fallback, nil
+	}
+	str, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("kafka field %s is not a string", key)
+	}
+	return str, nil
+}
+
 func getInt32(nativeMap map[string]any, key string) (int32, error) {
 	value, ok := nativeMap[key]
 	if !ok {

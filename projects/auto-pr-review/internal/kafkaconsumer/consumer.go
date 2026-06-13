@@ -111,7 +111,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 }
 
 func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
-	version := schemaregistry.PeriodicJobEnvelopeV1Version
+	version := schemaregistry.PeriodicJobEnvelopeV2Version
 	event, err := c.schemaRegistry.UnmarshalPeriodicJobEnvelope(msg.Value, version)
 	if err != nil {
 		event = schemaregistry.PeriodicJobEnvelope{
@@ -145,6 +145,7 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 			c.logger.Info(
 				"postgres ping success",
 				slog.String("github_link", event.GitHubLink),
+				slog.String("idempotency_key", event.IdempotencyKey),
 				slog.String("topic", msg.Topic),
 				slog.Int("partition", int(msg.Partition)),
 				slog.Int64("offset", msg.Offset),
@@ -158,6 +159,7 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 			"postgres ping failed",
 			slog.String("error", err.Error()),
 			slog.String("github_link", event.GitHubLink),
+			slog.String("idempotency_key", event.IdempotencyKey),
 			slog.Int("attempt", attempt+1),
 			slog.Int("max_retries", c.maxRetries),
 			slog.String("topic", msg.Topic),
@@ -174,6 +176,7 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 	c.logger.Warn(
 		"kafka message dead-lettered",
 		slog.String("github_link", event.GitHubLink),
+		slog.String("idempotency_key", event.IdempotencyKey),
 		slog.String("topic", msg.Topic),
 		slog.Int("partition", int(msg.Partition)),
 		slog.Int64("offset", msg.Offset),

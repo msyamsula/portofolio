@@ -11,17 +11,22 @@ const (
 	MessageTypePeriodicJobEnvelope MessageType = "periodic_job_envelope"
 
 	PeriodicJobEnvelopeV1Version SchemaVersion = 1
+	PeriodicJobEnvelopeV2Version SchemaVersion = 2
 )
 
 //go:embed schema/pr_review_event.avsc
 var periodicJobSchemaV1 []byte
 
+//go:embed schema/pr_review_event_v2.avsc
+var periodicJobSchemaV2 []byte
+
 type PeriodicJobEnvelope struct {
-	SchemaVersion int32
-	GitHubLink    string
-	Period        string
-	NextTimestamp int64
-	Error         string
+	SchemaVersion  int32
+	GitHubLink     string
+	Period         string
+	NextTimestamp  int64
+	Error          string
+	IdempotencyKey string
 }
 
 func (r *Registry) registerPeriodicJobEnvelopeSchemas() error {
@@ -38,12 +43,21 @@ func newPeriodicJobEnvelopeSchemas() (map[SchemaVersion]*SchemaDefinition, error
 	if err != nil {
 		return nil, fmt.Errorf("load periodic job v1 avro codec: %w", err)
 	}
+	periodicJobV2Codec, err := goavro.NewCodec(string(periodicJobSchemaV2))
+	if err != nil {
+		return nil, fmt.Errorf("load periodic job v2 avro codec: %w", err)
+	}
 
 	return map[SchemaVersion]*SchemaDefinition{
 		PeriodicJobEnvelopeV1Version: {
 			MessageType: MessageTypePeriodicJobEnvelope,
 			Version:     PeriodicJobEnvelopeV1Version,
 			Codec:       periodicJobV1Codec,
+		},
+		PeriodicJobEnvelopeV2Version: {
+			MessageType: MessageTypePeriodicJobEnvelope,
+			Version:     PeriodicJobEnvelopeV2Version,
+			Codec:       periodicJobV2Codec,
 		},
 	}, nil
 }
@@ -64,6 +78,9 @@ func (r *Registry) MarshalPeriodicJobEnvelope(payload PeriodicJobEnvelope, versi
 		"period":         payload.Period,
 		"next_timestamp": payload.NextTimestamp,
 		"error":          payload.Error,
+	}
+	if version >= PeriodicJobEnvelopeV2Version {
+		native["idempotency_key"] = payload.IdempotencyKey
 	}
 
 	body, err := schema.Codec.BinaryFromNative(nil, native)
@@ -117,12 +134,17 @@ func (r *Registry) unmarshalPeriodicJobEnvelope(schema *SchemaDefinition, data [
 	if err != nil {
 		return PeriodicJobEnvelope{}, err
 	}
+	idempotencyKey, err := getStringDefault(nativeMap, "idempotency_key", "")
+	if err != nil {
+		return PeriodicJobEnvelope{}, err
+	}
 
 	return PeriodicJobEnvelope{
-		SchemaVersion: schemaVersion,
-		GitHubLink:    githubLink,
-		Period:        period,
-		NextTimestamp: nextTimestamp,
-		Error:         messageError,
+		SchemaVersion:  schemaVersion,
+		GitHubLink:     githubLink,
+		Period:         period,
+		NextTimestamp:  nextTimestamp,
+		Error:          messageError,
+		IdempotencyKey: idempotencyKey,
 	}, nil
 }

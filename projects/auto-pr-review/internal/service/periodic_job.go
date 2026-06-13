@@ -11,9 +11,10 @@ import (
 var ErrInvalidJobPeriod = errors.New("invalid job period")
 
 type PeriodicJob struct {
-	GitHubLink    string `json:"github_link"`
-	Period        string `json:"period"`
-	NextTimestamp int64  `json:"next_timestamp"`
+	GitHubLink     string `json:"github_link"`
+	Period         string `json:"period"`
+	NextTimestamp  int64  `json:"next_timestamp"`
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
 }
 
 type PeriodicJobRepository interface {

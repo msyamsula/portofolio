@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "PeriodicJobEnvelope",
+  "namespace": "auto_pr_review.kafka",
+  "fields": [
+    { "name": "schema_version", "type": "int", "default": 2 },
+    { "name": "github_link", "type": "string" },
+    { "name": "period", "type": "string" },
+    { "name": "next_timestamp", "type": "long" },
+    { "name": "error", "type": "string", "default": "" },
+    { "name": "idempotency_key", "type": "string", "default": "" }
+  ]
+}

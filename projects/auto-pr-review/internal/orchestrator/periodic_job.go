@@ -2,6 +2,10 @@ package orchestrator
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"io"
 	"log/slog"
 	"time"
 
@@ -14,11 +18,14 @@ type PeriodicJobClaimer interface {
 
 type PeriodicJobDoneFunc func(ctx context.Context, job service.PeriodicJob) error
 
+type IdempotencyKeyFunc func() (string, error)
+
 type PeriodicJobOrchestrator struct {
-	claimer  PeriodicJobClaimer
-	interval time.Duration
-	logger   *slog.Logger
-	done     PeriodicJobDoneFunc
+	claimer        PeriodicJobClaimer
+	interval       time.Duration
+	logger         *slog.Logger
+	done           PeriodicJobDoneFunc
+	idempotencyKey IdempotencyKeyFunc
 }
 
 func NewPeriodicJobOrchestrator(
@@ -28,10 +35,11 @@ func NewPeriodicJobOrchestrator(
 	done PeriodicJobDoneFunc,
 ) *PeriodicJobOrchestrator {
 	return &PeriodicJobOrchestrator{
-		claimer:  claimer,
-		interval: interval,
-		logger:   logger,
-		done:     done,
+		claimer:        claimer,
+		interval:       interval,
+		logger:         logger,
+		done:           done,
+		idempotencyKey: NewIdempotencyKey,
 	}
 }
 
@@ -60,8 +68,24 @@ func (o *PeriodicJobOrchestrator) runOnce(ctx context.Context) {
 		return
 	}
 
+	idempotencyKey, err := o.idempotencyKey()
+	if err != nil {
+		o.logger.Warn("generate periodic job idempotency key failed", slog.String("error", err.Error()))
+		return
+	}
+	job.IdempotencyKey = idempotencyKey
+
 	if err := o.done(ctx, job); err != nil {
 		o.logger.Warn("periodic job dispatch failed", slog.String("error", err.Error()))
 		return
 	}
+}
+
+func NewIdempotencyKey() (string, error) {
+	var key [16]byte
+	if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
+		return "", fmt.Errorf("generate idempotency key: %w", err)
+	}
+
+	return hex.EncodeToString(key[:]), nil
 }

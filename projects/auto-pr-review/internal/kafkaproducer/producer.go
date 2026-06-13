@@ -63,13 +63,14 @@ func (p *Producer) PublishPeriodicJob(ctx context.Context, job service.PeriodicJ
 		return false, err
 	}
 
-	version := schemaregistry.PeriodicJobEnvelopeV1Version
+	version := schemaregistry.PeriodicJobEnvelopeV2Version
 	if err := p.PublishEvent(ctx, p.topic, job.GitHubLink, schemaregistry.PeriodicJobEnvelope{
-		SchemaVersion: int32(version),
-		GitHubLink:    job.GitHubLink,
-		Period:        job.Period,
-		NextTimestamp: job.NextTimestamp,
-		Error:         "",
+		SchemaVersion:  int32(version),
+		GitHubLink:     job.GitHubLink,
+		Period:         job.Period,
+		NextTimestamp:  job.NextTimestamp,
+		Error:          "",
+		IdempotencyKey: job.IdempotencyKey,
 	}, version); err != nil {
 		return false, err
 	}
