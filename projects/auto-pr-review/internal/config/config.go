@@ -14,6 +14,7 @@ type Config struct {
 	Database        DatabaseConfig
 	Redis           RedisConfig
 	Kafka           KafkaConfig
+	KafkaConsumer   KafkaConsumerConfig
 	JobOrchestrator JobOrchestratorConfig
 	Jobs            JobsConfig
 }
@@ -54,6 +55,14 @@ type KafkaConfig struct {
 	RetryBackoff   time.Duration
 	MaxInFlight    int
 	PublishTimeout time.Duration
+}
+
+type KafkaConsumerConfig struct {
+	GroupID        string
+	MaxRetries     int
+	RetryBackoff   time.Duration
+	AttemptTimeout time.Duration
+	MaxInFlight    int
 }
 
 type JobOrchestratorConfig struct {
@@ -142,6 +151,23 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	kafkaConsumerGroupID := envString("KAFKA_CONSUMER_GROUP_ID", "auto_pr_review")
+	kafkaConsumerMaxRetries, err := envInt("KAFKA_CONSUMER_MAX_RETRIES", 5)
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaConsumerRetryBackoff, err := envDuration("KAFKA_CONSUMER_RETRY_BACKOFF", 100*time.Millisecond)
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaConsumerAttemptTimeout, err := envDuration("KAFKA_CONSUMER_ATTEMPT_TIMEOUT", 5*time.Second)
+	if err != nil {
+		return Config{}, err
+	}
+	kafkaConsumerMaxInFlight, err := envInt("KAFKA_CONSUMER_MAX_IN_FLIGHT", 15)
+	if err != nil {
+		return Config{}, err
+	}
 	jobOrchestratorInterval, err := envDuration("JOB_ORCHESTRATOR_INTERVAL", time.Second)
 	if err != nil {
 		return Config{}, err
@@ -186,6 +212,13 @@ func Load() (Config, error) {
 			MaxInFlight:    kafkaMaxInFlight,
 			PublishTimeout: kafkaPublishTimeout,
 		},
+		KafkaConsumer: KafkaConsumerConfig{
+			GroupID:        kafkaConsumerGroupID,
+			MaxRetries:     kafkaConsumerMaxRetries,
+			RetryBackoff:   kafkaConsumerRetryBackoff,
+			AttemptTimeout: kafkaConsumerAttemptTimeout,
+			MaxInFlight:    kafkaConsumerMaxInFlight,
+		},
 		JobOrchestrator: JobOrchestratorConfig{
 			Interval: jobOrchestratorInterval,
 		},
@@ -223,6 +256,21 @@ func Load() (Config, error) {
 	}
 	if cfg.Kafka.PublishTimeout <= 0 {
 		return Config{}, fmt.Errorf("KAFKA_PUBLISH_TIMEOUT must be positive")
+	}
+	if cfg.KafkaConsumer.GroupID == "" {
+		return Config{}, fmt.Errorf("KAFKA_CONSUMER_GROUP_ID is required")
+	}
+	if cfg.KafkaConsumer.MaxRetries < 0 {
+		return Config{}, fmt.Errorf("KAFKA_CONSUMER_MAX_RETRIES must be non-negative")
+	}
+	if cfg.KafkaConsumer.RetryBackoff < 0 {
+		return Config{}, fmt.Errorf("KAFKA_CONSUMER_RETRY_BACKOFF must be non-negative")
+	}
+	if cfg.KafkaConsumer.AttemptTimeout <= 0 {
+		return Config{}, fmt.Errorf("KAFKA_CONSUMER_ATTEMPT_TIMEOUT must be positive")
+	}
+	if cfg.KafkaConsumer.MaxInFlight < 1 {
+		return Config{}, fmt.Errorf("KAFKA_CONSUMER_MAX_IN_FLIGHT must be at least 1")
 	}
 	if cfg.JobOrchestrator.Interval <= 0 {
 		return Config{}, fmt.Errorf("JOB_ORCHESTRATOR_INTERVAL must be positive")

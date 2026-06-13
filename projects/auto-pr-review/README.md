@@ -1,6 +1,7 @@
 # auto-pr-review
 
-Small Go HTTP API for registering GitHub links in Postgres.
+Small Go service for registering GitHub links in Postgres, scheduling periodic
+jobs in Redis, and dispatching work through Kafka.
 
 ## Run locally
 
@@ -49,12 +50,20 @@ The web dropdown period options come from `JOB_PERIOD_OPTIONS`, for example
 `1s,10m,5h`. Periodic interval state is persisted in Postgres on each GitHub
 link; Redis only stores the next-claim sorted set used by the orchestrator.
 
+The `job-consumer` container listens to `pr_review`, pings Postgres as a
+placeholder for real work, retries with backoff and jitter, and sends the
+message to `pr_review_dlq` after the retry budget is exhausted.
+
 Kafka is used for dispatch after a claim:
 - topic `pr_review` with 3 partitions
 - dead-letter topic `pr_review_dlq`
 - max retries `5`
 - retry backoff `100ms`
+- consumer retry budget `5`
+- consumer retry backoff `5s`
+- consumer attempt timeout `5s`
 - max in-flight requests `10`
+- consumer max in-flight `15`
 - messages are keyed by GitHub link so the same link lands in the same partition
 - Kafka broker limits connections with the configured broker settings
 - Kafka retention is set to 2 days for this project

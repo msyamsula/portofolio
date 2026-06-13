@@ -2,18 +2,15 @@ package kafkaproducer
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
 	"auto-pr-review/internal/config"
+	"auto-pr-review/internal/kafkaevent"
 	"auto-pr-review/internal/service"
 
 	"github.com/IBM/sarama"
 	"github.com/linkedin/goavro/v2"
 )
-
-//go:embed schema/pr_review_event.avsc
-var periodicJobSchema []byte
 
 type Producer struct {
 	producer sarama.SyncProducer
@@ -21,16 +18,8 @@ type Producer struct {
 	codec    *goavro.Codec
 }
 
-type periodicJobEnvelope struct {
-	SchemaVersion int32  `json:"schema_version"`
-	GitHubLink    string `json:"github_link"`
-	Period        string `json:"period"`
-	NextTimestamp int64  `json:"next_timestamp"`
-	Error         string `json:"error"`
-}
-
 func NewProducer(cfg config.KafkaConfig) (*Producer, error) {
-	codec, err := goavro.NewCodec(string(periodicJobSchema))
+	codec, err := kafkaevent.NewCodec()
 	if err != nil {
 		return nil, fmt.Errorf("load avro codec: %w", err)
 	}
@@ -75,7 +64,7 @@ func (p *Producer) PublishPeriodicJob(ctx context.Context, job service.PeriodicJ
 		return false, err
 	}
 
-	if err := p.publishOnce(p.topic, job.GitHubLink, periodicJobEnvelope{
+	if err := p.PublishEvent(ctx, p.topic, job.GitHubLink, kafkaevent.PeriodicJobEnvelope{
 		SchemaVersion: 1,
 		GitHubLink:    job.GitHubLink,
 		Period:        job.Period,
@@ -88,8 +77,16 @@ func (p *Producer) PublishPeriodicJob(ctx context.Context, job service.PeriodicJ
 	return true, nil
 }
 
-func (p *Producer) publishOnce(topic, key string, payload periodicJobEnvelope) error {
-	messageBody, err := p.marshal(payload)
+func (p *Producer) PublishEvent(ctx context.Context, topic, key string, payload kafkaevent.PeriodicJobEnvelope) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	return p.publishOnce(topic, key, payload)
+}
+
+func (p *Producer) publishOnce(topic, key string, payload kafkaevent.PeriodicJobEnvelope) error {
+	messageBody, err := kafkaevent.Marshal(p.codec, payload)
 	if err != nil {
 		return err
 	}
@@ -104,21 +101,4 @@ func (p *Producer) publishOnce(topic, key string, payload periodicJobEnvelope) e
 	}
 
 	return nil
-}
-
-func (p *Producer) marshal(payload periodicJobEnvelope) ([]byte, error) {
-	native := map[string]any{
-		"schema_version": payload.SchemaVersion,
-		"github_link":    payload.GitHubLink,
-		"period":         payload.Period,
-		"next_timestamp": payload.NextTimestamp,
-		"error":          payload.Error,
-	}
-
-	binary, err := p.codec.BinaryFromNative(nil, native)
-	if err != nil {
-		return nil, fmt.Errorf("marshal kafka message: %w", err)
-	}
-
-	return binary, nil
 }
