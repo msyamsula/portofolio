@@ -5,23 +5,22 @@ import (
 	"fmt"
 
 	"auto-pr-review/internal/config"
-	"auto-pr-review/internal/kafkaevent"
+	"auto-pr-review/internal/schemaregistry"
 	"auto-pr-review/internal/service"
 
 	"github.com/IBM/sarama"
-	"github.com/linkedin/goavro/v2"
 )
 
 type Producer struct {
-	producer sarama.SyncProducer
-	topic    string
-	codec    *goavro.Codec
+	producer       sarama.SyncProducer
+	topic          string
+	schemaRegistry *schemaregistry.Registry
 }
 
 func NewProducer(cfg config.KafkaConfig) (*Producer, error) {
-	codec, err := kafkaevent.NewCodec()
+	registry, err := schemaregistry.New()
 	if err != nil {
-		return nil, fmt.Errorf("load avro codec: %w", err)
+		return nil, fmt.Errorf("load schema registry: %w", err)
 	}
 
 	saramaConfig := sarama.NewConfig()
@@ -49,9 +48,9 @@ func NewProducer(cfg config.KafkaConfig) (*Producer, error) {
 	}
 
 	return &Producer{
-		producer: producer,
-		topic:    cfg.Topic,
-		codec:    codec,
+		producer:       producer,
+		topic:          cfg.Topic,
+		schemaRegistry: registry,
 	}, nil
 }
 
@@ -64,29 +63,30 @@ func (p *Producer) PublishPeriodicJob(ctx context.Context, job service.PeriodicJ
 		return false, err
 	}
 
-	if err := p.PublishEvent(ctx, p.topic, job.GitHubLink, kafkaevent.PeriodicJobEnvelope{
-		SchemaVersion: 1,
+	version := schemaregistry.PeriodicJobEnvelopeV1Version
+	if err := p.PublishEvent(ctx, p.topic, job.GitHubLink, schemaregistry.PeriodicJobEnvelope{
+		SchemaVersion: int32(version),
 		GitHubLink:    job.GitHubLink,
 		Period:        job.Period,
 		NextTimestamp: job.NextTimestamp,
 		Error:         "",
-	}); err != nil {
+	}, version); err != nil {
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (p *Producer) PublishEvent(ctx context.Context, topic, key string, payload kafkaevent.PeriodicJobEnvelope) error {
+func (p *Producer) PublishEvent(ctx context.Context, topic, key string, payload schemaregistry.PeriodicJobEnvelope, version schemaregistry.SchemaVersion) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 
-	return p.publishOnce(topic, key, payload)
+	return p.publishOnce(topic, key, payload, version)
 }
 
-func (p *Producer) publishOnce(topic, key string, payload kafkaevent.PeriodicJobEnvelope) error {
-	messageBody, err := kafkaevent.Marshal(p.codec, payload)
+func (p *Producer) publishOnce(topic, key string, payload schemaregistry.PeriodicJobEnvelope, version schemaregistry.SchemaVersion) error {
+	messageBody, err := p.schemaRegistry.MarshalPeriodicJobEnvelope(payload, version)
 	if err != nil {
 		return err
 	}

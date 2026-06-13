@@ -8,12 +8,11 @@ import (
 	"time"
 
 	"auto-pr-review/internal/config"
-	"auto-pr-review/internal/kafkaevent"
 	"auto-pr-review/internal/kafkaproducer"
+	"auto-pr-review/internal/schemaregistry"
 
 	"github.com/IBM/sarama"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/linkedin/goavro/v2"
 )
 
 type Consumer struct {
@@ -23,7 +22,7 @@ type Consumer struct {
 	dlqPublisher   *kafkaproducer.Producer
 	pgPool         *pgxpool.Pool
 	logger         *slog.Logger
-	codec          *goavro.Codec
+	schemaRegistry *schemaregistry.Registry
 	maxRetries     int
 	retryBackoff   time.Duration
 	attemptTimeout time.Duration
@@ -49,12 +48,12 @@ func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig,
 		return nil, fmt.Errorf("create kafka consumer group: %w", err)
 	}
 
-	codec, err := kafkaevent.NewCodec()
+	registry, err := schemaregistry.New()
 	if err != nil {
 		if closeErr := group.Close(); closeErr != nil {
-			return nil, fmt.Errorf("load avro codec: %w; close consumer group: %w", err, closeErr)
+			return nil, fmt.Errorf("load schema registry: %w; close consumer group: %w", err, closeErr)
 		}
-		return nil, fmt.Errorf("load avro codec: %w", err)
+		return nil, fmt.Errorf("load schema registry: %w", err)
 	}
 
 	return &Consumer{
@@ -64,7 +63,7 @@ func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig,
 		dlqPublisher:   dlqPublisher,
 		pgPool:         pgPool,
 		logger:         logger,
-		codec:          codec,
+		schemaRegistry: registry,
 		maxRetries:     consumerCfg.MaxRetries,
 		retryBackoff:   consumerCfg.RetryBackoff,
 		attemptTimeout: consumerCfg.AttemptTimeout,
@@ -112,10 +111,11 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 }
 
 func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
-	event, err := kafkaevent.Unmarshal(c.codec, msg.Value)
+	version := schemaregistry.PeriodicJobEnvelopeV1Version
+	event, err := c.schemaRegistry.UnmarshalPeriodicJobEnvelope(msg.Value, version)
 	if err != nil {
-		event = kafkaevent.PeriodicJobEnvelope{
-			SchemaVersion: 1,
+		event = schemaregistry.PeriodicJobEnvelope{
+			SchemaVersion: int32(version),
 			GitHubLink:    string(msg.Key),
 			Period:        "",
 			NextTimestamp: msg.Timestamp.UnixMilli(),
@@ -167,7 +167,7 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 	}
 
 	event.Error = lastErr.Error()
-	if err := c.dlqPublisher.PublishEvent(ctx, c.dlqTopic, event.GitHubLink, event); err != nil {
+	if err := c.dlqPublisher.PublishEvent(ctx, c.dlqTopic, event.GitHubLink, event, version); err != nil {
 		return fmt.Errorf("publish dlq message: %w", err)
 	}
 
