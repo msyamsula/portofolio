@@ -85,6 +85,7 @@ type PRDiscussion struct {
 	State          string
 	Author         string
 	Body           string
+	Branch         string
 	IssueComments  []Comment
 	ReviewComments []ReviewComment
 	Reviews        []Review
@@ -98,6 +99,9 @@ type PR struct {
 	User    struct {
 		Login string `json:"login"`
 	} `json:"user"`
+	Head struct {
+		Ref string `json:"ref"`
+	} `json:"head"`
 }
 
 type Comment struct {
@@ -225,6 +229,7 @@ func (c *Client) FetchDiscussion(ctx context.Context, pr PRRef) (PRDiscussion, e
 		State:          pull.State,
 		Author:         pull.User.Login,
 		Body:           pull.Body,
+		Branch:         pull.Head.Ref,
 		IssueComments:  issueComments,
 		ReviewComments: reviewComments,
 		Reviews:        reviews,

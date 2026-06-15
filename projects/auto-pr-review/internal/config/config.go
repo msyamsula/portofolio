@@ -95,7 +95,7 @@ type PRReviewConfig struct {
 }
 
 type PRReviewAgentConfig struct {
-	RepoPath      string
+	WorkspaceRoot  string
 	DevelopBranch string
 	OutputDir     string
 	GitUser       string
@@ -269,7 +269,7 @@ func Load() (Config, error) {
 		},
 		PRReview: prReviewerCfg.PRReview,
 		PRReviewAgent: PRReviewAgentConfig{
-			RepoPath:      envString("PR_REVIEW_AGENT_REPO_PATH", ""),
+			WorkspaceRoot:  envString("PR_REVIEW_AGENT_WORKSPACE_ROOT", ""),
 			DevelopBranch: envString("PR_REVIEW_AGENT_DEVELOP_BRANCH", "develop"),
 			OutputDir:     envString("PR_REVIEW_AGENT_OUTPUT_DIR", "reports/agent"),
 			GitUser:       envString("PR_REVIEW_AGENT_GIT_USER", "pr-review-agent"),

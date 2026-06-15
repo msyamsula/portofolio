@@ -178,15 +178,16 @@ services:
       LLM_MAX_CONNS_PER_HOST: ${LLM_MAX_CONNS_PER_HOST:-10}
       GITHUB_TOKEN_PATH: /privatekey/githubtoken.txt
       PR_REVIEW_OUTPUT_DIR: ${PR_REVIEW_OUTPUT_DIR:-/reports}
-      PR_REVIEW_AGENT_REPO_PATH: ${PR_REVIEW_AGENT_REPO_PATH:-}
+      PR_REVIEW_AGENT_WORKSPACE_ROOT: /workspace
       PR_REVIEW_AGENT_DEVELOP_BRANCH: ${PR_REVIEW_AGENT_DEVELOP_BRANCH:-develop}
       PR_REVIEW_AGENT_OUTPUT_DIR: ${PR_REVIEW_AGENT_OUTPUT_DIR:-/reports/agent}
       PR_REVIEW_AGENT_GIT_USER: ${PR_REVIEW_AGENT_GIT_USER:-pr-review-agent}
       PR_REVIEW_AGENT_GIT_EMAIL: ${PR_REVIEW_AGENT_GIT_EMAIL:-agent@auto-pr-review.local}
     volumes:
+      - ${PR_REVIEW_AGENT_WORKSPACE_ROOT}:/workspace
       - ./reports:/reports
       - ./privatekey:/privatekey:ro
-      - ./privatekey/ssh:/root/.ssh:ro
+      - ./privatekey/ssh:/home/appuser/.ssh:ro
 
 volumes:
   postgres-data:

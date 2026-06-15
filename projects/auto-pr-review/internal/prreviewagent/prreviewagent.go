@@ -1,8 +1,10 @@
 package prreviewagent
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,7 +16,30 @@ import (
 	"auto-pr-review/internal/llm"
 )
 
-const maxAgentTurns = 20
+const maxAgentTurns = 50
+const systemPrompt = `You are an autonomous PR fix agent. You have a git worktree on the feature branch, already merged with the latest develop.
+
+Phase 1 — Survey:
+  1. Read the PR description below to understand what this PR does.
+  2. Use list_files to survey the project structure.
+  3. Read relevant files that the review comments reference.
+  4. Use run_command to check the current build/test state.
+
+Phase 2 — Fix:
+  Apply each actionable item from the PR discussion. Use write_file with the full updated file content.
+  After a batch of changes, run build/tests with run_command.
+  Use git_diff to verify your changes are minimal and correct.
+
+Phase 3 — Report:
+  When all items are addressed or you cannot proceed further, produce a Markdown report.
+  The first line MUST be: COMMIT_MSG: <your commit message>
+  Then the full report describing what was fixed and what was left open.
+
+Rules:
+- Be surgical. Only change what is needed. Never refactor or beautify unrelated code.
+- Always read a file with read_file before editing it.
+- Never include credentials, API keys, or secrets in any file.
+- If you cannot fix something, explain why in your report.`
 
 type Config struct {
 	GitHubClient    *githubprdescriptor.Client
@@ -22,8 +47,8 @@ type Config struct {
 	GitHubTokenPath string
 	Agent           llm.Agent
 	LLM             llm.Config
+	WorkspaceRoot   string
 	DevelopBranch   string
-	RepoPath        string
 	OutputDir       string
 	GitUser         string
 	GitEmail        string
@@ -33,16 +58,17 @@ type Executor struct {
 	githubClient *githubprdescriptor.Client
 	agent        llm.Agent
 	cfg          Config
+	logger       *slog.Logger
 }
 
 type PRInfo struct {
 	Ref          githubprdescriptor.PRRef
-	Branch       string
 	Discussion   githubprdescriptor.PRDiscussion
 	URL          string
 	WorkspaceDir string
 	Plan         string
 	Report       string
+	Branch       string
 }
 
 func New(cfg Config) (*Executor, error) {
@@ -68,12 +94,17 @@ func New(cfg Config) (*Executor, error) {
 		githubClient: githubClient,
 		agent:        agent,
 		cfg:          cfg,
+		logger:       slog.Default(),
 	}, nil
 }
 
 func (e *Executor) SetAgent(a llm.Agent) { e.agent = a }
 
 func (e *Executor) Execute(ctx context.Context, prLink string) (string, error) {
+	if e.cfg.WorkspaceRoot == "" {
+		return "", fmt.Errorf("workspace root is required")
+	}
+
 	pr, err := githubprdescriptor.ParseURL(prLink)
 	if err != nil {
 		return "", fmt.Errorf("parse PR link: %w", err)
@@ -84,108 +115,152 @@ func (e *Executor) Execute(ctx context.Context, prLink string) (string, error) {
 		return "", fmt.Errorf("fetch PR discussion: %w", err)
 	}
 
+	if discussion.Branch == "" {
+		return "", fmt.Errorf("PR branch not found in GitHub response")
+	}
+
 	info := &PRInfo{
 		Ref:        pr,
 		Discussion: discussion,
 		URL:        prLink,
+		Branch:     discussion.Branch,
 	}
 
-	if err := e.setupWorkspace(ctx, info); err != nil {
-		return "", fmt.Errorf("setup workspace: %w", err)
-	}
-	defer os.RemoveAll(info.WorkspaceDir)
-
-	if err := e.mergeBase(ctx, info); err != nil {
-		return "", fmt.Errorf("merge base: %w", err)
-	}
-
-	plan, err := e.buildFixPlan(ctx, info)
+	worktree, err := e.prepareWorktree(ctx, info)
 	if err != nil {
-		return "", fmt.Errorf("build fix plan: %w", err)
+		return "", fmt.Errorf("prepare worktree: %w", err)
 	}
-	info.Plan = plan
+	defer e.cleanupWorktree(worktree)
+
+	if err := e.mergeDevelop(ctx, worktree, info); err != nil {
+		return "", err
+	}
 
 	if err := e.ApplyFixes(ctx, info); err != nil {
 		return "", fmt.Errorf("apply fixes: %w", err)
 	}
 
-	if err := e.checkCredentials(ctx, info); err != nil {
+	if info.Report == "" {
+		return "", fmt.Errorf("agent returned empty report")
+	}
+
+	if err := e.checkCredentials(ctx, worktree); err != nil {
 		return "", fmt.Errorf("credential check: %w", err)
 	}
 
-	if err := e.commitAndPush(ctx, info); err != nil {
-		return "", fmt.Errorf("commit and push: %w", err)
-	}
-
-	if err := e.resolveDiscussions(ctx, info); err != nil {
-		return "", fmt.Errorf("resolve discussions: %w", err)
+	msg := extractCommitMsg(info.Report)
+	if err := e.commit(ctx, worktree, msg); err != nil {
+		return "", fmt.Errorf("commit: %w", err)
 	}
 
 	return e.writeReport(ctx, info)
 }
 
-func (e *Executor) setupWorkspace(ctx context.Context, info *PRInfo) error {
-	repoPath := e.cfg.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repo path is required")
-	}
-
-	workspace, err := os.MkdirTemp("", "executor-*")
+func (e *Executor) prepareWorktree(ctx context.Context, info *PRInfo) (string, error) {
+	worktree, err := os.MkdirTemp("", "agent-wt-*")
 	if err != nil {
-		return fmt.Errorf("create workspace: %w", err)
+		return "", fmt.Errorf("create worktree dir: %w", err)
 	}
-	info.WorkspaceDir = workspace
+	info.WorkspaceDir = worktree
 
 	cmds := [][]string{
-		{"clone", repoPath, workspace},
-		{"config", "user.name", e.cfg.GitUser},
-		{"config", "user.email", e.cfg.GitEmail},
+		{"pull", "origin", e.cfg.DevelopBranch},
 		{"fetch", "origin"},
-		{"checkout", info.Branch},
 	}
 	for _, args := range cmds {
-		if err := runGitCmd(ctx, workspace, args); err != nil {
-			return err
+		if err := runGitCmd(ctx, e.cfg.WorkspaceRoot, args); err != nil {
+			e.logger.Warn("git prep failed", slog.String("error", err.Error()))
+		}
+	}
+
+	if err := runGitCmd(ctx, e.cfg.WorkspaceRoot, []string{"worktree", "add", worktree, info.Branch}); err != nil {
+		return "", fmt.Errorf("worktree add %s: %w", info.Branch, err)
+	}
+
+	setupCmds := [][]string{
+		{"config", "user.name", e.cfg.GitUser},
+		{"config", "user.email", e.cfg.GitEmail},
+	}
+	for _, args := range setupCmds {
+		if err := runGitCmd(ctx, worktree, args); err != nil {
+			return "", fmt.Errorf("configure worktree: %w", err)
+		}
+	}
+
+	return worktree, nil
+}
+
+func (e *Executor) mergeDevelop(ctx context.Context, worktree string, info *PRInfo) error {
+	if err := runGitCmd(ctx, worktree, []string{"merge", "origin/" + e.cfg.DevelopBranch}); err != nil {
+		e.logger.Warn("merge develop failed, discarding worktree",
+			slog.String("branch", info.Branch),
+			slog.String("error", err.Error()))
+		e.cleanupWorktree(worktree)
+		return fmt.Errorf("merge conflict with %s on branch %s", e.cfg.DevelopBranch, info.Branch)
+	}
+	return nil
+}
+
+func (e *Executor) cleanupWorktree(worktree string) {
+	_ = runGitCmd(context.Background(), e.cfg.WorkspaceRoot, []string{"worktree", "remove", "--force", worktree})
+	_ = os.RemoveAll(worktree)
+}
+
+func (e *Executor) checkCredentials(ctx context.Context, worktree string) error {
+	diff, err := captureGitCmd(ctx, worktree, []string{"diff", "--staged"})
+	if err != nil {
+		return err
+	}
+
+	patterns := []string{
+		`(?:api_key|apikey|api-key|secret|password|token|credential)[\s]*[=:][\s]*['"]?[A-Za-z0-9._\-]{16,}['"]?`,
+		`-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----`,
+		`sk-[A-Za-z0-9]{32,}`,
+	}
+
+	for _, pattern := range patterns {
+		re := regexp.MustCompile(`(?i)` + pattern)
+		if re.MatchString(diff) {
+			return fmt.Errorf("credential pattern detected in staged changes: %s", pattern)
 		}
 	}
 
 	return nil
 }
 
-func (e *Executor) mergeBase(ctx context.Context, info *PRInfo) error {
-	if err := runGitCmd(ctx, info.WorkspaceDir, []string{"merge", "origin/" + e.cfg.DevelopBranch}); err != nil {
-		return fmt.Errorf("merge %s: %w", e.cfg.DevelopBranch, err)
+func (e *Executor) commit(ctx context.Context, worktree, msg string) error {
+	files, err := captureGitCmd(ctx, worktree, []string{"status", "--porcelain"})
+	if err != nil {
+		return err
 	}
+	if strings.TrimSpace(files) == "" {
+		return nil
+	}
+
+	cmds := [][]string{
+		{"add", "-A"},
+		{"commit", "-m", msg},
+	}
+	for _, args := range cmds {
+		if err := runGitCmd(ctx, worktree, args); err != nil {
+			return err
+		}
+	}
+
+	e.logger.Info("changes committed", slog.String("branch", e.cfg.WorkspaceRoot))
 	return nil
 }
 
-func (e *Executor) buildFixPlan(ctx context.Context, info *PRInfo) (string, error) {
-	var b strings.Builder
-	b.WriteString("Review this PR discussion and produce a concrete fix plan with numbered action items.\n")
-	b.WriteString("For each item, specify the file path and exact change. Be surgical.\n\n")
-	b.WriteString("## PR Discussion\n\n")
-	b.WriteString(fmt.Sprintf("URL: %s\n", info.Discussion.URL))
-	b.WriteString(fmt.Sprintf("Title: %s\n", info.Discussion.Title))
-	b.WriteString(fmt.Sprintf("State: %s\n", info.Discussion.State))
-
-	for _, comment := range info.Discussion.IssueComments {
-		b.WriteString(fmt.Sprintf("\nComment by %s: %s\n", comment.User.Login, comment.Body))
+func extractCommitMsg(report string) string {
+	report = strings.TrimSpace(report)
+	if !strings.HasPrefix(report, "COMMIT_MSG:") {
+		return "apply PR review fixes"
 	}
-	for _, review := range info.Discussion.Reviews {
-		b.WriteString(fmt.Sprintf("\nReview by %s (%s): %s\n", review.User.Login, review.State, review.Body))
+	idx := strings.Index(report, "\n")
+	if idx < 0 {
+		return strings.TrimPrefix(report, "COMMIT_MSG:")
 	}
-	for _, rc := range info.Discussion.ReviewComments {
-		b.WriteString(fmt.Sprintf("\nReview comment by %s on %s: %s\n", rc.User.Login, rc.Path, rc.Body))
-	}
-
-	resp, err := e.agent.Chat(ctx, []llm.Message{
-		{Role: "system", Content: "You are a fix plan generator. Produce only the plan, no tool calls."},
-		{Role: "user", Content: b.String()},
-	}, nil)
-	if err != nil {
-		return "", err
-	}
-	return resp.Text, nil
+	return strings.TrimSpace(report[len("COMMIT_MSG:"):idx])
 }
 
 func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
@@ -198,14 +273,11 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 		aitools.NewRunCommand(info.WorkspaceDir),
 	)
 
+	prompt := buildDiscussionPrompt(info.Discussion)
+
 	messages := []llm.Message{
-		{Role: "system", Content: `You are an autonomous coding agent. Execute this fix plan using the provided tools.
-- Read files before editing them.
-- Use write_file to apply changes (always provide the full file content, not diffs).
-- Use run_command to build, test, and verify your changes.
-- If a tool call fails, try a different approach.
-- When all changes are applied and verified, respond with a summary of what you did.`},
-		{Role: "user", Content: fmt.Sprintf("Fix plan:\n\n%s", info.Plan)},
+		{Role: "system", Content: systemPrompt},
+		{Role: "user", Content: prompt},
 	}
 
 	for turn := 0; turn < maxAgentTurns; turn++ {
@@ -233,82 +305,76 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 	return fmt.Errorf("agent did not finish within %d turns", maxAgentTurns)
 }
 
-func (e *Executor) checkCredentials(ctx context.Context, info *PRInfo) error {
-	diff, err := captureGitCmd(ctx, info.WorkspaceDir, []string{"diff", "--staged"})
-	if err != nil {
-		return err
+func buildDiscussionPrompt(discussion githubprdescriptor.PRDiscussion) string {
+	var b strings.Builder
+	b.WriteString("## PR Discussion\n\n")
+	b.WriteString(fmt.Sprintf("URL: %s\n", discussion.URL))
+	b.WriteString(fmt.Sprintf("Title: %s\n", discussion.Title))
+	b.WriteString(fmt.Sprintf("State: %s\n", discussion.State))
+	b.WriteString(fmt.Sprintf("Author: %s\n\n", discussion.Author))
+
+	if strings.TrimSpace(discussion.Body) != "" {
+		b.WriteString("### Description\n\n")
+		b.WriteString(discussion.Body)
+		b.WriteString("\n\n")
 	}
 
-	patterns := []string{
-		`(?:api_key|apikey|api-key|secret|password|token|credential)[\s]*[=:][\s]*['"]?[A-Za-z0-9._\-]{16,}['"]?`,
-		`-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----`,
-		`sk-[A-Za-z0-9]{32,}`,
+	b.WriteString("### Issue Comments\n\n")
+	for _, c := range discussion.IssueComments {
+		fmt.Fprintf(&b, "- **%s**: %s\n", c.User.Login, c.Body)
+	}
+	if len(discussion.IssueComments) == 0 {
+		b.WriteString("(none)\n")
 	}
 
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(`(?i)` + pattern)
-		if re.MatchString(diff) {
-			return fmt.Errorf("credential pattern detected in staged changes: %s", pattern)
-		}
+	b.WriteString("\n### Review Summaries\n\n")
+	for _, r := range discussion.Reviews {
+		fmt.Fprintf(&b, "- **%s** (%s): %s\n", r.User.Login, r.State, r.Body)
+	}
+	if len(discussion.Reviews) == 0 {
+		b.WriteString("(none)\n")
 	}
 
-	return nil
-}
-
-func (e *Executor) commitAndPush(ctx context.Context, info *PRInfo) error {
-	files, err := captureGitCmd(ctx, info.WorkspaceDir, []string{"status", "--porcelain"})
-	if err != nil {
-		return err
+	b.WriteString("\n### Inline Review Comments\n\n")
+	for _, rc := range discussion.ReviewComments {
+		fmt.Fprintf(&b, "- **%s** on `%s`: %s\n", rc.User.Login, rc.Path, rc.Body)
 	}
-	if strings.TrimSpace(files) == "" {
-		return nil
+	if len(discussion.ReviewComments) == 0 {
+		b.WriteString("(none)\n")
 	}
 
-	msg := fmt.Sprintf("fix: apply PR review changes for %s", info.URL)
-	cmds := [][]string{
-		{"add", "-A"},
-		{"commit", "-m", msg},
-		{"push", "origin", info.Branch},
-	}
-	for _, args := range cmds {
-		if err := runGitCmd(ctx, info.WorkspaceDir, args); err != nil {
-			return err
-		}
-	}
+	b.WriteString("\nApply fixes for all actionable items above.\n")
+	b.WriteString("Read relevant files first, make targeted changes, then build and test.\n")
+	b.WriteString("When done, provide a Markdown report starting with COMMIT_MSG: <message>\n")
 
-	return nil
-}
-
-func (e *Executor) resolveDiscussions(ctx context.Context, info *PRInfo) error {
-	return nil
+	return b.String()
 }
 
 func (e *Executor) writeReport(ctx context.Context, info *PRInfo) (string, error) {
 	outputDir := e.cfg.OutputDir
 	if outputDir == "" {
-		outputDir = "reports/executor"
+		outputDir = "reports/agent"
 	}
 
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		return "", fmt.Errorf("create output dir: %w", err)
 	}
 
-	reportPath := filepath.Join(outputDir, fmt.Sprintf("executor-%s-%s-%d.md",
+	reportPath := filepath.Join(outputDir, fmt.Sprintf("agent-%s-%s-%d.md",
 		sanitizePart(info.Ref.Owner),
 		sanitizePart(info.Ref.Repo),
 		info.Ref.Number,
 	))
 
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("# Executor Report\n\n"))
+	b.WriteString(fmt.Sprintf("# Agent Report\n\n"))
 	b.WriteString(fmt.Sprintf("**PR:** %s\n\n", info.URL))
 	b.WriteString(fmt.Sprintf("**Branch:** %s\n\n", info.Branch))
-	b.WriteString(fmt.Sprintf("## Fix Plan\n\n%s\n\n", info.Plan))
-	b.WriteString(fmt.Sprintf("## Changes Applied\n\n%s\n\n", info.Report))
-	b.WriteString(fmt.Sprintf("## Discussions\n\n"))
-	b.WriteString(fmt.Sprintf("- Total comments: %d\n", len(info.Discussion.IssueComments)))
-	b.WriteString(fmt.Sprintf("- Total reviews: %d\n", len(info.Discussion.Reviews)))
-	b.WriteString(fmt.Sprintf("- Total review comments: %d\n", len(info.Discussion.ReviewComments)))
+	b.WriteString(fmt.Sprintf("## Summary\n\n%s\n\n", info.Report))
+	b.WriteString(fmt.Sprintf("## Discussion Stats\n\n"))
+	b.WriteString(fmt.Sprintf("- Comments: %d\n", len(info.Discussion.IssueComments)))
+	b.WriteString(fmt.Sprintf("- Reviews: %d\n", len(info.Discussion.Reviews)))
+	b.WriteString(fmt.Sprintf("- Inline comments: %d\n", len(info.Discussion.ReviewComments)))
 
 	if err := os.WriteFile(reportPath, []byte(b.String()), 0o644); err != nil {
 		return "", fmt.Errorf("write report: %w", err)
@@ -322,10 +388,7 @@ func runGitCmd(ctx context.Context, dir string, args []string) error {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
-	}
-	return nil
+	return cmd.Run()
 }
 
 func captureGitCmd(ctx context.Context, dir string, args []string) (string, error) {
@@ -333,7 +396,9 @@ func captureGitCmd(ctx context.Context, dir string, args []string) (string, erro
 	cmd.Dir = dir
 	out, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		return "", fmt.Errorf("git %s: %w\n%s", strings.Join(args, " "), err, stderr.String())
 	}
 	return strings.TrimSpace(string(out)), nil
 }

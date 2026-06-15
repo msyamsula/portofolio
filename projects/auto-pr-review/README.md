@@ -50,11 +50,39 @@ The web dropdown period options come from `JOB_PERIOD_OPTIONS`, for example
 `1s,10m,5h`. Periodic interval state is persisted in Postgres on each GitHub
 link; Redis only stores the next-claim sorted set used by the orchestrator.
 
-The `job-consumer` container listens to `pr_review`, runs the PR review service
-for each GitHub link, writes a Markdown report, retries with backoff and jitter,
-and sends the message to `pr_review_dlq` after the retry budget is exhausted.
-After processing finishes, including failed processing that was dead-lettered,
-the consumer re-registers the periodic job in Redis with `now + period`.
+The `job-consumer` container runs the PR review agent. It consumes from `pr_review`,
+fetches the PR discussion from GitHub, creates a git worktree on the feature branch
+merged with develop, applies fixes via the LLM agent, commits the changes (no push),
+writes an agent report, and reschedules the periodic job in Redis.
+
+### SSH for private repos
+
+The agent container needs SSH to pull/fetch from private GitHub repositories.
+Copy your SSH key and config to `privatekey/ssh/`. Example:
+
+```bash
+cp ~/.ssh/id_ed25519_astronautsid privatekey/ssh/
+chmod 600 privatekey/ssh/id_ed25519_astronautsid
+```
+
+Create `privatekey/ssh/config`:
+```
+Host github-astronautsid
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_astronautsid
+    IdentitiesOnly yes
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+```
+
+The repo's git remote must use the SSH alias:
+```bash
+git remote set-url origin git@github-astronautsid:owner/repo.git
+```
+
+Files are mounted read-only to `/home/appuser/.ssh` in the container. Not needed
+if the repo uses HTTPS.
 
 Kafka is used for dispatch after a claim:
 - topic `pr_review` with 3 partitions
@@ -104,15 +132,14 @@ Both scripts load `.env` and use `GITHUB_TOKEN_PATH` for GitHub access. The
 token file is read for each GitHub request, so refreshing the file does not
 require restarting the consumer.
 
-LLM review calls are selected through one provider interface. The current
-default is Claude:
+LLM review calls are selected through one provider interface. The current default is DeepSeek:
 
-- `LLM_PROVIDER=claude`
-- `LLM_API_KEY` or `ANTHROPIC_API_KEY`
-- `LLM_MODEL` or `ANTHROPIC_MODEL` (`claude-sonnet-4-6`)
+- `LLM_PROVIDER=deepseek`
+- `DEEPSEEK_API_KEY`
+- `DEEPSEEK_MODEL` (`deepseek-v4-pro`)
 
-Switching to ChatGPT later only requires changing `LLM_PROVIDER=chatgpt` and
-providing `LLM_API_KEY` or `OPENAI_API_KEY`. Request timeout, retry count,
+Switching to Claude or ChatGPT only requires changing `LLM_PROVIDER` and
+providing the corresponding API key. Request timeout, retry count,
 retry backoff, and HTTP connection pooling are configured with
 `LLM_REQUEST_TIMEOUT`, `LLM_MAX_RETRIES`, `LLM_RETRY_BACKOFF`,
 `LLM_MAX_IDLE_CONNS`, `LLM_MAX_IDLE_CONNS_PER_HOST`, and

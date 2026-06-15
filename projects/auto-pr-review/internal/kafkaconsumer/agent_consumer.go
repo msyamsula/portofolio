@@ -32,8 +32,8 @@ func NewPrReviewAgentConsumer(
 	executor, err := prreviewagent.New(prreviewagent.Config{
 		GitHubTokenPath: cfg.GitHub.TokenPath,
 		LLM:             cfg.LLM,
+		WorkspaceRoot:   cfg.PRReviewAgent.WorkspaceRoot,
 		DevelopBranch:   cfg.PRReviewAgent.DevelopBranch,
-		RepoPath:        cfg.PRReviewAgent.RepoPath,
 		OutputDir:       cfg.PRReviewAgent.OutputDir,
 		GitUser:         cfg.PRReviewAgent.GitUser,
 		GitEmail:        cfg.PRReviewAgent.GitEmail,

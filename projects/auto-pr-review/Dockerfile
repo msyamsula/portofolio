@@ -12,9 +12,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /out/job-consumer ./cmd/job-consumer
 
 FROM alpine:3.20
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git openssh-client
 
 RUN adduser -D -H -u 10001 appuser
+RUN mkdir -p /home/appuser/.ssh && chown -R appuser:appuser /home/appuser
 USER appuser
 
 COPY --from=build /out/api /api
