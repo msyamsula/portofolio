@@ -22,6 +22,7 @@ type Config struct {
 	LLM             llm.Config
 	GitHub          GitHubConfig
 	PRReview        PRReviewConfig
+	PRReviewAgent   PRReviewAgentConfig
 }
 
 type PRReviewerRuntimeConfig struct {
@@ -91,6 +92,14 @@ type GitHubConfig struct {
 
 type PRReviewConfig struct {
 	OutputDir string
+}
+
+type PRReviewAgentConfig struct {
+	RepoPath      string
+	DevelopBranch string
+	OutputDir     string
+	GitUser       string
+	GitEmail      string
 }
 
 func Load() (Config, error) {
@@ -259,6 +268,13 @@ func Load() (Config, error) {
 			TokenPath: envString("GITHUB_TOKEN_PATH", ""),
 		},
 		PRReview: prReviewerCfg.PRReview,
+		PRReviewAgent: PRReviewAgentConfig{
+			RepoPath:      envString("PR_REVIEW_AGENT_REPO_PATH", ""),
+			DevelopBranch: envString("PR_REVIEW_AGENT_DEVELOP_BRANCH", "develop"),
+			OutputDir:     envString("PR_REVIEW_AGENT_OUTPUT_DIR", "reports/agent"),
+			GitUser:       envString("PR_REVIEW_AGENT_GIT_USER", "pr-review-agent"),
+			GitEmail:      envString("PR_REVIEW_AGENT_GIT_EMAIL", "agent@auto-pr-review.local"),
+		},
 	}
 
 	if cfg.Database.URL == "" {

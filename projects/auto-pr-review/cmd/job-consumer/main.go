@@ -74,9 +74,9 @@ func main() {
 	}
 	lockManager := lockmanager.New(lockRedis, logger, 5*time.Minute)
 
-	consumer, err := kafkaconsumer.NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, scheduler, lockManager)
+	consumer, err := kafkaconsumer.NewPrReviewAgentConsumer(cfg, dlqPublisher, logger, scheduler, lockManager)
 	if err != nil {
-		logger.Error("create PR review consumer", slog.String("error", err.Error()))
+		logger.Error("create PR review agent consumer", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 	defer func() {
@@ -90,7 +90,7 @@ func main() {
 		}
 	}()
 
-	logger.Info("job consumer started", slog.String("group_id", cfg.KafkaConsumer.GroupID), slog.String("topic", cfg.Kafka.Topic))
+	logger.Info("job consumer started (pr-review agent)", slog.String("group_id", cfg.KafkaConsumer.GroupID), slog.String("topic", cfg.Kafka.Topic))
 	if err := consumer.Run(ctx); err != nil && err != context.Canceled {
 		logger.Error("run consumer", slog.String("error", err.Error()))
 		os.Exit(1)

@@ -12,6 +12,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /out/job-consumer ./cmd/job-consumer
 
 FROM alpine:3.20
 
+RUN apk add --no-cache git
+
 RUN adduser -D -H -u 10001 appuser
 USER appuser
 

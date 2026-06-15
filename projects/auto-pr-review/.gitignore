@@ -2,3 +2,4 @@
 *.pem
 privatekey/*
 !privatekey/.gitkeep
+bed-time-story/

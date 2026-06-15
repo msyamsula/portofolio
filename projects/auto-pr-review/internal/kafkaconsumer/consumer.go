@@ -113,10 +113,6 @@ func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig,
 	}, nil
 }
 
-func NewPrReviewConsumer(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger) (*PrReviewConsumer, error) {
-	return NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, nil, nil)
-}
-
 func NewPrReviewConsumerWithScheduler(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger, scheduler PeriodicJobScheduleManager, lockManager *lockmanager.Manager) (*PrReviewConsumer, error) {
 	reviewer, err := service.NewPRReviewer(service.PRDiscussionReviewConfig{
 		LLM:             cfg.LLM,
