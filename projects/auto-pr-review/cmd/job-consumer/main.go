@@ -10,6 +10,9 @@ import (
 	"auto-pr-review/internal/config"
 	"auto-pr-review/internal/kafkaconsumer"
 	"auto-pr-review/internal/kafkaproducer"
+	"auto-pr-review/internal/postgres"
+	"auto-pr-review/internal/redisstore"
+	"auto-pr-review/internal/scheduler"
 )
 
 func main() {
@@ -24,6 +27,24 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	jobStore, err := redisstore.NewRepository(ctx, cfg.Redis)
+	if err != nil {
+		logger.Error("connect redis", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer func() {
+		if err := jobStore.Close(); err != nil {
+			logger.Error("close redis", slog.String("error", err.Error()))
+		}
+	}()
+
+	store, err := postgres.NewRepository(ctx, cfg.Database)
+	if err != nil {
+		logger.Error("connect postgres", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer store.Close()
+
 	dlqPublisher, err := kafkaproducer.NewProducer(cfg.Kafka)
 	if err != nil {
 		logger.Error("connect kafka publisher", slog.String("error", err.Error()))
@@ -35,7 +56,8 @@ func main() {
 		}
 	}()
 
-	consumer, err := kafkaconsumer.NewPrReviewConsumer(cfg, dlqPublisher, logger)
+	scheduler := scheduler.New(store, jobStore, logger)
+	consumer, err := kafkaconsumer.NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, scheduler)
 	if err != nil {
 		logger.Error("create PR review consumer", slog.String("error", err.Error()))
 		os.Exit(1)

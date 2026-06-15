@@ -18,15 +18,26 @@ import (
 )
 
 var ErrInvalidPullRequestURL = errors.New("invalid github pull request url")
+var ErrGitHubNotFound = errors.New("github resource not found")
+
+type GitHubAPIError struct {
+	StatusCode int
+	Body       string
+	URL        string
+}
+
+func (e *GitHubAPIError) Error() string {
+	return fmt.Sprintf("github request failed: status %d: %s", e.StatusCode, e.Body)
+}
 
 type PRDiscussionReviewConfig struct {
-	Analyzer     llm.Analyzer
-	LLM          llm.Config
-	GitHubToken  string
-	OutputDir    string
-	HTTPClient   *http.Client
-	GitHubClient *GitHubClient
-	FileHandler  FileHandler
+	Analyzer        llm.Analyzer
+	LLM             llm.Config
+	GitHubTokenPath string
+	OutputDir       string
+	HTTPClient      *http.Client
+	GitHubClient    *GitHubClient
+	FileHandler     FileHandler
 }
 
 type PRReviewer struct {
@@ -38,7 +49,7 @@ type PRReviewer struct {
 
 type GitHubClient struct {
 	httpClient *http.Client
-	token      string
+	tokenPath  string
 }
 
 type FileHandler interface {
@@ -54,7 +65,7 @@ func NewPRReviewer(cfg PRDiscussionReviewConfig) (*PRReviewer, error) {
 		if client == nil {
 			client = newPooledGitHubHTTPClient()
 		}
-		githubClient = NewGitHubClient(client, strings.TrimSpace(cfg.GitHubToken))
+		githubClient = NewGitHubClient(client, strings.TrimSpace(cfg.GitHubTokenPath))
 	}
 
 	fileHandler := cfg.FileHandler
@@ -79,13 +90,13 @@ func NewPRReviewer(cfg PRDiscussionReviewConfig) (*PRReviewer, error) {
 	}, nil
 }
 
-func NewGitHubClient(client *http.Client, token string) *GitHubClient {
+func NewGitHubClient(client *http.Client, tokenPath string) *GitHubClient {
 	if client == nil {
 		client = newPooledGitHubHTTPClient()
 	}
 	return &GitHubClient{
 		httpClient: client,
-		token:      strings.TrimSpace(token),
+		tokenPath:  strings.TrimSpace(tokenPath),
 	}
 }
 
@@ -288,8 +299,12 @@ func (c *GitHubClient) get(ctx context.Context, requestURL string, target any) e
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	if c.token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.token)
+	token, err := c.githubToken()
+	if err != nil {
+		return err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -300,7 +315,11 @@ func (c *GitHubClient) get(ctx context.Context, requestURL string, target any) e
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return fmt.Errorf("github request failed: status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return &GitHubAPIError{
+			StatusCode: resp.StatusCode,
+			Body:       strings.TrimSpace(string(body)),
+			URL:        requestURL,
+		}
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
@@ -308,6 +327,22 @@ func (c *GitHubClient) get(ctx context.Context, requestURL string, target any) e
 	}
 
 	return nil
+}
+
+func (c *GitHubClient) githubToken() (string, error) {
+	tokenPath := strings.TrimSpace(c.tokenPath)
+	if tokenPath == "" {
+		return "", fmt.Errorf("github token path is required")
+	}
+	data, err := os.ReadFile(tokenPath)
+	if err != nil {
+		return "", fmt.Errorf("read github token file: %w", err)
+	}
+	token := strings.TrimSpace(string(data))
+	if token == "" {
+		return "", fmt.Errorf("github token file is empty")
+	}
+	return token, nil
 }
 
 func summarizePullRequestDiscussion(ctx context.Context, analyzer llm.Analyzer, discussion pullRequestDiscussion) (string, error) {

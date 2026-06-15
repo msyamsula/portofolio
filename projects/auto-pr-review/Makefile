@@ -1,4 +1,4 @@
-.PHONY: env up down test build kafka-topics kafka-topic-create kafka-topic-describe kafka-topic-offsets kafka-topic-read kafka-consume-debug kafka-group-describe kafka-group-state
+.PHONY: env up down test build kafka-topics kafka-topic-create kafka-topic-describe kafka-topic-offsets kafka-dlq-topic-offsets kafka-topic-read kafka-consume-debug kafka-group-describe kafka-group-state
 
 env:
 	@touch .env
@@ -38,6 +38,9 @@ kafka-topic-describe:
 
 kafka-topic-offsets:
 	docker compose exec -T kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server $(KAFKA_BOOTSTRAP_SERVER) --topic $(KAFKA_TOPIC) --time -1
+
+kafka-dlq-topic-offsets:
+	docker compose exec -T kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server $(KAFKA_BOOTSTRAP_SERVER) --topic $(KAFKA_DLQ_TOPIC) --time -1
 
 kafka-topic-read:
 	docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server $(KAFKA_BOOTSTRAP_SERVER) --topic $(KAFKA_TOPIC) --from-beginning --formatter-property print.key=true --formatter-property print.partition=true --formatter-property print.timestamp=true

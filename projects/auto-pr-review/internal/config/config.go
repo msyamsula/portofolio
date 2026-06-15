@@ -85,7 +85,7 @@ type JobsConfig struct {
 }
 
 type GitHubConfig struct {
-	Token string
+	TokenPath string
 }
 
 type PRReviewConfig struct {
@@ -248,8 +248,10 @@ func Load() (Config, error) {
 		Jobs: JobsConfig{
 			PeriodOptions: jobPeriodOptions,
 		},
-		LLM:      prReviewerCfg.LLM,
-		GitHub:   prReviewerCfg.GitHub,
+		LLM: prReviewerCfg.LLM,
+		GitHub: GitHubConfig{
+			TokenPath: envString("GITHUB_TOKEN_PATH", ""),
+		},
 		PRReview: prReviewerCfg.PRReview,
 	}
 
@@ -340,7 +342,7 @@ func LoadPRReviewer() (PRReviewerRuntimeConfig, error) {
 	cfg := PRReviewerRuntimeConfig{
 		LLM: llmCfg,
 		GitHub: GitHubConfig{
-			Token: envString("GITHUB_TOKEN", ""),
+			TokenPath: envString("GITHUB_TOKEN_PATH", ""),
 		},
 		PRReview: PRReviewConfig{
 			OutputDir: envString("PR_REVIEW_OUTPUT_DIR", "reports"),

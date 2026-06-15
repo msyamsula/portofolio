@@ -31,19 +31,14 @@ type periodicJobSchedulerStub struct {
 	err error
 }
 
-func (s *periodicJobSchedulerStub) RegisterPeriodicJob(_ context.Context, job PeriodicJob) error {
+func (s *periodicJobSchedulerStub) SetSchedule(_ context.Context, job PeriodicJob) error {
 	s.job = job
 	return s.err
 }
 
-func (s *periodicJobSchedulerStub) DeregisterPeriodicJob(_ context.Context, job PeriodicJob) error {
+func (s *periodicJobSchedulerStub) RemoveSchedule(_ context.Context, job PeriodicJob) error {
 	s.job = job
 	return s.err
-}
-
-func (r *periodicJobRepoStub) RegisterPeriodicJob(_ context.Context, job PeriodicJob) error {
-	r.job = job
-	return r.err
 }
 
 func TestPeriodicJobServiceRegister(t *testing.T) {

@@ -23,18 +23,18 @@ type PeriodicJobRepository interface {
 	ClearPeriodicJob(ctx context.Context, githubURL, period string) error
 }
 
-type PeriodicJobScheduler interface {
-	RegisterPeriodicJob(ctx context.Context, job PeriodicJob) error
-	DeregisterPeriodicJob(ctx context.Context, job PeriodicJob) error
+type ScheduleManager interface {
+	SetSchedule(ctx context.Context, job PeriodicJob) error
+	RemoveSchedule(ctx context.Context, job PeriodicJob) error
 }
 
 type PeriodicJobService struct {
 	repo      PeriodicJobRepository
-	scheduler PeriodicJobScheduler
+	scheduler ScheduleManager
 	now       func() time.Time
 }
 
-func NewPeriodicJobService(repo PeriodicJobRepository, scheduler PeriodicJobScheduler) *PeriodicJobService {
+func NewPeriodicJobService(repo PeriodicJobRepository, scheduler ScheduleManager) *PeriodicJobService {
 	return &PeriodicJobService{
 		repo:      repo,
 		scheduler: scheduler,
@@ -61,14 +61,14 @@ func (s *PeriodicJobService) Register(ctx context.Context, rawURL, rawPeriod str
 
 	for _, currentJob := range currentJobs {
 		if currentJob.GitHubLink == storedJob.GitHubLink && currentJob.Period != storedJob.Period {
-			if err := s.scheduler.DeregisterPeriodicJob(ctx, currentJob); err != nil {
+			if err := s.scheduler.RemoveSchedule(ctx, currentJob); err != nil {
 				return PeriodicJob{}, err
 			}
 			break
 		}
 	}
 
-	if err := s.scheduler.RegisterPeriodicJob(ctx, storedJob); err != nil {
+	if err := s.scheduler.SetSchedule(ctx, storedJob); err != nil {
 		return PeriodicJob{}, err
 	}
 
@@ -89,7 +89,7 @@ func (s *PeriodicJobService) Deregister(ctx context.Context, rawURL, rawPeriod s
 		return err
 	}
 
-	return s.scheduler.DeregisterPeriodicJob(ctx, job)
+	return s.scheduler.RemoveSchedule(ctx, job)
 }
 
 func (s *PeriodicJobService) buildJob(rawURL, rawPeriod string) (PeriodicJob, time.Duration, error) {

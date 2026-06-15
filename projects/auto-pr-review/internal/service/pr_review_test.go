@@ -112,6 +112,10 @@ func TestPRReviewerWriteReviewPlanMarkdown(t *testing.T) {
 	if err := os.WriteFile(outputPath, []byte("old summary"), 0o644); err != nil {
 		t.Fatalf("write old summary: %v", err)
 	}
+	tokenPath := filepath.Join(t.TempDir(), "github-token")
+	if err := os.WriteFile(tokenPath, []byte("test-token"), 0o600); err != nil {
+		t.Fatalf("write token file: %v", err)
+	}
 	var fileHandlerCalls int
 	fileHandler := fileHandlerFunc(func(path string, data []byte) error {
 		fileHandlerCalls++
@@ -122,9 +126,9 @@ func TestPRReviewerWriteReviewPlanMarkdown(t *testing.T) {
 	})
 
 	reviewer, err := NewPRReviewer(PRDiscussionReviewConfig{
-		Analyzer:    analyzer,
-		HTTPClient:  client,
-		FileHandler: fileHandler,
+		Analyzer:     analyzer,
+		GitHubClient: NewGitHubClient(client, tokenPath),
+		FileHandler:  fileHandler,
 	})
 	if err != nil {
 		t.Fatalf("new reviewer: %v", err)

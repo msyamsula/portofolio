@@ -15,7 +15,7 @@ import (
 
 const PeriodicJobNextTimestampKey = "link:periodic:nexttimestamp"
 
-const advancePeriodicJobScript = `
+const claimPeriodicJobScript = `
 local current_score = redis.call("ZSCORE", KEYS[1], ARGV[1])
 if not current_score then
 	return 0
@@ -23,7 +23,7 @@ end
 if tonumber(current_score) ~= tonumber(ARGV[2]) then
 	return 0
 end
-return redis.call("ZADD", KEYS[1], "XX", "CH", ARGV[3], ARGV[1])
+return redis.call("ZREM", KEYS[1], ARGV[1])
 `
 
 type Repository struct {
@@ -134,28 +134,26 @@ func (r *Repository) ClaimDuePeriodicJob(ctx context.Context, now time.Time) (se
 		return service.PeriodicJob{}, false, nil
 	}
 
-	job, period, err := parsePeriodicJobMember(member)
+	job, _, err := parsePeriodicJobMember(member)
 	if err != nil {
 		return service.PeriodicJob{}, false, err
 	}
 
-	updatedTimestamp := now.Add(period).Unix()
 	result, err := r.client.Eval(
 		queryCtx,
-		advancePeriodicJobScript,
+		claimPeriodicJobScript,
 		[]string{PeriodicJobNextTimestampKey},
 		member,
 		strconv.FormatInt(nextTimestamp, 10),
-		strconv.FormatInt(updatedTimestamp, 10),
 	).Int64()
 	if err != nil {
-		return service.PeriodicJob{}, false, fmt.Errorf("advance periodic job: %w", err)
+		return service.PeriodicJob{}, false, fmt.Errorf("claim periodic job: %w", err)
 	}
 	if result != 1 {
 		return service.PeriodicJob{}, false, nil
 	}
 
-	job.NextTimestamp = updatedTimestamp
+	job.NextTimestamp = nextTimestamp
 	return job, true, nil
 }
 

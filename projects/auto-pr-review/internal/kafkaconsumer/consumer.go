@@ -2,6 +2,7 @@ package kafkaconsumer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -19,10 +20,24 @@ type MessageProcessor interface {
 	Process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error
 }
 
+type MessageFinalizer interface {
+	Finalize(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error
+}
+
 type MessageProcessorFunc func(context.Context, schemaregistry.PeriodicJobEnvelope) error
 
 func (f MessageProcessorFunc) Process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
 	return f(ctx, event)
+}
+
+type MessageFinalizerFunc func(context.Context, schemaregistry.PeriodicJobEnvelope) error
+
+func (f MessageFinalizerFunc) Finalize(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
+	return f(ctx, event)
+}
+
+type PeriodicJobScheduleManager interface {
+	SetSchedule(ctx context.Context, job service.PeriodicJob) error
 }
 
 type Consumer struct {
@@ -33,14 +48,18 @@ type Consumer struct {
 	logger         *slog.Logger
 	schemaRegistry *schemaregistry.Registry
 	processor      MessageProcessor
+	finalizer      MessageFinalizer
 	maxRetries     int
 	retryBackoff   time.Duration
 	attemptTimeout time.Duration
 }
 
 type PrReviewConsumer struct {
-	consumer *Consumer
-	reviewer *service.PRReviewer
+	consumer  *Consumer
+	reviewer  *service.PRReviewer
+	scheduler PeriodicJobScheduleManager
+	logger    *slog.Logger
+	now       func() time.Time
 }
 
 type consumerGroupHandler struct {
@@ -90,23 +109,31 @@ func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig,
 }
 
 func NewPrReviewConsumer(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger) (*PrReviewConsumer, error) {
+	return NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, nil)
+}
+
+func NewPrReviewConsumerWithScheduler(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger, scheduler PeriodicJobScheduleManager) (*PrReviewConsumer, error) {
 	reviewer, err := service.NewPRReviewer(service.PRDiscussionReviewConfig{
-		LLM:         cfg.LLM,
-		GitHubToken: cfg.GitHub.Token,
-		OutputDir:   cfg.PRReview.OutputDir,
+		LLM:             cfg.LLM,
+		GitHubTokenPath: cfg.GitHub.TokenPath,
+		OutputDir:       cfg.PRReview.OutputDir,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create PR reviewer: %w", err)
 	}
 
 	prReviewConsumer := &PrReviewConsumer{
-		reviewer: reviewer,
+		reviewer:  reviewer,
+		scheduler: scheduler,
+		logger:    logger,
+		now:       time.Now,
 	}
 
 	consumer, err := NewConsumer(cfg.Kafka, cfg.KafkaConsumer, dlqPublisher, logger, MessageProcessorFunc(prReviewConsumer.process))
 	if err != nil {
 		return nil, err
 	}
+	consumer.finalizer = MessageFinalizerFunc(prReviewConsumer.reschedule)
 	prReviewConsumer.consumer = consumer
 
 	return prReviewConsumer, nil
@@ -201,10 +228,23 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 				slog.Int64("offset", msg.Offset),
 				slog.Int("attempt", attempt+1),
 			)
-			return nil
+			return c.finalizeMessage(ctx, event)
 		}
 
 		lastErr = err
+		if shouldStopRetrying(err) {
+			c.logger.Warn(
+				"kafka message processing failed permanently",
+				slog.String("error", err.Error()),
+				slog.String("github_link", event.GitHubLink),
+				slog.String("idempotency_key", event.IdempotencyKey),
+				slog.Int("attempt", attempt+1),
+				slog.String("topic", msg.Topic),
+				slog.Int("partition", int(msg.Partition)),
+				slog.Int64("offset", msg.Offset),
+			)
+			break
+		}
 		c.logger.Warn(
 			"kafka message processing attempt failed",
 			slog.String("error", err.Error()),
@@ -232,7 +272,25 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 		slog.Int64("offset", msg.Offset),
 	)
 
+	return c.finalizeMessage(ctx, event)
+}
+
+func (c *Consumer) finalizeMessage(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
+	if c.finalizer == nil {
+		return nil
+	}
+	if err := c.finalizer.Finalize(ctx, event); err != nil {
+		return fmt.Errorf("finalize kafka message: %w", err)
+	}
 	return nil
+}
+
+func shouldStopRetrying(err error) bool {
+	var githubErr *service.GitHubAPIError
+	if errors.As(err, &githubErr) {
+		return githubErr.StatusCode == 404
+	}
+	return false
 }
 
 func (c *PrReviewConsumer) process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
@@ -246,6 +304,46 @@ func (c *PrReviewConsumer) process(ctx context.Context, event schemaregistry.Per
 	}
 
 	return c.consumer.logReviewOutput(event, outputPath)
+}
+
+func (c *PrReviewConsumer) reschedule(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error {
+	if c.scheduler == nil {
+		return nil
+	}
+	if event.GitHubLink == "" || event.Period == "" {
+		c.logger.Warn(
+			"periodic job reschedule skipped",
+			slog.String("github_link", event.GitHubLink),
+			slog.String("period", event.Period),
+			slog.String("idempotency_key", event.IdempotencyKey),
+		)
+		return nil
+	}
+
+	period, err := time.ParseDuration(event.Period)
+	if err != nil || period < time.Second {
+		return fmt.Errorf("invalid periodic job period %q", event.Period)
+	}
+
+	job := service.PeriodicJob{
+		GitHubLink:     event.GitHubLink,
+		Period:         event.Period,
+		NextTimestamp:  c.now().Add(period).Unix(),
+		IdempotencyKey: event.IdempotencyKey,
+	}
+	if err := c.scheduler.SetSchedule(ctx, job); err != nil {
+		return err
+	}
+
+	c.logger.Info(
+		"periodic job rescheduled",
+		slog.String("github_link", job.GitHubLink),
+		slog.String("period", job.Period),
+		slog.Int64("next_timestamp", job.NextTimestamp),
+		slog.String("idempotency_key", job.IdempotencyKey),
+	)
+
+	return nil
 }
 
 func (c *Consumer) logReviewOutput(event schemaregistry.PeriodicJobEnvelope, outputPath string) error {

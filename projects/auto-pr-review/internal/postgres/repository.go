@@ -28,6 +28,8 @@ const (
 	clearPeriodicJobSQL       = `UPDATE github_links SET periodic_interval = NULL WHERE url = $1 AND periodic_interval = $2 RETURNING url`
 	listPeriodicJobsStatement = "list_periodic_jobs"
 	listPeriodicJobsSQL       = `SELECT url, periodic_interval FROM github_links WHERE periodic_interval IS NOT NULL ORDER BY id`
+	getPeriodicJobStatement   = "get_periodic_job"
+	getPeriodicJobSQL         = `SELECT url, periodic_interval FROM github_links WHERE url = $1 AND periodic_interval IS NOT NULL`
 	uniqueViolationCode       = "23505"
 )
 
@@ -81,6 +83,9 @@ func NewRepository(ctx context.Context, cfg config.DatabaseConfig) (*Repository,
 		}
 		if _, err := conn.Prepare(ctx, listPeriodicJobsStatement, listPeriodicJobsSQL); err != nil {
 			return fmt.Errorf("prepare %s: %w", listPeriodicJobsStatement, err)
+		}
+		if _, err := conn.Prepare(ctx, getPeriodicJobStatement, getPeriodicJobSQL); err != nil {
+			return fmt.Errorf("prepare %s: %w", getPeriodicJobStatement, err)
 		}
 		return nil
 	}
@@ -222,6 +227,22 @@ func (r *Repository) ListPeriodicJobs(ctx context.Context) ([]service.PeriodicJo
 	}
 
 	return jobs, nil
+}
+
+func (r *Repository) GetPeriodicJob(ctx context.Context, githubURL string) (service.PeriodicJob, error) {
+	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
+	defer cancel()
+
+	var job service.PeriodicJob
+	err := r.pool.QueryRow(queryCtx, getPeriodicJobStatement, githubURL).Scan(&job.GitHubLink, &job.Period)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return service.PeriodicJob{}, service.ErrGitHubLinkNotFound
+		}
+		return service.PeriodicJob{}, fmt.Errorf("get periodic job: %w", err)
+	}
+
+	return job, nil
 }
 
 func (r *Repository) DeleteGitHubLink(ctx context.Context, id int64) error {

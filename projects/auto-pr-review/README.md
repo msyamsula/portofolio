@@ -43,8 +43,8 @@ ascending.
 
 A separate `job-orchestrator` container runs the background loop. On each
 `JOB_ORCHESTRATOR_INTERVAL`, it checks the smallest Redis score, skips empty or
-not-yet-due jobs, atomically advances due jobs by their period, and currently
-logs a `periodic job done` message as the placeholder processing function.
+not-yet-due jobs, atomically claims due jobs from Redis, and dispatches them to
+Kafka.
 
 The web dropdown period options come from `JOB_PERIOD_OPTIONS`, for example
 `1s,10m,5h`. Periodic interval state is persisted in Postgres on each GitHub
@@ -53,6 +53,8 @@ link; Redis only stores the next-claim sorted set used by the orchestrator.
 The `job-consumer` container listens to `pr_review`, runs the PR review service
 for each GitHub link, writes a Markdown report, retries with backoff and jitter,
 and sends the message to `pr_review_dlq` after the retry budget is exhausted.
+After processing finishes, including failed processing that was dead-lettered,
+the consumer re-registers the periodic job in Redis with `now + period`.
 
 Kafka is used for dispatch after a claim:
 - topic `pr_review` with 3 partitions
@@ -72,6 +74,8 @@ Kafka is used for dispatch after a claim:
 Local monitoring and topic management:
 - `make kafka-topics`
 - `make kafka-topic-describe`
+- `make kafka-topic-offsets`
+- `make kafka-dlq-topic-offsets`
 - `make kafka-consume-debug`
 - `make kafka-group-describe`
 - `make kafka-group-state`
@@ -90,18 +94,29 @@ Manually integration-test PR review without Kafka:
 go run scripts/integration-pr-review.go https://github.com/owner/repo/pull/123
 ```
 
+Check only GitHub PR access without running the LLM review:
+
+```bash
+go run ./scripts/check-pr-access https://github.com/astronautsid/astro-ads-be/pull/659
+```
+
+Both scripts load `.env` and use `GITHUB_TOKEN_PATH` for GitHub access. The
+token file is read for each GitHub request, so refreshing the file does not
+require restarting the consumer.
+
 LLM review calls are selected through one provider interface. The current
 default is Claude:
 
 - `LLM_PROVIDER=claude`
 - `LLM_API_KEY` or `ANTHROPIC_API_KEY`
-- `LLM_MODEL` or `ANTHROPIC_MODEL`
+- `LLM_MODEL` or `ANTHROPIC_MODEL` (`claude-sonnet-4-6`)
 
 Switching to ChatGPT later only requires changing `LLM_PROVIDER=chatgpt` and
 providing `LLM_API_KEY` or `OPENAI_API_KEY`. Request timeout, retry count,
 retry backoff, and HTTP connection pooling are configured with
 `LLM_REQUEST_TIMEOUT`, `LLM_MAX_RETRIES`, `LLM_RETRY_BACKOFF`,
 `LLM_MAX_IDLE_CONNS`, `LLM_MAX_IDLE_CONNS_PER_HOST`, and
-`LLM_MAX_CONNS_PER_HOST`. GitHub API access uses `GITHUB_TOKEN`, and generated
-Markdown reports are written under `PR_REVIEW_OUTPUT_DIR` (`reports` by
-default).
+`LLM_MAX_CONNS_PER_HOST`.
+
+GitHub API access uses `GITHUB_TOKEN_PATH`. Generated Markdown reports are
+written under `PR_REVIEW_OUTPUT_DIR` (`reports` by default).

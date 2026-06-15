@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const defaultClaudeModel = "claude-3-5-haiku-latest"
+const defaultClaudeModel = "claude-sonnet-4-6"
 
 type ClaudeAnalyzer struct {
 	retryingAnalyzer
