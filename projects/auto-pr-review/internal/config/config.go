@@ -312,8 +312,8 @@ func Load() (Config, error) {
 	if len(cfg.Jobs.PeriodOptions) == 0 {
 		return Config{}, fmt.Errorf("JOB_PERIOD_OPTIONS must contain at least one duration")
 	}
-	if cfg.LLM.Provider != llm.ProviderClaude && cfg.LLM.Provider != llm.ProviderChatGPT {
-		return Config{}, fmt.Errorf("LLM_PROVIDER must be one of: %s, %s", llm.ProviderClaude, llm.ProviderChatGPT)
+	if cfg.LLM.Provider != llm.ProviderClaude && cfg.LLM.Provider != llm.ProviderChatGPT && cfg.LLM.Provider != llm.ProviderDeepSeek {
+		return Config{}, fmt.Errorf("LLM_PROVIDER must be one of: %s, %s, %s", llm.ProviderClaude, llm.ProviderChatGPT, llm.ProviderDeepSeek)
 	}
 	if cfg.LLM.RequestTimeout <= 0 {
 		return Config{}, fmt.Errorf("LLM_REQUEST_TIMEOUT must be positive")
@@ -364,7 +364,7 @@ func LoadPRReviewer() (PRReviewerRuntimeConfig, error) {
 }
 
 func loadLLM() (llm.Config, error) {
-	provider := strings.ToLower(strings.TrimSpace(envString("LLM_PROVIDER", llm.ProviderClaude)))
+	provider := strings.ToLower(strings.TrimSpace(envString("LLM_PROVIDER", llm.ProviderDeepSeek)))
 	var apiKey, model string
 	switch provider {
 	case llm.ProviderClaude:
@@ -373,6 +373,9 @@ func loadLLM() (llm.Config, error) {
 	case llm.ProviderChatGPT:
 		apiKey = strings.TrimSpace(envString("OPENAI_API_KEY", ""))
 		model = strings.TrimSpace(envString("OPENAI_MODEL", ""))
+	case llm.ProviderDeepSeek:
+		apiKey = strings.TrimSpace(envString("DEEPSEEK_API_KEY", ""))
+		model = strings.TrimSpace(envString("DEEPSEEK_MODEL", ""))
 	}
 
 	requestTimeout, err := envDuration("LLM_REQUEST_TIMEOUT", time.Minute)
@@ -414,8 +417,8 @@ func loadLLM() (llm.Config, error) {
 }
 
 func validateLLM(cfg llm.Config) error {
-	if cfg.Provider != llm.ProviderClaude && cfg.Provider != llm.ProviderChatGPT {
-		return fmt.Errorf("LLM_PROVIDER must be one of: %s, %s", llm.ProviderClaude, llm.ProviderChatGPT)
+	if cfg.Provider != llm.ProviderClaude && cfg.Provider != llm.ProviderChatGPT && cfg.Provider != llm.ProviderDeepSeek {
+		return fmt.Errorf("LLM_PROVIDER must be one of: %s, %s, %s", llm.ProviderClaude, llm.ProviderChatGPT, llm.ProviderDeepSeek)
 	}
 	if cfg.RequestTimeout <= 0 {
 		return fmt.Errorf("LLM_REQUEST_TIMEOUT must be positive")

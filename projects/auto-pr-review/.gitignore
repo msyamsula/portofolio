@@ -1,6 +1,4 @@
 .env
-api
-job-orchestrator
 *.pem
 privatekey/*
 !privatekey/.gitkeep

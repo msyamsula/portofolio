@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	ProviderClaude  = "claude"
-	ProviderChatGPT = "chatgpt"
+	ProviderClaude   = "claude"
+	ProviderChatGPT  = "chatgpt"
+	ProviderDeepSeek = "deepseek"
 )
 
 type Analyzer interface {
@@ -34,6 +35,8 @@ func NewAnalyzer(cfg Config) (Analyzer, error) {
 		return NewClaudeAnalyzer(cfg)
 	case ProviderChatGPT:
 		return NewChatGPTAnalyzer(cfg)
+	case ProviderDeepSeek:
+		return NewDeepSeekAnalyzer(cfg)
 	default:
 		return nil, fmt.Errorf("unsupported LLM provider %q", cfg.Provider)
 	}
