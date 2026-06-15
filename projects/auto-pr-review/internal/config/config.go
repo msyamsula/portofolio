@@ -101,6 +101,7 @@ type PRReviewAgentConfig struct {
 	TraceDir      string
 	GitUser       string
 	GitEmail      string
+	MaxAgentTurns int
 }
 
 func Load() (Config, error) {
@@ -215,6 +216,11 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	prReviewAgentMaxTurns, err := envInt("PR_REVIEW_AGENT_MAX_TURNS", 50)
+	if err != nil {
+		return Config{}, err
+	}
+
 	cfg := Config{
 		HTTP: HTTPConfig{
 			Addr:              net.JoinHostPort("", port),
@@ -276,6 +282,7 @@ func Load() (Config, error) {
 			TraceDir:      envString("PR_REVIEW_AGENT_TRACE_DIR", "reports/agent/traces"),
 			GitUser:       envString("PR_REVIEW_AGENT_GIT_USER", "pr-review-agent"),
 			GitEmail:      envString("PR_REVIEW_AGENT_GIT_EMAIL", "agent@auto-pr-review.local"),
+			MaxAgentTurns: prReviewAgentMaxTurns,
 		},
 	}
 

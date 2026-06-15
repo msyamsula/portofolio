@@ -184,6 +184,7 @@ services:
       PR_REVIEW_AGENT_TRACE_DIR: ${PR_REVIEW_AGENT_TRACE_DIR:-/reports/agent/traces}
       PR_REVIEW_AGENT_GIT_USER: ${PR_REVIEW_AGENT_GIT_USER:-pr-review-agent}
       PR_REVIEW_AGENT_GIT_EMAIL: ${PR_REVIEW_AGENT_GIT_EMAIL:-agent@auto-pr-review.local}
+      PR_REVIEW_AGENT_MAX_TURNS: ${PR_REVIEW_AGENT_MAX_TURNS:-50}
     volumes:
       - ${PR_REVIEW_AGENT_WORKSPACE_ROOT}:/workspace
       - ./reports:/reports

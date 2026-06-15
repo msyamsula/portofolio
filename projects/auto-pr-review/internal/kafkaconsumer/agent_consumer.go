@@ -38,6 +38,7 @@ func NewPrReviewAgentConsumer(
 		TraceDir:        cfg.PRReviewAgent.TraceDir,
 		GitUser:         cfg.PRReviewAgent.GitUser,
 		GitEmail:        cfg.PRReviewAgent.GitEmail,
+		MaxAgentTurns:   cfg.PRReviewAgent.MaxAgentTurns,
 	})
 	if err != nil {
 		return nil, err

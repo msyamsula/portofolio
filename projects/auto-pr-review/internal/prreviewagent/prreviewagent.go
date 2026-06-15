@@ -18,7 +18,6 @@ import (
 	"auto-pr-review/internal/llm"
 )
 
-const maxAgentTurns = 50
 const systemPrompt = `You are an autonomous PR fix agent. You have a git worktree on the feature branch, already merged with the latest develop.
 
 Phase 1 — Survey:
@@ -66,6 +65,7 @@ type Config struct {
 	TraceDir        string
 	GitUser         string
 	GitEmail        string
+	MaxAgentTurns   int
 }
 
 type Executor struct {
@@ -324,8 +324,13 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 		e.logger.Info("resuming from previous trace", slog.String("github_link", info.URL))
 	}
 
-	for turn := 0; turn < maxAgentTurns; turn++ {
-		e.logger.Info("agent turn", slog.Int("turn", turn+1), slog.Int("max", maxAgentTurns), slog.String("github_link", info.URL))
+	maxTurns := e.cfg.MaxAgentTurns
+	if maxTurns <= 0 {
+		maxTurns = 50
+	}
+
+	for turn := 0; turn < maxTurns; turn++ {
+		e.logger.Info("agent turn", slog.Int("turn", turn+1), slog.Int("max", maxTurns), slog.String("github_link", info.URL))
 		resp, err := e.agent.Chat(ctx, messages, registry.List())
 		if err != nil {
 			return fmt.Errorf("agent chat: %w", err)
@@ -358,7 +363,7 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 		}
 	}
 
-	return fmt.Errorf("agent did not finish within %d turns", maxAgentTurns)
+	return fmt.Errorf("agent did not finish within %d turns", maxTurns)
 }
 
 func traceFilePath(dir, prURL string) string {
