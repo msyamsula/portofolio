@@ -7,35 +7,58 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"auto-pr-review/internal/service"
+
+	"github.com/redis/go-redis/v9"
 )
 
-type PeriodicJobClaimer interface {
-	ClaimDuePeriodicJob(ctx context.Context, now time.Time) (service.PeriodicJob, bool, error)
-}
+const claimPeriodicJobScript = `
+local items = redis.call("ZRANGE", KEYS[1], 0, 0, "WITHSCORES")
+if #items == 0 then
+	return ""
+end
+
+local member = items[1]
+local score = tonumber(items[2])
+
+if score > tonumber(ARGV[1]) then
+	return ""
+end
+
+local removed = redis.call("ZREM", KEYS[1], member)
+if removed == 0 then
+	return ""
+end
+
+return member
+`
 
 type PeriodicJobDoneFunc func(ctx context.Context, job service.PeriodicJob) error
 
 type IdempotencyKeyFunc func() (string, error)
 
 type PeriodicJobOrchestrator struct {
-	claimer        PeriodicJobClaimer
+	sortedSetKey   string
 	interval       time.Duration
 	logger         *slog.Logger
 	done           PeriodicJobDoneFunc
 	idempotencyKey IdempotencyKeyFunc
+	eval           func(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
 }
 
 func NewPeriodicJobOrchestrator(
-	claimer PeriodicJobClaimer,
+	eval func(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd,
+	sortedSetKey string,
 	interval time.Duration,
 	logger *slog.Logger,
 	done PeriodicJobDoneFunc,
 ) *PeriodicJobOrchestrator {
 	return &PeriodicJobOrchestrator{
-		claimer:        claimer,
+		eval:           eval,
+		sortedSetKey:   sortedSetKey,
 		interval:       interval,
 		logger:         logger,
 		done:           done,
@@ -59,7 +82,7 @@ func (o *PeriodicJobOrchestrator) Run(ctx context.Context) {
 }
 
 func (o *PeriodicJobOrchestrator) runOnce(ctx context.Context) {
-	job, ok, err := o.claimer.ClaimDuePeriodicJob(ctx, time.Now())
+	job, ok, err := o.claimDuePeriodicJob(ctx, time.Now())
 	if err != nil {
 		o.logger.Warn("claim periodic job failed", slog.String("error", err.Error()))
 		return
@@ -79,6 +102,28 @@ func (o *PeriodicJobOrchestrator) runOnce(ctx context.Context) {
 		o.logger.Warn("periodic job dispatch failed", slog.String("error", err.Error()))
 		return
 	}
+}
+
+func (o *PeriodicJobOrchestrator) claimDuePeriodicJob(ctx context.Context, now time.Time) (service.PeriodicJob, bool, error) {
+	member, err := o.eval(
+		ctx,
+		claimPeriodicJobScript,
+		[]string{o.sortedSetKey},
+		strconv.FormatInt(now.Unix(), 10),
+	).Text()
+	if err != nil {
+		return service.PeriodicJob{}, false, fmt.Errorf("eval claim script: %w", err)
+	}
+	if member == "" {
+		return service.PeriodicJob{}, false, nil
+	}
+
+	job, _, err := service.ParsePeriodicJobMember(member)
+	if err != nil {
+		return service.PeriodicJob{}, false, err
+	}
+
+	return job, true, nil
 }
 
 func NewIdempotencyKey() (string, error) {

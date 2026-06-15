@@ -112,3 +112,24 @@ func (s *PeriodicJobService) buildJob(rawURL, rawPeriod string) (PeriodicJob, ti
 
 	return job, period, nil
 }
+
+func PeriodicJobMember(job PeriodicJob) string {
+	return fmt.Sprintf("%s:%s", job.GitHubLink, job.Period)
+}
+
+func ParsePeriodicJobMember(member string) (PeriodicJob, time.Duration, error) {
+	separator := strings.LastIndex(member, ":")
+	if separator < 1 || separator == len(member)-1 {
+		return PeriodicJob{}, 0, fmt.Errorf("invalid periodic job member")
+	}
+
+	period, err := time.ParseDuration(member[separator+1:])
+	if err != nil || period < time.Second {
+		return PeriodicJob{}, 0, fmt.Errorf("invalid periodic job period")
+	}
+
+	return PeriodicJob{
+		GitHubLink: member[:separator],
+		Period:     member[separator+1:],
+	}, period, nil
+}

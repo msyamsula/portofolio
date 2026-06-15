@@ -9,7 +9,7 @@ import (
 func TestPeriodicJobMember(t *testing.T) {
 	t.Parallel()
 
-	got := periodicJobMember(service.PeriodicJob{
+	got := service.PeriodicJobMember(service.PeriodicJob{
 		GitHubLink: "https://github.com/octocat/Hello-World",
 		Period:     "5s",
 	})
@@ -23,7 +23,7 @@ func TestPeriodicJobMember(t *testing.T) {
 func TestParsePeriodicJobMember(t *testing.T) {
 	t.Parallel()
 
-	job, period, err := parsePeriodicJobMember("https://github.com/octocat/Hello-World:10m")
+	job, period, err := service.ParsePeriodicJobMember("https://github.com/octocat/Hello-World:10m")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestParsePeriodicJobMember(t *testing.T) {
 func TestParsePeriodicJobMemberRejectsInvalidMember(t *testing.T) {
 	t.Parallel()
 
-	_, _, err := parsePeriodicJobMember("https://github.com/octocat/Hello-World")
+	_, _, err := service.ParsePeriodicJobMember("https://github.com/octocat/Hello-World")
 	if err == nil {
 		t.Fatal("expected error")
 	}

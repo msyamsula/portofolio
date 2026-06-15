@@ -7,43 +7,46 @@ import (
 	"time"
 
 	"auto-pr-review/internal/service"
+
+	"github.com/redis/go-redis/v9"
 )
 
-type periodicJobClaimerStub struct {
-	jobs []service.PeriodicJob
-}
-
-func (c *periodicJobClaimerStub) ClaimDuePeriodicJob(context.Context, time.Time) (service.PeriodicJob, bool, error) {
-	if len(c.jobs) == 0 {
-		return service.PeriodicJob{}, false, nil
+func evalStub(jobs []service.PeriodicJob) func(context.Context, string, []string, ...interface{}) *redis.Cmd {
+	i := 0
+	return func(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+		if i >= len(jobs) {
+			cmd := redis.NewCmd(ctx)
+			cmd.SetVal("")
+			return cmd
+		}
+		job := jobs[i]
+		i++
+		cmd := redis.NewCmd(ctx)
+		cmd.SetVal(service.PeriodicJobMember(job))
+		return cmd
 	}
-
-	job := c.jobs[0]
-	c.jobs = c.jobs[1:]
-	return job, true, nil
 }
 
 func TestPeriodicJobOrchestratorAddsIdempotencyKeyPerDispatch(t *testing.T) {
 	t.Parallel()
 
-	claimer := &periodicJobClaimerStub{
-		jobs: []service.PeriodicJob{
-			{
-				GitHubLink:    "https://github.com/octocat/Hello-World",
-				Period:        "10m",
-				NextTimestamp: 123,
-			},
-			{
-				GitHubLink:    "https://github.com/octocat/Hello-World",
-				Period:        "10m",
-				NextTimestamp: 456,
-			},
+	jobs := []service.PeriodicJob{
+		{
+			GitHubLink:    "https://github.com/octocat/Hello-World",
+			Period:        "10m",
+			NextTimestamp: 123,
+		},
+		{
+			GitHubLink:    "https://github.com/octocat/Hello-World",
+			Period:        "10m",
+			NextTimestamp: 456,
 		},
 	}
 	keys := []string{"dispatch-key-1", "dispatch-key-2"}
 	var dispatched []service.PeriodicJob
 	orchestrator := NewPeriodicJobOrchestrator(
-		claimer,
+		evalStub(jobs),
+		"test:key",
 		time.Second,
 		slog.Default(),
 		func(_ context.Context, job service.PeriodicJob) error {
