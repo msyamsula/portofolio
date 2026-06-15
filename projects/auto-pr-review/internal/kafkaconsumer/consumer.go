@@ -10,11 +10,14 @@ import (
 
 	"auto-pr-review/internal/config"
 	"auto-pr-review/internal/kafkaproducer"
+	"auto-pr-review/internal/lockmanager"
 	"auto-pr-review/internal/schemaregistry"
 	"auto-pr-review/internal/service"
 
 	"github.com/IBM/sarama"
 )
+
+var ErrSkipMessage = errors.New("skip message")
 
 type MessageProcessor interface {
 	Process(ctx context.Context, event schemaregistry.PeriodicJobEnvelope) error
@@ -49,6 +52,7 @@ type Consumer struct {
 	schemaRegistry *schemaregistry.Registry
 	processor      MessageProcessor
 	finalizer      MessageFinalizer
+	preProcess     func(ctx context.Context, key string) (release func(), skip bool, err error)
 	maxRetries     int
 	retryBackoff   time.Duration
 	attemptTimeout time.Duration
@@ -109,10 +113,10 @@ func NewConsumer(cfg config.KafkaConfig, consumerCfg config.KafkaConsumerConfig,
 }
 
 func NewPrReviewConsumer(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger) (*PrReviewConsumer, error) {
-	return NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, nil)
+	return NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, nil, nil)
 }
 
-func NewPrReviewConsumerWithScheduler(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger, scheduler PeriodicJobScheduleManager) (*PrReviewConsumer, error) {
+func NewPrReviewConsumerWithScheduler(cfg config.Config, dlqPublisher *kafkaproducer.Producer, logger *slog.Logger, scheduler PeriodicJobScheduleManager, lockManager *lockmanager.Manager) (*PrReviewConsumer, error) {
 	reviewer, err := service.NewPRReviewer(service.PRDiscussionReviewConfig{
 		LLM:             cfg.LLM,
 		GitHubTokenPath: cfg.GitHub.TokenPath,
@@ -134,6 +138,27 @@ func NewPrReviewConsumerWithScheduler(cfg config.Config, dlqPublisher *kafkaprod
 		return nil, err
 	}
 	consumer.finalizer = MessageFinalizerFunc(prReviewConsumer.reschedule)
+
+	if lockManager != nil {
+		lockTTL := cfg.KafkaConsumer.LockTTL
+		consumer.preProcess = func(ctx context.Context, key string) (func(), bool, error) {
+			token, err := lockManager.AcquireWithTTL(ctx, key, lockTTL)
+			if err != nil {
+				if errors.Is(err, lockmanager.ErrLockHeld) {
+					return nil, true, nil
+				}
+				return nil, false, err
+			}
+			release := func() {
+				if err := lockManager.Release(context.Background(), key, token); err != nil {
+					logger.Error("release lock failed",
+						slog.String("error", err.Error()))
+				}
+			}
+			return release, false, nil
+		}
+	}
+
 	prReviewConsumer.consumer = consumer
 
 	return prReviewConsumer, nil
@@ -170,7 +195,11 @@ func (h *consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error { retu
 
 func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		if err := h.consumer.handleMessage(session.Context(), msg); err != nil {
+		err := h.consumer.handleMessage(session.Context(), msg)
+		if errors.Is(err, ErrSkipMessage) {
+			continue
+		}
+		if err != nil {
 			h.consumer.logger.Warn(
 				"kafka message processing failed",
 				slog.String("error", err.Error()),
@@ -205,6 +234,19 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 			slog.Int("partition", int(msg.Partition)),
 			slog.Int64("offset", msg.Offset),
 		)
+	}
+
+	if c.preProcess != nil {
+		release, skip, err := c.preProcess(ctx, event.GitHubLink)
+		if skip {
+			c.logger.Info("message skipped, lock held by another consumer",
+				slog.String("github_link", event.GitHubLink))
+			return ErrSkipMessage
+		}
+		if err != nil {
+			return fmt.Errorf("pre-process: %w", err)
+		}
+		defer release()
 	}
 
 	var lastErr error

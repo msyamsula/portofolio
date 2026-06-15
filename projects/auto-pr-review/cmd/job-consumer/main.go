@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"auto-pr-review/internal/config"
 	"auto-pr-review/internal/kafkaconsumer"
 	"auto-pr-review/internal/kafkaproducer"
+	"auto-pr-review/internal/lockmanager"
 	"auto-pr-review/internal/postgres"
 	"auto-pr-review/internal/redisstore"
 	"auto-pr-review/internal/scheduler"
@@ -57,7 +59,22 @@ func main() {
 	}()
 
 	scheduler := scheduler.New(store, jobStore, logger)
-	consumer, err := kafkaconsumer.NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, scheduler)
+
+	lockRedis, err := lockmanager.NewRedisBackend(lockmanager.RedisBackendConfig{
+		Addr:         cfg.Redis.Addr,
+		Password:     cfg.Redis.Password,
+		DB:           cfg.Redis.DB,
+		PoolSize:     cfg.Redis.PoolSize,
+		MinIdleConns: cfg.Redis.MinIdleConns,
+		ExecTimeout:  cfg.Redis.ExecTimeout,
+	}, "lock:pr:")
+	if err != nil {
+		logger.Error("connect lock redis", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	lockManager := lockmanager.New(lockRedis, logger, 5*time.Minute)
+
+	consumer, err := kafkaconsumer.NewPrReviewConsumerWithScheduler(cfg, dlqPublisher, logger, scheduler, lockManager)
 	if err != nil {
 		logger.Error("create PR review consumer", slog.String("error", err.Error()))
 		os.Exit(1)
@@ -65,6 +82,11 @@ func main() {
 	defer func() {
 		if err := consumer.Close(); err != nil {
 			logger.Error("close kafka consumer", slog.String("error", err.Error()))
+		}
+	}()
+	defer func() {
+		if err := lockRedis.Close(); err != nil {
+			logger.Error("close lock redis", slog.String("error", err.Error()))
 		}
 	}()
 

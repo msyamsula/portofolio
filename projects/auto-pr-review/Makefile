@@ -9,7 +9,7 @@ env:
 	done < .env.example
 
 up: env
-	docker compose up --build
+	docker compose up --build --scale job-consumer=3 -d
 
 down:
 	docker compose down

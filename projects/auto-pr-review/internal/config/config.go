@@ -74,6 +74,7 @@ type KafkaConsumerConfig struct {
 	RetryBackoff   time.Duration
 	AttemptTimeout time.Duration
 	MaxInFlight    int
+	LockTTL        time.Duration
 }
 
 type JobOrchestratorConfig struct {
@@ -187,6 +188,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	kafkaConsumerLockTTL, err := envDuration("KAFKA_CONSUMER_LOCK_TTL", 5*time.Minute)
+	if err != nil {
+		return Config{}, err
+	}
 	jobOrchestratorInterval, err := envDuration("JOB_ORCHESTRATOR_INTERVAL", time.Second)
 	if err != nil {
 		return Config{}, err
@@ -241,6 +246,7 @@ func Load() (Config, error) {
 			RetryBackoff:   kafkaConsumerRetryBackoff,
 			AttemptTimeout: kafkaConsumerAttemptTimeout,
 			MaxInFlight:    kafkaConsumerMaxInFlight,
+			LockTTL:        kafkaConsumerLockTTL,
 		},
 		JobOrchestrator: JobOrchestratorConfig{
 			Interval: jobOrchestratorInterval,
