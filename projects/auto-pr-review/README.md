@@ -50,10 +50,35 @@ The web dropdown period options come from `JOB_PERIOD_OPTIONS`, for example
 `1s,10m,5h`. Periodic interval state is persisted in Postgres on each GitHub
 link; Redis only stores the next-claim sorted set used by the orchestrator.
 
-The `job-consumer` container runs the PR review agent. It consumes from `pr_review`,
-fetches the PR discussion from GitHub, creates a git worktree on the feature branch
-merged with develop, applies fixes via the LLM agent, commits the changes (no push),
-writes an agent report, and reschedules the periodic job in Redis.
+The `job-consumer` container runs the PR review agent. It consumes from `pr_review`
+and processes PRs in the following workflow:
+
+1. **Consume** — Read a message from Kafka (keyed by GitHub URL, partitioned for order).
+2. **Lock** — Acquire a distributed Redis lock (`lock:pr:<github_url>`, TTL 5m) to prevent
+   concurrent processing of the same PR across partitions or containers.
+3. **Fetch** — Pull the PR discussion (title, description, issue comments, review
+   summaries, inline review comments) from GitHub via the API. Gets the feature
+   branch name.
+4. **Prepare worktree** — `git fetch origin`, force-update local branch to remote,
+   remove any stale worktree for the same branch, `git worktree add` from the
+   feature branch, `git merge origin/develop`.
+5. **Apply fixes** — Run the LLM agent (DeepSeek default) with tool-calling:
+   - Survey the PR discussion and relevant source files
+   - Apply targeted code fixes via `write_file`
+   - Validate with `make test` and `make lint-gci-new`
+   - Produce a Markdown report with commit message and diff summary
+6. **Commit** — `git add -A && git commit --no-verify` (no push, manual review).
+7. **Report** — Write the agent report Markdown to `reports/agent/`.
+8. **Reschedule** — Re-set the periodic job in Redis for the next review cycle.
+9. **Release** — Release the distributed lock.
+
+On retry (after transient failures), the agent reads the previous JSONL trace file
+to avoid repeating work, and stale worktree paths in the trace are rewritten to the
+current workspace directory.
+
+The agent supports up to `PR_REVIEW_AGENT_MAX_TURNS` (default 50) LLM turns per
+review. Each turn can include multiple tool calls (read_file, write_file,
+run_command, etc.).
 
 ### SSH for private repos
 
