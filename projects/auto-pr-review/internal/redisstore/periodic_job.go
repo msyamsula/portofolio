@@ -81,12 +81,10 @@ func (r *Repository) ListPeriodicJobs(ctx context.Context) ([]service.PeriodicJo
 			return nil, fmt.Errorf("periodic job member is not a string")
 		}
 
-		job, _, err := service.ParsePeriodicJobMember(member)
-		if err != nil {
-			return nil, err
-		}
-		job.NextTimestamp = int64(item.Score)
-		jobs = append(jobs, job)
+		jobs = append(jobs, service.PeriodicJob{
+			GitHubLink:    member,
+			NextTimestamp: int64(item.Score),
+		})
 	}
 
 	return jobs, nil

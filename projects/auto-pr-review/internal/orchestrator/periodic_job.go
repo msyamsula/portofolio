@@ -118,12 +118,7 @@ func (o *PeriodicJobOrchestrator) claimDuePeriodicJob(ctx context.Context, now t
 		return service.PeriodicJob{}, false, nil
 	}
 
-	job, _, err := service.ParsePeriodicJobMember(member)
-	if err != nil {
-		return service.PeriodicJob{}, false, err
-	}
-
-	return job, true, nil
+	return service.PeriodicJob{GitHubLink: member}, true, nil
 }
 
 func NewIdempotencyKey() (string, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"auto-pr-review/internal/service"
 )
@@ -21,22 +22,32 @@ type Scheduler struct {
 	repo   PeriodicJobLookup
 	redis  PeriodicJobScheduler
 	logger *slog.Logger
+	now    func() time.Time
 }
 
 func New(repo PeriodicJobLookup, redis PeriodicJobScheduler, logger *slog.Logger) *Scheduler {
-	return &Scheduler{repo: repo, redis: redis, logger: logger}
+	return &Scheduler{repo: repo, redis: redis, logger: logger, now: time.Now}
 }
 
 func (s *Scheduler) SetSchedule(ctx context.Context, job service.PeriodicJob) error {
-	_, err := s.repo.GetPeriodicJob(ctx, job.GitHubLink)
+	pgJob, err := s.repo.GetPeriodicJob(ctx, job.GitHubLink)
 	if err != nil {
 		if errors.Is(err, service.ErrGitHubLinkNotFound) {
 			s.logger.Info("schedule not set, job has been deregistered",
-				slog.String("github_link", job.GitHubLink),
-				slog.String("period", job.Period))
+				slog.String("github_link", job.GitHubLink))
 			return nil
 		}
 		return err
+	}
+
+	job.Period = pgJob.Period
+
+	if job.NextTimestamp == 0 {
+		period, err := time.ParseDuration(pgJob.Period)
+		if err != nil {
+			return err
+		}
+		job.NextTimestamp = s.now().Add(period).Unix()
 	}
 
 	return s.redis.RegisterPeriodicJob(ctx, job)
@@ -50,8 +61,7 @@ func (s *Scheduler) RemoveSchedule(ctx context.Context, job service.PeriodicJob)
 
 	if !removed {
 		s.logger.Info("schedule not removed, job was not registered",
-			slog.String("github_link", job.GitHubLink),
-			slog.String("period", job.Period))
+			slog.String("github_link", job.GitHubLink))
 	}
 
 	return nil

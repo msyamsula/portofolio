@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"auto-pr-review/internal/githubprdescriptor"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -31,7 +33,7 @@ func (f fileHandlerFunc) Replace(path string, data []byte) error {
 func TestParsePullRequestURL(t *testing.T) {
 	t.Parallel()
 
-	got, err := parsePullRequestURL("https://github.com/octocat/Hello-World/pull/123")
+	got, err := githubprdescriptor.ParseURL("https://github.com/octocat/Hello-World/pull/123")
 	if err != nil {
 		t.Fatalf("parse pull request url: %v", err)
 	}
@@ -49,7 +51,7 @@ func TestParsePullRequestURL(t *testing.T) {
 func TestParsePullRequestURLRejectsNonPullRequest(t *testing.T) {
 	t.Parallel()
 
-	_, err := parsePullRequestURL("https://github.com/octocat/Hello-World")
+	_, err := githubprdescriptor.ParseURL("https://github.com/octocat/Hello-World")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -67,7 +69,7 @@ func TestSanitizeFilePart(t *testing.T) {
 func TestBuildPullRequestSummaryPromptRequestsFixPlanAndOpenQuestions(t *testing.T) {
 	t.Parallel()
 
-	prompt := buildPullRequestSummaryPrompt(pullRequestDiscussion{})
+	prompt := buildPullRequestSummaryPrompt(githubprdescriptor.PRDiscussion{})
 	if !strings.Contains(prompt, "Fix plan") {
 		t.Fatalf("prompt does not request fix plan: %q", prompt)
 	}
@@ -127,7 +129,7 @@ func TestPRReviewerWriteReviewPlanMarkdown(t *testing.T) {
 
 	reviewer, err := NewPRReviewer(PRDiscussionReviewConfig{
 		Analyzer:     analyzer,
-		GitHubClient: NewGitHubClient(client, tokenPath),
+		GitHubClient: githubprdescriptor.NewClient(client, tokenPath, githubprdescriptor.PoolConfig{}),
 		FileHandler:  fileHandler,
 	})
 	if err != nil {

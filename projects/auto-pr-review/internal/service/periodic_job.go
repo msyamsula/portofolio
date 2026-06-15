@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"auto-pr-review/internal/githubprdescriptor"
 )
 
 var ErrInvalidJobPeriod = errors.New("invalid job period")
@@ -48,25 +50,11 @@ func (s *PeriodicJobService) Register(ctx context.Context, rawURL, rawPeriod str
 		return PeriodicJob{}, err
 	}
 
-	currentJobs, err := s.repo.ListPeriodicJobs(ctx)
-	if err != nil {
-		return PeriodicJob{}, err
-	}
-
 	storedJob, err := s.repo.SetPeriodicJob(ctx, job.GitHubLink, job.Period)
 	if err != nil {
 		return PeriodicJob{}, err
 	}
 	storedJob.NextTimestamp = job.NextTimestamp
-
-	for _, currentJob := range currentJobs {
-		if currentJob.GitHubLink == storedJob.GitHubLink && currentJob.Period != storedJob.Period {
-			if err := s.scheduler.RemoveSchedule(ctx, currentJob); err != nil {
-				return PeriodicJob{}, err
-			}
-			break
-		}
-	}
 
 	if err := s.scheduler.SetSchedule(ctx, storedJob); err != nil {
 		return PeriodicJob{}, err
@@ -93,7 +81,7 @@ func (s *PeriodicJobService) Deregister(ctx context.Context, rawURL, rawPeriod s
 }
 
 func (s *PeriodicJobService) buildJob(rawURL, rawPeriod string) (PeriodicJob, time.Duration, error) {
-	githubURL, err := NormalizeGitHubURL(rawURL)
+	githubURL, err := githubprdescriptor.NormalizeGitHubURL(rawURL)
 	if err != nil {
 		return PeriodicJob{}, 0, err
 	}
@@ -114,22 +102,5 @@ func (s *PeriodicJobService) buildJob(rawURL, rawPeriod string) (PeriodicJob, ti
 }
 
 func PeriodicJobMember(job PeriodicJob) string {
-	return fmt.Sprintf("%s:%s", job.GitHubLink, job.Period)
-}
-
-func ParsePeriodicJobMember(member string) (PeriodicJob, time.Duration, error) {
-	separator := strings.LastIndex(member, ":")
-	if separator < 1 || separator == len(member)-1 {
-		return PeriodicJob{}, 0, fmt.Errorf("invalid periodic job member")
-	}
-
-	period, err := time.ParseDuration(member[separator+1:])
-	if err != nil || period < time.Second {
-		return PeriodicJob{}, 0, fmt.Errorf("invalid periodic job period")
-	}
-
-	return PeriodicJob{
-		GitHubLink: member[:separator],
-		Period:     member[separator+1:],
-	}, period, nil
+	return job.GitHubLink
 }

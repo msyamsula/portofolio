@@ -2,54 +2,33 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
+	"auto-pr-review/internal/githubprdescriptor"
 	"auto-pr-review/internal/llm"
 )
 
-var ErrInvalidPullRequestURL = errors.New("invalid github pull request url")
-var ErrGitHubNotFound = errors.New("github resource not found")
-
-type GitHubAPIError struct {
-	StatusCode int
-	Body       string
-	URL        string
-}
-
-func (e *GitHubAPIError) Error() string {
-	return fmt.Sprintf("github request failed: status %d: %s", e.StatusCode, e.Body)
-}
-
 type PRDiscussionReviewConfig struct {
-	Analyzer        llm.Analyzer
-	LLM             llm.Config
-	GitHubTokenPath string
-	OutputDir       string
-	HTTPClient      *http.Client
-	GitHubClient    *GitHubClient
-	FileHandler     FileHandler
+	Analyzer          llm.Analyzer
+	LLM               llm.Config
+	GitHubTokenPath   string
+	GitHubPoolConfig  githubprdescriptor.PoolConfig
+	GitHubClient      *githubprdescriptor.Client
+	OutputDir         string
+	HTTPClient        *http.Client
+	FileHandler       FileHandler
 }
 
 type PRReviewer struct {
-	githubClient *GitHubClient
+	githubClient *githubprdescriptor.Client
 	fileHandler  FileHandler
 	config       PRDiscussionReviewConfig
 	analyzer     llm.Analyzer
-}
-
-type GitHubClient struct {
-	httpClient *http.Client
-	tokenPath  string
 }
 
 type FileHandler interface {
@@ -62,10 +41,7 @@ func NewPRReviewer(cfg PRDiscussionReviewConfig) (*PRReviewer, error) {
 	githubClient := cfg.GitHubClient
 	if githubClient == nil {
 		client := cfg.HTTPClient
-		if client == nil {
-			client = newPooledGitHubHTTPClient()
-		}
-		githubClient = NewGitHubClient(client, strings.TrimSpace(cfg.GitHubTokenPath))
+		githubClient = githubprdescriptor.NewClient(client, strings.TrimSpace(cfg.GitHubTokenPath), cfg.GitHubPoolConfig)
 	}
 
 	fileHandler := cfg.FileHandler
@@ -90,71 +66,6 @@ func NewPRReviewer(cfg PRDiscussionReviewConfig) (*PRReviewer, error) {
 	}, nil
 }
 
-func NewGitHubClient(client *http.Client, tokenPath string) *GitHubClient {
-	if client == nil {
-		client = newPooledGitHubHTTPClient()
-	}
-	return &GitHubClient{
-		httpClient: client,
-		tokenPath:  strings.TrimSpace(tokenPath),
-	}
-}
-
-type pullRequestRef struct {
-	Owner  string
-	Repo   string
-	Number int
-}
-
-type pullRequestDiscussion struct {
-	URL            string
-	Title          string
-	State          string
-	Author         string
-	Body           string
-	IssueComments  []githubComment
-	ReviewComments []githubReviewComment
-	Reviews        []githubReview
-}
-
-type githubPullRequest struct {
-	HTMLURL string `json:"html_url"`
-	Title   string `json:"title"`
-	State   string `json:"state"`
-	Body    string `json:"body"`
-	User    struct {
-		Login string `json:"login"`
-	} `json:"user"`
-}
-
-type githubComment struct {
-	User struct {
-		Login string `json:"login"`
-	} `json:"user"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type githubReviewComment struct {
-	User struct {
-		Login string `json:"login"`
-	} `json:"user"`
-	Path      string    `json:"path"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type githubReview struct {
-	User struct {
-		Login string `json:"login"`
-	} `json:"user"`
-	State       string    `json:"state"`
-	Body        string    `json:"body"`
-	SubmittedAt time.Time `json:"submitted_at"`
-}
-
 func (r *PRReviewer) WriteReviewPlanMarkdown(ctx context.Context, githubLink, outputPath string) error {
 	if strings.TrimSpace(outputPath) == "" {
 		return fmt.Errorf("output path is required")
@@ -163,12 +74,12 @@ func (r *PRReviewer) WriteReviewPlanMarkdown(ctx context.Context, githubLink, ou
 		return fmt.Errorf("PR reviewer is required")
 	}
 
-	pr, err := parsePullRequestURL(githubLink)
+	pr, err := githubprdescriptor.ParseURL(githubLink)
 	if err != nil {
 		return err
 	}
 
-	discussion, err := r.githubClient.FetchPullRequestDiscussion(ctx, pr)
+	discussion, err := r.githubClient.FetchDiscussion(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -186,7 +97,7 @@ func (r *PRReviewer) WriteReviewPlanMarkdown(ctx context.Context, githubLink, ou
 }
 
 func (r *PRReviewer) WriteReviewPlanMarkdownToDefaultFile(ctx context.Context, githubLink string) (string, error) {
-	pr, err := parsePullRequestURL(githubLink)
+	pr, err := githubprdescriptor.ParseURL(githubLink)
 	if err != nil {
 		return "", err
 	}
@@ -201,34 +112,6 @@ func (r *PRReviewer) WriteReviewPlanMarkdownToDefaultFile(ctx context.Context, g
 	}
 
 	return outputPath, nil
-}
-
-func parsePullRequestURL(rawURL string) (pullRequestRef, error) {
-	normalizedURL, err := NormalizeGitHubURL(rawURL)
-	if err != nil {
-		return pullRequestRef{}, err
-	}
-
-	parsed, err := url.Parse(normalizedURL)
-	if err != nil {
-		return pullRequestRef{}, fmt.Errorf("%w: malformed url", ErrInvalidPullRequestURL)
-	}
-
-	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
-	if len(parts) < 4 || parts[2] != "pull" {
-		return pullRequestRef{}, fmt.Errorf("%w: expected /owner/repo/pull/number", ErrInvalidPullRequestURL)
-	}
-
-	number, err := strconv.Atoi(parts[3])
-	if err != nil || number < 1 {
-		return pullRequestRef{}, fmt.Errorf("%w: invalid pull request number", ErrInvalidPullRequestURL)
-	}
-
-	return pullRequestRef{
-		Owner:  parts[0],
-		Repo:   parts[1],
-		Number: number,
-	}, nil
 }
 
 func sanitizeFilePart(value string) string {
@@ -254,103 +137,12 @@ func sanitizeFilePart(value string) string {
 	return b.String()
 }
 
-func (c *GitHubClient) FetchPullRequestDiscussion(ctx context.Context, pr pullRequestRef) (pullRequestDiscussion, error) {
-	if c == nil {
-		return pullRequestDiscussion{}, fmt.Errorf("github client is required")
-	}
-	basePath := fmt.Sprintf("https://api.github.com/repos/%s/%s", url.PathEscape(pr.Owner), url.PathEscape(pr.Repo))
-
-	var pull githubPullRequest
-	if err := c.get(ctx, fmt.Sprintf("%s/pulls/%d", basePath, pr.Number), &pull); err != nil {
-		return pullRequestDiscussion{}, err
-	}
-
-	var issueComments []githubComment
-	if err := c.get(ctx, fmt.Sprintf("%s/issues/%d/comments?per_page=100", basePath, pr.Number), &issueComments); err != nil {
-		return pullRequestDiscussion{}, err
-	}
-
-	var reviewComments []githubReviewComment
-	if err := c.get(ctx, fmt.Sprintf("%s/pulls/%d/comments?per_page=100", basePath, pr.Number), &reviewComments); err != nil {
-		return pullRequestDiscussion{}, err
-	}
-
-	var reviews []githubReview
-	if err := c.get(ctx, fmt.Sprintf("%s/pulls/%d/reviews?per_page=100", basePath, pr.Number), &reviews); err != nil {
-		return pullRequestDiscussion{}, err
-	}
-
-	return pullRequestDiscussion{
-		URL:            pull.HTMLURL,
-		Title:          pull.Title,
-		State:          pull.State,
-		Author:         pull.User.Login,
-		Body:           pull.Body,
-		IssueComments:  issueComments,
-		ReviewComments: reviewComments,
-		Reviews:        reviews,
-	}, nil
-}
-
-func (c *GitHubClient) get(ctx context.Context, requestURL string, target any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	token, err := c.githubToken()
-	if err != nil {
-		return err
-	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("github request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return &GitHubAPIError{
-			StatusCode: resp.StatusCode,
-			Body:       strings.TrimSpace(string(body)),
-			URL:        requestURL,
-		}
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
-		return fmt.Errorf("decode github response: %w", err)
-	}
-
-	return nil
-}
-
-func (c *GitHubClient) githubToken() (string, error) {
-	tokenPath := strings.TrimSpace(c.tokenPath)
-	if tokenPath == "" {
-		return "", fmt.Errorf("github token path is required")
-	}
-	data, err := os.ReadFile(tokenPath)
-	if err != nil {
-		return "", fmt.Errorf("read github token file: %w", err)
-	}
-	token := strings.TrimSpace(string(data))
-	if token == "" {
-		return "", fmt.Errorf("github token file is empty")
-	}
-	return token, nil
-}
-
-func summarizePullRequestDiscussion(ctx context.Context, analyzer llm.Analyzer, discussion pullRequestDiscussion) (string, error) {
+func summarizePullRequestDiscussion(ctx context.Context, analyzer llm.Analyzer, discussion githubprdescriptor.PRDiscussion) (string, error) {
 	prompt := buildPullRequestSummaryPrompt(discussion)
 	return analyzer.AnalyzePRandReviewPlan(ctx, prompt)
 }
 
-func buildPullRequestSummaryPrompt(discussion pullRequestDiscussion) string {
+func buildPullRequestSummaryPrompt(discussion githubprdescriptor.PRDiscussion) string {
 	var b strings.Builder
 	b.WriteString("Review this GitHub pull request discussion and summarize what is happening.\n")
 	b.WriteString("Write concise Markdown with: Overview, Key discussion points, Fix plan, Open discussion or questions, and Current status.\n")
@@ -395,17 +187,6 @@ func truncateForPrompt(value string) string {
 		return value
 	}
 	return value[:limit] + "\n[truncated]"
-}
-
-func newPooledGitHubHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConns:        10,
-			MaxIdleConnsPerHost: 10,
-			MaxConnsPerHost:     10,
-			IdleConnTimeout:     90 * time.Second,
-		},
-	}
 }
 
 func (AtomicFileHandler) Replace(path string, data []byte) error {

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"auto-pr-review/internal/githubprdescriptor"
 	"auto-pr-review/internal/service"
 )
 
@@ -95,7 +96,7 @@ func (s *Server) registerGitHubLink(w http.ResponseWriter, r *http.Request) {
 
 	link, err := s.githubLinks.Register(r.Context(), req.URL)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidGitHubURL) {
+		if errors.Is(err, githubprdescriptor.ErrInvalidGitHubURL) {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -123,7 +124,7 @@ func (s *Server) registerPeriodicJob(w http.ResponseWriter, r *http.Request) {
 
 	job, err := s.periodicJobs.Register(r.Context(), req.URL, req.Period)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidGitHubURL) || errors.Is(err, service.ErrInvalidJobPeriod) {
+		if errors.Is(err, githubprdescriptor.ErrInvalidGitHubURL) || errors.Is(err, service.ErrInvalidJobPeriod) {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -162,7 +163,7 @@ func (s *Server) deregisterPeriodicJob(w http.ResponseWriter, r *http.Request) {
 
 	err := s.periodicJobs.Deregister(r.Context(), req.URL, req.Period)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidGitHubURL) || errors.Is(err, service.ErrInvalidJobPeriod) {
+		if errors.Is(err, githubprdescriptor.ErrInvalidGitHubURL) || errors.Is(err, service.ErrInvalidJobPeriod) {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}

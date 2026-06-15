@@ -10,6 +10,9 @@ env:
 
 up: env
 	docker compose up --build --scale job-consumer=3 -d
+	@echo "Waiting for kafka to be healthy..."
+	@while ! docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1; do sleep 2; done
+	@$(MAKE) kafka-topic-create
 
 down:
 	docker compose down

@@ -33,12 +33,10 @@ func TestPeriodicJobOrchestratorAddsIdempotencyKeyPerDispatch(t *testing.T) {
 	jobs := []service.PeriodicJob{
 		{
 			GitHubLink:    "https://github.com/octocat/Hello-World",
-			Period:        "10m",
 			NextTimestamp: 123,
 		},
 		{
-			GitHubLink:    "https://github.com/octocat/Hello-World",
-			Period:        "10m",
+			GitHubLink:    "https://github.com/octocat/Spoon-Knife",
 			NextTimestamp: 456,
 		},
 	}

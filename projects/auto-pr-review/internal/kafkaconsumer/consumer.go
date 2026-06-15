@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"auto-pr-review/internal/config"
+	"auto-pr-review/internal/githubprdescriptor"
 	"auto-pr-review/internal/kafkaproducer"
 	"auto-pr-review/internal/lockmanager"
 	"auto-pr-review/internal/schemaregistry"
@@ -328,7 +329,7 @@ func (c *Consumer) finalizeMessage(ctx context.Context, event schemaregistry.Per
 }
 
 func shouldStopRetrying(err error) bool {
-	var githubErr *service.GitHubAPIError
+	var githubErr *githubprdescriptor.APIError
 	if errors.As(err, &githubErr) {
 		return githubErr.StatusCode == 404
 	}
@@ -352,37 +353,22 @@ func (c *PrReviewConsumer) reschedule(ctx context.Context, event schemaregistry.
 	if c.scheduler == nil {
 		return nil
 	}
-	if event.GitHubLink == "" || event.Period == "" {
-		c.logger.Warn(
-			"periodic job reschedule skipped",
-			slog.String("github_link", event.GitHubLink),
-			slog.String("period", event.Period),
-			slog.String("idempotency_key", event.IdempotencyKey),
-		)
+	if event.GitHubLink == "" {
+		c.logger.Warn("periodic job reschedule skipped, empty github link",
+			slog.String("idempotency_key", event.IdempotencyKey))
 		return nil
 	}
 
-	period, err := time.ParseDuration(event.Period)
-	if err != nil || period < time.Second {
-		return fmt.Errorf("invalid periodic job period %q", event.Period)
-	}
-
 	job := service.PeriodicJob{
-		GitHubLink:     event.GitHubLink,
-		Period:         event.Period,
-		NextTimestamp:  c.now().Add(period).Unix(),
-		IdempotencyKey: event.IdempotencyKey,
+		GitHubLink: event.GitHubLink,
 	}
 	if err := c.scheduler.SetSchedule(ctx, job); err != nil {
 		return err
 	}
 
-	c.logger.Info(
-		"periodic job rescheduled",
+	c.logger.Info("periodic job rescheduled",
 		slog.String("github_link", job.GitHubLink),
-		slog.String("period", job.Period),
-		slog.Int64("next_timestamp", job.NextTimestamp),
-		slog.String("idempotency_key", job.IdempotencyKey),
+		slog.String("idempotency_key", event.IdempotencyKey),
 	)
 
 	return nil
