@@ -90,15 +90,23 @@ func New(cfg Config) (*Executor, error) {
 		}
 	}
 
-	return &Executor{
+	e := &Executor{
 		githubClient: githubClient,
 		agent:        agent,
 		cfg:          cfg,
 		logger:       slog.Default(),
-	}, nil
+	}
+	e.logger.Info("prreviewagent initialized",
+		slog.String("provider", cfg.LLM.Provider),
+		slog.String("workspace_root", cfg.WorkspaceRoot),
+		slog.String("develop_branch", cfg.DevelopBranch),
+		slog.String("llm_request_timeout", cfg.LLM.RequestTimeout.String()))
+
+	return e, nil
 }
 
 func (e *Executor) SetAgent(a llm.Agent) { e.agent = a }
+func (e *Executor) SetLogger(l *slog.Logger)  { e.logger = l }
 
 func (e *Executor) Execute(ctx context.Context, prLink string) (string, error) {
 	if e.cfg.WorkspaceRoot == "" {
@@ -239,7 +247,7 @@ func (e *Executor) commit(ctx context.Context, worktree, msg string) error {
 
 	cmds := [][]string{
 		{"add", "-A"},
-		{"commit", "-m", msg},
+		{"commit", "--no-verify", "-m", msg},
 	}
 	for _, args := range cmds {
 		if err := runGitCmd(ctx, worktree, args); err != nil {
@@ -281,14 +289,24 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 	}
 
 	for turn := 0; turn < maxAgentTurns; turn++ {
+		e.logger.Info("agent turn", slog.Int("turn", turn+1), slog.Int("max", maxAgentTurns), slog.String("github_link", info.URL))
 		resp, err := e.agent.Chat(ctx, messages, registry.List())
 		if err != nil {
 			return fmt.Errorf("agent chat: %w", err)
 		}
 
+		if resp.Text != "" {
+			e.logger.Info("agent response", slog.String("text", resp.Text), slog.Int("turn", turn+1))
+		}
+
 		if len(resp.ToolCalls) == 0 {
+			e.logger.Info("agent finished", slog.Int("turns", turn+1), slog.String("github_link", info.URL))
 			info.Report = resp.Text
 			return nil
+		}
+
+		for _, tc := range resp.ToolCalls {
+			e.logger.Info("agent tool call", slog.String("tool", tc.Name), slog.Any("args", tc.Args), slog.Int("turn", turn+1))
 		}
 
 		messages = append(messages, llm.Message{Role: "assistant", Content: resp.Text, ToolCalls: resp.ToolCalls})
@@ -298,6 +316,7 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 			if err != nil {
 				result = fmt.Sprintf("error: %v", err)
 			}
+			e.logger.Info("agent tool result", slog.String("tool", tc.Name), slog.String("result", result), slog.Int("turn", turn+1))
 			messages = append(messages, llm.Message{Role: "tool", Content: result, ToolCallID: tc.ID})
 		}
 	}

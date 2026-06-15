@@ -89,6 +89,11 @@ func NewDeepSeekAnalyzer(cfg Config) (*DeepSeekAnalyzer, error) {
 }
 
 func (a *DeepSeekAnalyzer) Chat(ctx context.Context, messages []Message, tools []Tool) (*Response, error) {
+	chatCtx, cancel := context.WithTimeout(ctx, a.requestTimeout)
+	defer cancel()
+	_ = ctx
+	_ = chatCtx
+
 	payload := deepSeekChatRequest{
 		Model: a.model,
 	}
@@ -118,7 +123,7 @@ func (a *DeepSeekAnalyzer) Chat(ctx context.Context, messages []Message, tools [
 	}
 
 	var result deepSeekChatResponse
-	statusCode, err := postJSON(ctx, a.client, "https://api.deepseek.com/v1/chat/completions", map[string]string{
+	statusCode, err := postJSON(chatCtx, a.client, "https://api.deepseek.com/v1/chat/completions", map[string]string{
 		"Authorization": "Bearer " + a.apiKey,
 	}, payload, &result, ProviderDeepSeek)
 	if err != nil {

@@ -1,4 +1,4 @@
-.PHONY: env up down test build kafka-topics kafka-topic-create kafka-topic-describe kafka-topic-offsets kafka-dlq-topic-offsets kafka-topic-read kafka-consume-debug kafka-group-describe kafka-group-state
+.PHONY: env up down test build kafka-topics kafka-topic-create kafka-topic-describe kafka-topic-offsets kafka-dlq-topic-offsets kafka-topic-read kafka-consume-debug kafka-group-describe kafka-group-state kafka-lag
 
 env:
 	@touch .env
@@ -9,7 +9,7 @@ env:
 	done < .env.example
 
 up: env
-	docker compose up --build --scale job-consumer=1 -d
+	env -u LLM_REQUEST_TIMEOUT docker compose --env-file .env up --build --scale job-consumer=1 -d
 	@echo "Waiting for kafka to be healthy..."
 	@while ! docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1; do sleep 2; done
 	@$(MAKE) kafka-topic-create
@@ -56,3 +56,5 @@ kafka-group-describe:
 
 kafka-group-state:
 	docker compose exec -T kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server $(KAFKA_BOOTSTRAP_SERVER) --describe --group $(KAFKA_RUNNING_GROUP)
+
+kafka-lag: kafka-group-state

@@ -41,6 +41,7 @@ func NewPrReviewAgentConsumer(
 	if err != nil {
 		return nil, err
 	}
+	executor.SetLogger(logger)
 
 	prReviewAgentConsumer := &PrReviewAgentConsumer{
 		executor:  executor,
@@ -92,7 +93,18 @@ func (c *PrReviewAgentConsumer) process(ctx context.Context, event schemaregistr
 		return nil
 	}
 
-	_, err := c.executor.Execute(ctx, event.GitHubLink)
+	c.logger.Info("agent processing started",
+		slog.String("github_link", event.GitHubLink),
+		slog.String("idempotency_key", event.IdempotencyKey))
+
+	startTime := time.Now()
+	reportPath, err := c.executor.Execute(ctx, event.GitHubLink)
+	elapsed := time.Since(startTime)
+	c.logger.Info("agent processing completed",
+		slog.String("github_link", event.GitHubLink),
+		slog.Duration("elapsed", elapsed),
+		slog.String("report", reportPath),
+		slog.Any("error", err))
 	return err
 }
 
