@@ -98,6 +98,7 @@ type PRReviewAgentConfig struct {
 	WorkspaceRoot  string
 	DevelopBranch string
 	OutputDir     string
+	TraceDir      string
 	GitUser       string
 	GitEmail      string
 }
@@ -272,6 +273,7 @@ func Load() (Config, error) {
 			WorkspaceRoot:  envString("PR_REVIEW_AGENT_WORKSPACE_ROOT", ""),
 			DevelopBranch: envString("PR_REVIEW_AGENT_DEVELOP_BRANCH", "develop"),
 			OutputDir:     envString("PR_REVIEW_AGENT_OUTPUT_DIR", "reports/agent"),
+			TraceDir:      envString("PR_REVIEW_AGENT_TRACE_DIR", "reports/agent/traces"),
 			GitUser:       envString("PR_REVIEW_AGENT_GIT_USER", "pr-review-agent"),
 			GitEmail:      envString("PR_REVIEW_AGENT_GIT_EMAIL", "agent@auto-pr-review.local"),
 		},

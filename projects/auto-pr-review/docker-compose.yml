@@ -181,6 +181,7 @@ services:
       PR_REVIEW_AGENT_WORKSPACE_ROOT: /workspace
       PR_REVIEW_AGENT_DEVELOP_BRANCH: ${PR_REVIEW_AGENT_DEVELOP_BRANCH:-develop}
       PR_REVIEW_AGENT_OUTPUT_DIR: ${PR_REVIEW_AGENT_OUTPUT_DIR:-/reports/agent}
+      PR_REVIEW_AGENT_TRACE_DIR: ${PR_REVIEW_AGENT_TRACE_DIR:-/reports/agent/traces}
       PR_REVIEW_AGENT_GIT_USER: ${PR_REVIEW_AGENT_GIT_USER:-pr-review-agent}
       PR_REVIEW_AGENT_GIT_EMAIL: ${PR_REVIEW_AGENT_GIT_EMAIL:-agent@auto-pr-review.local}
     volumes:

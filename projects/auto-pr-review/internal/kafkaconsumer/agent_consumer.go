@@ -35,6 +35,7 @@ func NewPrReviewAgentConsumer(
 		WorkspaceRoot:   cfg.PRReviewAgent.WorkspaceRoot,
 		DevelopBranch:   cfg.PRReviewAgent.DevelopBranch,
 		OutputDir:       cfg.PRReviewAgent.OutputDir,
+		TraceDir:        cfg.PRReviewAgent.TraceDir,
 		GitUser:         cfg.PRReviewAgent.GitUser,
 		GitEmail:        cfg.PRReviewAgent.GitEmail,
 	})

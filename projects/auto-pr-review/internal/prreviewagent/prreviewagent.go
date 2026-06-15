@@ -3,6 +3,7 @@ package prreviewagent
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"auto-pr-review/internal/aitools"
 	"auto-pr-review/internal/githubprdescriptor"
@@ -27,18 +29,29 @@ Phase 1 — Survey:
 
 Phase 2 — Fix:
   Apply each actionable item from the PR discussion. Use write_file with the full updated file content.
-  After a batch of changes, run build/tests with run_command.
-  Use git_diff to verify your changes are minimal and correct.
+  After each batch of changes, use run_command to verify the build/tests still pass.
+  Use git_diff to verify your changes are minimal and targeted.
 
-Phase 3 — Report:
-  When all items are addressed or you cannot proceed further, produce a Markdown report.
+Phase 3 — Validate (REQUIRED before reporting):
+  You MUST run these commands before producing your final report:
+  - Use the run_command tool to execute: make test
+  - Use the run_command tool to execute: make lint-gci-new
+  If a command is not available, you MUST explicitly note this in your report.
+  If a command fails, you MUST read the error output, fix the failures, and re-run until it passes.
+  DO NOT skip this step. DO NOT produce a report without running these commands first.
+
+Phase 4 — Report:
+  When all changes are applied AND validation passes, produce a Markdown report.
   The first line MUST be: COMMIT_MSG: <your commit message>
-  Then the full report describing what was fixed and what was left open.
+  Then include the full report describing what was fixed and what was left open.
+  At the end, include a ## Diff section summarizing the changes (file paths and a brief description of each).
+  If there is no diff, state: "No changes in this round of review."
 
 Rules:
 - Be surgical. Only change what is needed. Never refactor or beautify unrelated code.
 - Always read a file with read_file before editing it.
 - Never include credentials, API keys, or secrets in any file.
+- Run make test after every change. Do not report done if tests fail.
 - If you cannot fix something, explain why in your report.`
 
 type Config struct {
@@ -50,6 +63,7 @@ type Config struct {
 	WorkspaceRoot   string
 	DevelopBranch   string
 	OutputDir       string
+	TraceDir        string
 	GitUser         string
 	GitEmail        string
 }
@@ -174,6 +188,7 @@ func (e *Executor) prepareWorktree(ctx context.Context, info *PRInfo) (string, e
 	cmds := [][]string{
 		{"pull", "origin", e.cfg.DevelopBranch},
 		{"fetch", "origin"},
+		{"worktree", "prune"},
 	}
 	for _, args := range cmds {
 		if err := runGitCmd(ctx, e.cfg.WorkspaceRoot, args); err != nil {
@@ -181,8 +196,18 @@ func (e *Executor) prepareWorktree(ctx context.Context, info *PRInfo) (string, e
 		}
 	}
 
+	if stale := findExistingWorktree(ctx, e.cfg.WorkspaceRoot, info.Branch); stale != "" {
+		e.logger.Warn("removing stale worktree for branch", slog.String("branch", info.Branch), slog.String("path", stale))
+		_ = runGitCmd(ctx, e.cfg.WorkspaceRoot, []string{"worktree", "remove", "--force", stale})
+	}
+
+	_ = runGitCmd(ctx, e.cfg.WorkspaceRoot, []string{"fetch", "origin", "+refs/heads/" + info.Branch + ":refs/heads/" + info.Branch})
+
 	if err := runGitCmd(ctx, e.cfg.WorkspaceRoot, []string{"worktree", "add", worktree, info.Branch}); err != nil {
-		return "", fmt.Errorf("worktree add %s: %w", info.Branch, err)
+		_ = runGitCmd(ctx, e.cfg.WorkspaceRoot, []string{"worktree", "remove", "--force", worktree})
+		if err := runGitCmd(ctx, e.cfg.WorkspaceRoot, []string{"worktree", "add", worktree, info.Branch}); err != nil {
+			return "", fmt.Errorf("worktree add %s: %w", info.Branch, err)
+		}
 	}
 
 	setupCmds := [][]string{
@@ -190,7 +215,7 @@ func (e *Executor) prepareWorktree(ctx context.Context, info *PRInfo) (string, e
 		{"config", "user.email", e.cfg.GitEmail},
 	}
 	for _, args := range setupCmds {
-		if err := runGitCmd(ctx, worktree, args); err != nil {
+		if err := retryGitCmd(ctx, worktree, args, 3, 100*time.Millisecond); err != nil {
 			return "", fmt.Errorf("configure worktree: %w", err)
 		}
 	}
@@ -288,6 +313,17 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 		{Role: "user", Content: prompt},
 	}
 
+	traceFile := traceFilePath(e.cfg.TraceDir, info.URL)
+	prevTrace := readTrace(traceFile)
+	if prevTrace != "" {
+		prevTrace = stripTracePaths(prevTrace, info.WorkspaceDir)
+		messages = append(messages, llm.Message{
+			Role: "user",
+			Content: fmt.Sprintf("CONTEXT: This is a retry. Your workspace is %s. File paths below use this directory. Here is the trace from the previous attempt. Use this to avoid repeating work that was already done. IMPORTANT: do NOT copy old /tmp/agent-wt-* paths from the trace — always use paths relative to your current workspace.\n\n%s", info.WorkspaceDir, prevTrace),
+		})
+		e.logger.Info("resuming from previous trace", slog.String("github_link", info.URL))
+	}
+
 	for turn := 0; turn < maxAgentTurns; turn++ {
 		e.logger.Info("agent turn", slog.Int("turn", turn+1), slog.Int("max", maxAgentTurns), slog.String("github_link", info.URL))
 		resp, err := e.agent.Chat(ctx, messages, registry.List())
@@ -318,10 +354,46 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 			}
 			e.logger.Info("agent tool result", slog.String("tool", tc.Name), slog.String("result", result), slog.Int("turn", turn+1))
 			messages = append(messages, llm.Message{Role: "tool", Content: result, ToolCallID: tc.ID})
+			appendTrace(traceFile, tc.Name, tc.Args, result)
 		}
 	}
 
 	return fmt.Errorf("agent did not finish within %d turns", maxAgentTurns)
+}
+
+func traceFilePath(dir, prURL string) string {
+	sanitized := strings.NewReplacer(
+		"://", "-", "/", "-", ".", "-", ":", "-", "?", "-", "&", "-", "=", "-",
+	).Replace(prURL)
+	sanitized = strings.Trim(sanitized, "-")
+	return filepath.Join(dir, sanitized+".jsonl")
+}
+
+type traceEntry struct {
+	Tool   string         `json:"tool"`
+	Args   map[string]any `json:"args,omitempty"`
+	Result string         `json:"result"`
+}
+
+func readTrace(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+func appendTrace(path, tool string, args map[string]any, result string) {
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	entry := traceEntry{Tool: tool, Args: args, Result: result}
+	b, _ := json.Marshal(entry)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_, _ = f.Write(b)
+	_, _ = f.Write([]byte("\n"))
 }
 
 func buildDiscussionPrompt(discussion githubprdescriptor.PRDiscussion) string {
@@ -410,6 +482,25 @@ func runGitCmd(ctx context.Context, dir string, args []string) error {
 	return cmd.Run()
 }
 
+func retryGitCmd(ctx context.Context, dir string, args []string, attempts int, delay time.Duration) error {
+	var lastErr error
+	for i := 0; i < attempts; i++ {
+		cmd := exec.CommandContext(ctx, "git", args...)
+		cmd.Dir = dir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err == nil {
+			return nil
+		} else {
+			lastErr = err
+		}
+		if i < attempts-1 {
+			time.Sleep(delay)
+		}
+	}
+	return lastErr
+}
+
 func captureGitCmd(ctx context.Context, dir string, args []string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
@@ -425,4 +516,31 @@ func captureGitCmd(ctx context.Context, dir string, args []string) (string, erro
 func sanitizePart(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	return strings.NewReplacer("/", "-", " ", "-", ".", "-").Replace(s)
+}
+
+func findExistingWorktree(ctx context.Context, repoDir, branch string) string {
+	out, err := captureGitCmd(ctx, repoDir, []string{"worktree", "list", "--porcelain"})
+	if err != nil {
+		return ""
+	}
+	branchRef := "refs/heads/" + branch
+	var currentPath string
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "worktree ") {
+			currentPath = strings.TrimSpace(strings.TrimPrefix(line, "worktree "))
+		}
+		if strings.HasPrefix(line, "branch ") && strings.TrimSpace(strings.TrimPrefix(line, "branch ")) == branchRef {
+			if currentPath == repoDir {
+				return "" // skip the main working tree
+			}
+			return currentPath
+		}
+	}
+	return ""
+}
+
+var tracePathRe = regexp.MustCompile(`/tmp/agent-wt-\d+`)
+
+func stripTracePaths(trace, workspaceDir string) string {
+	return tracePathRe.ReplaceAllString(trace, workspaceDir)
 }
