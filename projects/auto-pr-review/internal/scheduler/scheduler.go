@@ -14,7 +14,7 @@ type PeriodicJobLookup interface {
 
 type PeriodicJobScheduler interface {
 	RegisterPeriodicJob(ctx context.Context, job service.PeriodicJob) error
-	DeregisterPeriodicJob(ctx context.Context, job service.PeriodicJob) error
+	DeregisterPeriodicJob(ctx context.Context, job service.PeriodicJob) (bool, error)
 }
 
 type Scheduler struct {
@@ -43,5 +43,16 @@ func (s *Scheduler) SetSchedule(ctx context.Context, job service.PeriodicJob) er
 }
 
 func (s *Scheduler) RemoveSchedule(ctx context.Context, job service.PeriodicJob) error {
-	return s.redis.DeregisterPeriodicJob(ctx, job)
+	removed, err := s.redis.DeregisterPeriodicJob(ctx, job)
+	if err != nil {
+		return err
+	}
+
+	if !removed {
+		s.logger.Info("schedule not removed, job was not registered",
+			slog.String("github_link", job.GitHubLink),
+			slog.String("period", job.Period))
+	}
+
+	return nil
 }

@@ -101,15 +101,16 @@ func (r *Repository) ListPeriodicJobs(ctx context.Context) ([]service.PeriodicJo
 	return jobs, nil
 }
 
-func (r *Repository) DeregisterPeriodicJob(ctx context.Context, job service.PeriodicJob) error {
+func (r *Repository) DeregisterPeriodicJob(ctx context.Context, job service.PeriodicJob) (bool, error) {
 	queryCtx, cancel := context.WithTimeout(ctx, r.execTimeout)
 	defer cancel()
 
-	if err := r.client.ZRem(queryCtx, PeriodicJobNextTimestampKey, periodicJobMember(job)).Err(); err != nil {
-		return fmt.Errorf("deregister periodic job: %w", err)
+	count, err := r.client.ZRem(queryCtx, PeriodicJobNextTimestampKey, periodicJobMember(job)).Result()
+	if err != nil {
+		return false, fmt.Errorf("deregister periodic job: %w", err)
 	}
 
-	return nil
+	return count > 0, nil
 }
 
 func (r *Repository) ClaimDuePeriodicJob(ctx context.Context, now time.Time) (service.PeriodicJob, bool, error) {
