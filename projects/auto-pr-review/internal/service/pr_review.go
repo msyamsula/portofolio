@@ -14,14 +14,14 @@ import (
 )
 
 type PRDiscussionReviewConfig struct {
-	Analyzer          llm.Analyzer
-	LLM               llm.Config
-	GitHubTokenPath   string
-	GitHubPoolConfig  githubprdescriptor.PoolConfig
-	GitHubClient      *githubprdescriptor.Client
-	OutputDir         string
-	HTTPClient        *http.Client
-	FileHandler       FileHandler
+	Analyzer         llm.Analyzer
+	LLM              llm.Config
+	GitHubTokenPath  string
+	GitHubPoolConfig githubprdescriptor.PoolConfig
+	GitHubClient     *githubprdescriptor.Client
+	OutputDir        string
+	HTTPClient       *http.Client
+	FileHandler      FileHandler
 }
 
 type PRReviewer struct {
@@ -148,6 +148,9 @@ func buildPullRequestSummaryPrompt(discussion githubprdescriptor.PRDiscussion) s
 	b.WriteString("Write concise Markdown with: Overview, Key discussion points, Fix plan, Open discussion or questions, and Current status.\n")
 	b.WriteString("For every clearly actionable request, include a concrete fix plan with execution steps. Leave unclear, disputed, or unanswered items in Open discussion or questions instead of pretending they are ready to execute.\n")
 	b.WriteString("Focus on the discussion, reviewer feedback, disagreements, and unresolved questions. Do not invent facts.\n\n")
+	b.WriteString("make sure the discussion flow between dev are summarized in discussion section.\n\n")
+	b.WriteString("your work must use worktree for related branch that is cleaned up afterward.\n\n")
+	b.WriteString("never try to understand already merged, closed, and conflicted PR.. just summarize the folder that you see this is not an open PR, nothing to discuss or discussions have been resolved manually.\n\n")
 	fmt.Fprintf(&b, "PR: %s\nTitle: %s\nState: %s\nAuthor: %s\n\n", discussion.URL, discussion.Title, discussion.State, discussion.Author)
 	if strings.TrimSpace(discussion.Body) != "" {
 		fmt.Fprintf(&b, "Description:\n%s\n\n", truncateForPrompt(discussion.Body))

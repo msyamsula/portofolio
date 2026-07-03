@@ -95,13 +95,14 @@ type PRReviewConfig struct {
 }
 
 type PRReviewAgentConfig struct {
-	WorkspaceRoot  string
-	DevelopBranch string
-	OutputDir     string
-	TraceDir      string
-	GitUser       string
-	GitEmail      string
-	MaxAgentTurns int
+	WorkspaceRoot    string
+	DevelopBranch   string
+	OutputDir       string
+	TraceDir        string
+	GitUser         string
+	GitEmail        string
+	MaxAgentTurns   int
+	SystemPromptPath string
 }
 
 func Load() (Config, error) {
@@ -276,13 +277,14 @@ func Load() (Config, error) {
 		},
 		PRReview: prReviewerCfg.PRReview,
 		PRReviewAgent: PRReviewAgentConfig{
-			WorkspaceRoot:  envString("PR_REVIEW_AGENT_WORKSPACE_ROOT", ""),
-			DevelopBranch: envString("PR_REVIEW_AGENT_DEVELOP_BRANCH", "develop"),
-			OutputDir:     envString("PR_REVIEW_AGENT_OUTPUT_DIR", "reports/agent"),
-			TraceDir:      envString("PR_REVIEW_AGENT_TRACE_DIR", "reports/agent/traces"),
-			GitUser:       envString("PR_REVIEW_AGENT_GIT_USER", "pr-review-agent"),
-			GitEmail:      envString("PR_REVIEW_AGENT_GIT_EMAIL", "agent@auto-pr-review.local"),
-			MaxAgentTurns: prReviewAgentMaxTurns,
+			WorkspaceRoot:    envString("PR_REVIEW_AGENT_WORKSPACE_ROOT", ""),
+			DevelopBranch:   envString("PR_REVIEW_AGENT_DEVELOP_BRANCH", "develop"),
+			OutputDir:       envString("PR_REVIEW_AGENT_OUTPUT_DIR", "reports/agent"),
+			TraceDir:        envString("PR_REVIEW_AGENT_TRACE_DIR", "reports/agent/traces"),
+			GitUser:         envString("PR_REVIEW_AGENT_GIT_USER", "pr-review-agent"),
+			GitEmail:        envString("PR_REVIEW_AGENT_GIT_EMAIL", "agent@auto-pr-review.local"),
+			MaxAgentTurns:   prReviewAgentMaxTurns,
+			SystemPromptPath: envString("PR_REVIEW_AGENT_SYSTEM_PROMPT_PATH", "prompts/system.txt"),
 		},
 	}
 

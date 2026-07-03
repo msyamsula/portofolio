@@ -47,9 +47,10 @@ type deepSeekTool struct {
 }
 
 type deepSeekChatRequest struct {
-	Model    string            `json:"model"`
-	Messages []deepSeekMessage `json:"messages"`
-	Tools    []deepSeekTool    `json:"tools,omitempty"`
+	Model     string            `json:"model"`
+	MaxTokens int               `json:"max_tokens"`
+	Messages  []deepSeekMessage `json:"messages"`
+	Tools     []deepSeekTool    `json:"tools,omitempty"`
 }
 
 type deepSeekChatResponse struct {
@@ -95,7 +96,8 @@ func (a *DeepSeekAnalyzer) Chat(ctx context.Context, messages []Message, tools [
 	_ = chatCtx
 
 	payload := deepSeekChatRequest{
-		Model: a.model,
+		Model:     a.model,
+		MaxTokens: 4096,
 	}
 	for _, t := range tools {
 		payload.Tools = append(payload.Tools, deepSeekTool{
@@ -122,15 +124,27 @@ func (a *DeepSeekAnalyzer) Chat(ctx context.Context, messages []Message, tools [
 		payload.Messages = append(payload.Messages, dsm)
 	}
 
-	var result deepSeekChatResponse
-	statusCode, err := postJSON(chatCtx, a.client, "https://api.deepseek.com/v1/chat/completions", map[string]string{
-		"Authorization": "Bearer " + a.apiKey,
-	}, payload, &result, ProviderDeepSeek)
-	if err != nil {
-		return nil, fmt.Errorf("deepseek chat: %w", err)
-	}
+	var lastErr error
+	for attempt := 0; attempt <= a.maxRetries; attempt++ {
+		if attempt > 0 {
+			if err := sleepWithBackoffJitter(chatCtx, a.retryBackoff, attempt); err != nil {
+				return nil, err
+			}
+		}
 
-	return parseDeepSeekChatResponse(statusCode, &result)
+		var result deepSeekChatResponse
+		statusCode, err := postJSON(chatCtx, a.client, "https://api.deepseek.com/v1/chat/completions", map[string]string{
+			"Authorization": "Bearer " + a.apiKey,
+		}, payload, &result, ProviderDeepSeek)
+		if err == nil {
+			return parseDeepSeekChatResponse(statusCode, &result)
+		}
+		lastErr = err
+		if !(statusCode == 0 || isRetryableStatus(statusCode)) {
+			return nil, fmt.Errorf("deepseek chat: %w", err)
+		}
+	}
+	return nil, fmt.Errorf("deepseek chat after %d retries: %w", a.maxRetries, lastErr)
 }
 
 func requestDeepSeekSummary(ctx context.Context, client *http.Client, apiKey, model, prompt string) (string, bool, error) {

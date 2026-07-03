@@ -51,21 +51,22 @@ Rules:
 - Always read a file with read_file before editing it.
 - Never include credentials, API keys, or secrets in any file.
 - Run make test after every change. Do not report done if tests fail.
-- If you cannot fix something, explain why in your report.`
+- If you cannot fix something, explain why in your report.
+- Make multiple independent tool calls in a single response to reduce turns.`
 
 type Config struct {
-	GitHubClient    *githubprdescriptor.Client
-	GitHubPool      githubprdescriptor.PoolConfig
-	GitHubTokenPath string
-	Agent           llm.Agent
-	LLM             llm.Config
-	WorkspaceRoot   string
-	DevelopBranch   string
-	OutputDir       string
-	TraceDir        string
-	GitUser         string
-	GitEmail        string
-	MaxAgentTurns   int
+	GitHubClient     *githubprdescriptor.Client
+	GitHubPool       githubprdescriptor.PoolConfig
+	GitHubTokenPath  string
+	Agent            llm.Agent
+	WorkspaceRoot    string
+	DevelopBranch    string
+	OutputDir        string
+	TraceDir         string
+	GitUser          string
+	GitEmail         string
+	MaxAgentTurns    int
+	SystemPromptPath string
 }
 
 type Executor struct {
@@ -73,6 +74,7 @@ type Executor struct {
 	agent        llm.Agent
 	cfg          Config
 	logger       *slog.Logger
+	systemPrompt string
 }
 
 type PRInfo struct {
@@ -93,15 +95,7 @@ func New(cfg Config) (*Executor, error) {
 
 	agent := cfg.Agent
 	if agent == nil {
-		analyzer, err := llm.NewAnalyzer(cfg.LLM)
-		if err != nil {
-			return nil, err
-		}
-		var ok bool
-		agent, ok = analyzer.(llm.Agent)
-		if !ok {
-			return nil, fmt.Errorf("llm provider %q does not implement agent interface", cfg.LLM.Provider)
-		}
+		return nil, fmt.Errorf("agent is required")
 	}
 
 	e := &Executor{
@@ -109,18 +103,37 @@ func New(cfg Config) (*Executor, error) {
 		agent:        agent,
 		cfg:          cfg,
 		logger:       slog.Default(),
+		systemPrompt: loadSystemPrompt(cfg.SystemPromptPath),
 	}
 	e.logger.Info("prreviewagent initialized",
-		slog.String("provider", cfg.LLM.Provider),
 		slog.String("workspace_root", cfg.WorkspaceRoot),
-		slog.String("develop_branch", cfg.DevelopBranch),
-		slog.String("llm_request_timeout", cfg.LLM.RequestTimeout.String()))
+		slog.String("develop_branch", cfg.DevelopBranch))
 
 	return e, nil
 }
 
 func (e *Executor) SetAgent(a llm.Agent) { e.agent = a }
 func (e *Executor) SetLogger(l *slog.Logger)  { e.logger = l }
+
+func loadSystemPrompt(path string) string {
+	if path == "" {
+		return systemPrompt
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		slog.Warn("failed to read system prompt file, using built-in default",
+			slog.String("path", path),
+			slog.String("error", err.Error()))
+		return systemPrompt
+	}
+	trimmed := strings.TrimSpace(string(data))
+	if trimmed == "" {
+		slog.Warn("system prompt file is empty, using built-in default",
+			slog.String("path", path))
+		return systemPrompt
+	}
+	return trimmed
+}
 
 func (e *Executor) Execute(ctx context.Context, prLink string) (string, error) {
 	if e.cfg.WorkspaceRoot == "" {
@@ -309,7 +322,7 @@ func (e *Executor) ApplyFixes(ctx context.Context, info *PRInfo) error {
 	prompt := buildDiscussionPrompt(info.Discussion)
 
 	messages := []llm.Message{
-		{Role: "system", Content: systemPrompt},
+		{Role: "system", Content: e.systemPrompt},
 		{Role: "user", Content: prompt},
 	}
 

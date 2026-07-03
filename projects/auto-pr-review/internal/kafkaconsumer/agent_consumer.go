@@ -8,6 +8,7 @@ import (
 
 	"auto-pr-review/internal/config"
 	"auto-pr-review/internal/kafkaproducer"
+	"auto-pr-review/internal/llm"
 	"auto-pr-review/internal/lockmanager"
 	"auto-pr-review/internal/prreviewagent"
 	"auto-pr-review/internal/schemaregistry"
@@ -29,9 +30,14 @@ func NewPrReviewAgentConsumer(
 	scheduler PeriodicJobScheduleManager,
 	lockManager *lockmanager.Manager,
 ) (*PrReviewAgentConsumer, error) {
+	agent, err := llm.NewAgent(cfg.LLM)
+	if err != nil {
+		return nil, err
+	}
+
 	executor, err := prreviewagent.New(prreviewagent.Config{
 		GitHubTokenPath: cfg.GitHub.TokenPath,
-		LLM:             cfg.LLM,
+		Agent:           agent,
 		WorkspaceRoot:   cfg.PRReviewAgent.WorkspaceRoot,
 		DevelopBranch:   cfg.PRReviewAgent.DevelopBranch,
 		OutputDir:       cfg.PRReviewAgent.OutputDir,
@@ -39,6 +45,7 @@ func NewPrReviewAgentConsumer(
 		GitUser:         cfg.PRReviewAgent.GitUser,
 		GitEmail:        cfg.PRReviewAgent.GitEmail,
 		MaxAgentTurns:   cfg.PRReviewAgent.MaxAgentTurns,
+		SystemPromptPath: cfg.PRReviewAgent.SystemPromptPath,
 	})
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,14 +18,9 @@ func TestApplyFixes_BedtimeStory(t *testing.T) {
 		t.Skipf("config load failed (integration test): %v", err)
 	}
 
-	agent, err := llm.NewAnalyzer(cfg.LLM)
+	agent, err := llm.NewAgent(cfg.LLM)
 	if err != nil {
 		t.Fatalf("create llm agent: %v", err)
-	}
-
-	deepseekAgent, ok := agent.(*llm.DeepSeekAnalyzer)
-	if !ok {
-		t.Fatalf("expected deepseek agent, got %T", agent)
 	}
 
 	workspace := filepath.Join("..", "..", "..", "bed-time-story")
@@ -36,7 +32,8 @@ func TestApplyFixes_BedtimeStory(t *testing.T) {
 	}
 
 	ex := &prreviewagent.Executor{}
-	ex.SetAgent(deepseekAgent)
+	ex.SetAgent(agent)
+	ex.SetLogger(slog.Default())
 
 	info := &prreviewagent.PRInfo{
 		WorkspaceDir: workspace,
