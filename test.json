@@ -1,0 +1,159 @@
+{
+    "data": [
+        {
+            "id": "claude-sonnet-4-6",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 64000
+        },
+        {
+            "id": "claude-opus-4-7",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 128000
+        },
+        {
+            "id": "claude-opus-4-8",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 128000
+        },
+        {
+            "id": "claude-fable-5",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 128000
+        },
+        {
+            "id": "gpt-5.5-2026-04-23",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1050000,
+            "max_output_tokens": 128000
+        },
+        {
+            "id": "gemini/gemini-3.5-flash",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1048576,
+            "max_output_tokens": 65535
+        },
+        {
+            "id": "deepseek/deepseek-v4-pro",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 8192
+        },
+        {
+            "id": "text-embedding-3-small",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 8191
+        },
+        {
+            "id": "gemini/gemini-2.5-flash",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1048576,
+            "max_output_tokens": 65535
+        },
+        {
+            "id": "claude-haiku-4-5-20251001",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 200000,
+            "max_output_tokens": 64000
+        },
+        {
+            "id": "claude-sonnet-5",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 128000
+        },
+        {
+            "id": "gemini/gemini-3-flash-preview",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1048576,
+            "max_output_tokens": 65535
+        },
+        {
+            "id": "gpt-5-mini",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 272000,
+            "max_output_tokens": 128000
+        },
+        {
+            "id": "cohere/rerank-v3.5",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 4096,
+            "max_output_tokens": 4096
+        },
+        {
+            "id": "meta-llama/llama-4-scout",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai"
+        },
+        {
+            "id": "voyage/voyage-3-large",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 32000
+        },
+        {
+            "id": "gpt-4o",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 128000,
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "z-ai/glm-5.2",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai"
+        },
+        {
+            "id": "gpt-4o-mini",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 128000,
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "gpt-5.4-mini",
+            "object": "model",
+            "created": 1677610602,
+            "owned_by": "openai",
+            "max_input_tokens": 1050000,
+            "max_output_tokens": 128000
+        }
+    ],
+    "object": "list"
+}
